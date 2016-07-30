@@ -10,9 +10,9 @@ contain metadata for genes and cells, such as `Name`, `Chromosome`,
 
 Loom files (`.loom`) are created in the HDF5 file format, which 
 supports an internal collection of numerical multidimensional datasets.
-See *Internals* below. HDF is supported by many computer languages, 
-including Java, MATLAB, Mathematica, Python, R, and Julia. `.loom`
-files are accessible from any language that supports HDF5.
+HDF5 is supported by many computer languages, including Java, MATLAB, 
+Mathematica, Python, R, and Julia. `.loom` files are accessible from 
+any language that supports HDF5.
 
 ## Installation
 
@@ -21,6 +21,10 @@ Use [pip](https://pip.pypa.io/en/stable/) from your terminal:
 ```bash
 pip install loompy
 ```
+
+**Note:** there are some prerequisites, which will be installed along with loompy. If you 
+use the popular [Anaconda](https://www.continuum.io/why-anaconda) Python distribution, all prerequisites will have
+already been installed. 
 
 ## Getting started
  
