@@ -1,6 +1,6 @@
 # loompy
 
-<span style="color: crimson">★</span> This repository is under construction, and not yet ready for public use. Be patient.
+★ This repository is under construction, and not yet ready for public use. Be patient.
 
 `.loom` is an efficient file format for very large omics datasets, 
 consisting of a main matrix and a variable number of row and column 
@@ -68,4 +68,4 @@ accessed.
 
 ## Documentation
 
-The loompy API is documented at [loompy.readthedocs.org](loompy.readthedocs.org).
+The loompy API is documented at [loompy.readthedocs.org](http://loompy.readthedocs.org).
