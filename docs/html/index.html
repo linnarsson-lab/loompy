@@ -1,0 +1,500 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>loompy API documentation &mdash; loompy 0.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="loompy 0.1 documentation" href="#"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="#" class="icon icon-home"> loompy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="simple">
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="#">loompy</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="#">Docs</a> &raquo;</li>
+      
+    <li>loompy API documentation</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/index.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="loompy-api-documentation">
+<h1>loompy API documentation<a class="headerlink" href="#loompy-api-documentation" title="Permalink to this headline">¶</a></h1>
+<p>Contents:</p>
+<div class="toctree-wrapper compound">
+<ul class="simple">
+</ul>
+</div>
+<span class="target" id="module-loom"></span><dl class="function">
+<dt id="loom.connect">
+<code class="descclassname">loom.</code><code class="descname">connect</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="headerlink" href="#loom.connect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Establish a connection to a .loom file.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>filename (str):         Name of the .loom file to open</dd>
+<dt>Returns:</dt>
+<dd>A LoomConnection instance.</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="loom.create">
+<code class="descclassname">loom.</code><code class="descname">create</code><span class="sig-paren">(</span><em>filename</em>, <em>matrix</em>, <em>row_attrs</em>, <em>col_attrs</em><span class="sig-paren">)</span><a class="headerlink" href="#loom.create" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new .loom file from the given data.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">filename (str):                 The filename (typically using a &#8216;.loom&#8217; file extension)</p>
+<p>matrix (numpy.ndarray): Two-dimensional (N-by-M) numpy ndarray of float values</p>
+<p>row_attrs (dict):               Row attributes, where keys are attribute names and values are numpy arrays (float or string) of length N</p>
+<p class="last">col_attrs (dict):               Column attributes, where keys are attribute names and values are numpy arrays (float or string) of length M</p>
+</dd>
+<dt>Returns:</dt>
+<dd>Nothing. To work with the file, use loom.connect(filename).</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="loom.create_from_cef">
+<code class="descclassname">loom.</code><code class="descname">create_from_cef</code><span class="sig-paren">(</span><em>cef_file</em>, <em>loom_file</em><span class="sig-paren">)</span><a class="headerlink" href="#loom.create_from_cef" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a .loom file from a legacy CEF file.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">cef_file (str):         filename of the input CEF file</p>
+<p class="last">loom_file (str):        filename of the output .loom file (will be created)</p>
+</dd>
+<dt>Returns:</dt>
+<dd>Nothing.</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="loom.create_from_pandas">
+<code class="descclassname">loom.</code><code class="descname">create_from_pandas</code><span class="sig-paren">(</span><em>df</em>, <em>loom_file</em><span class="sig-paren">)</span><a class="headerlink" href="#loom.create_from_pandas" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a .loom file from a Pandas DataFrame.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">df (pd.DataFrame):      Pandas DataFrame</p>
+<p class="last">loom_file (str):        Name of the output .loom file (will be created)</p>
+</dd>
+<dt>Returns:</dt>
+<dd>Nothing.</dd>
+</dl>
+<p>The DataFrame can contain multi-indexes on both axes, which will be turned into row and column attributes
+of the .loom file. The main matrix of the DataFrame must contain only float values. The datatypes of the
+attributes will be inferred as either float or string.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="loom.LoomConnection">
+<em class="property">class </em><code class="descclassname">loom.</code><code class="descname">LoomConnection</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="headerlink" href="#loom.LoomConnection" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="loom.LoomConnection.add_columns">
+<code class="descname">add_columns</code><span class="sig-paren">(</span><em>submatrix</em>, <em>col_attrs</em><span class="sig-paren">)</span><a class="headerlink" href="#loom.LoomConnection.add_columns" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add columns of data and attribute values to the dataset.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">submatrix (numpy.ndarray):      An N-by-M matrix of floats (N rows, M columns)</p>
+<p class="last">col_attrs (dict):                       Column attributes, where keys are attribute names and values are numpy arrays (float or string) of length M</p>
+</dd>
+<dt>Returns:</dt>
+<dd>Nothing.</dd>
+</dl>
+<p>Note that this will modify the underlying HDF5 file, which will interfere with any concurrent readers.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="loom.LoomConnection.corr_matrix">
+<code class="descname">corr_matrix</code><span class="sig-paren">(</span><em>axis=0</em>, <em>log=False</em><span class="sig-paren">)</span><a class="headerlink" href="#loom.LoomConnection.corr_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute correlation matrix without casting to float64.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">axis (int):                     The axis along which to compute the correlation matrix.</p>
+<p class="last">log (bool):                     If true, compute correlation on log(x+1) values</p>
+</dd>
+<dt>Returns:</dt>
+<dd>numpy.ndarray of float32 correlation coefficents</dd>
+</dl>
+<p>This function avoids casting intermediate values to double (float64), to reduce memory footprint.
+If row attribute _Excluded exists, those rows will be excluded.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="loom.LoomConnection.dz_dimensions">
+<code class="descname">dz_dimensions</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#loom.LoomConnection.dz_dimensions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determine the total size of the deep zoom image.</p>
+<dl class="docutils">
+<dt>Returns:</dt>
+<dd>Tuple (x,y) of integers</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="loom.LoomConnection.dz_get_max_byrow">
+<code class="descname">dz_get_max_byrow</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#loom.LoomConnection.dz_get_max_byrow" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate maximal values by row and cache in the file.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="loom.LoomConnection.dz_get_min_byrow">
+<code class="descname">dz_get_min_byrow</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#loom.LoomConnection.dz_get_min_byrow" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate minimum values by row and cache in the file.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="loom.LoomConnection.dz_get_zoom_image">
+<code class="descname">dz_get_zoom_image</code><span class="sig-paren">(</span><em>x</em>, <em>y</em>, <em>z</em><span class="sig-paren">)</span><a class="headerlink" href="#loom.LoomConnection.dz_get_zoom_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a 256x256 pixel PIL image corresponding to the tile at x,y and z.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">x (int):        Horizontal tile index (0 is left-most)</p>
+<p>y (int):        Vertical tile index (0 is top-most)</p>
+<p class="last">z (int):        Zoom level (8 is &#8216;middle&#8217; where pixels correspond to data values)</p>
+</dd>
+<dt>Returns:</dt>
+<dd>Python image library Image object</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="loom.LoomConnection.dz_get_zoom_tile">
+<code class="descname">dz_get_zoom_tile</code><span class="sig-paren">(</span><em>x</em>, <em>y</em>, <em>z</em><span class="sig-paren">)</span><a class="headerlink" href="#loom.LoomConnection.dz_get_zoom_tile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a 256x256 pixel matrix corresponding to the tile at x,y and z.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">x (int):        Horizontal tile index (0 is left-most)</p>
+<p>y (int):        Vertical tile index (0 is top-most)</p>
+<p class="last">z (int):        Zoom level (8 is &#8216;middle&#8217; where pixels correspond to data values)</p>
+</dd>
+<dt>Returns:</dt>
+<dd>Numpy ndarray of shape (256,256)</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="loom.LoomConnection.dz_zoom_range">
+<code class="descname">dz_zoom_range</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#loom.LoomConnection.dz_zoom_range" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determine the zoom limits for this file.</p>
+<dl class="docutils">
+<dt>Returns:</dt>
+<dd>Tuple (middle, min_zoom, max_zoom) of integer zoom levels.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="loom.LoomConnection.feature_selection">
+<code class="descname">feature_selection</code><span class="sig-paren">(</span><em>n_genes</em><span class="sig-paren">)</span><a class="headerlink" href="#loom.LoomConnection.feature_selection" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Fits a noise model (CV vs mean)</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>n_genes (int):  number of genes to include</dd>
+<dt>Returns:</dt>
+<dd>Nothing.</dd>
+</dl>
+<p>This method creates new row attributes _LogMean, _LogCV, _Noise (CV relative to predicted CV), _Excluded (1/0)</p>
+</div></blockquote>
+<p>and now column attribute _TotalRNA</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="loom.LoomConnection.map">
+<code class="descname">map</code><span class="sig-paren">(</span><em>f</em>, <em>axis=0</em>, <em>chunksize=100000000</em><span class="sig-paren">)</span><a class="headerlink" href="#loom.LoomConnection.map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply a function along an axis without loading the entire dataset in memory.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">f (func):               Function that takes a numpy ndarray as argument</p>
+<p>axis (int):             Axis along which to apply the function (0 = rows, 1 = columns)</p>
+<p class="last">chunksize (int): Number of values to load per chunk</p>
+</dd>
+<dt>Returns:</dt>
+<dd>numpy.ndarray result of function application</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="loom.LoomConnection.permute">
+<code class="descname">permute</code><span class="sig-paren">(</span><em>ordering</em>, <em>axis</em><span class="sig-paren">)</span><a class="headerlink" href="#loom.LoomConnection.permute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Permute the dataset along the indicated axis.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">ordering (list of int):         The desired order along the axis</p>
+<p class="last">axis (int):                                     The axis along which to permute</p>
+</dd>
+<dt>Returns:</dt>
+<dd>Nothing.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="loom.LoomConnection.project_to_2d">
+<code class="descname">project_to_2d</code><span class="sig-paren">(</span><em>perplexity=20</em><span class="sig-paren">)</span><a class="headerlink" href="#loom.LoomConnection.project_to_2d" title="Permalink to this definition">¶</a></dt>
+<dd><p>Project to 2D and create new column attributes _tSNE1, _tSNE2 and _PC1, _PC2.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>perplexity (int):       Perplexity to use for tSNE</dd>
+<dt>Returns:</dt>
+<dd>Nothing.</dd>
+</dl>
+<p>This method first computes a PCA using scikit-learn IncrementalPCA (which doesn&#8217;t load the whole
+dataset in RAM), then uses the top principal components to compute a tSNE projection. If row 
+attribute &#8216;_Excluded&#8217; exists, the projection will be based only on non-excluded genes.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="loom.LoomConnection.select">
+<code class="descname">select</code><span class="sig-paren">(</span><em>row_expr</em>, <em>col_expr</em><span class="sig-paren">)</span><a class="headerlink" href="#loom.LoomConnection.select" title="Permalink to this definition">¶</a></dt>
+<dd><p>Select a subset of the dataset as a Pandas DataFrame with multi-indexes</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">row_expr (str):         A row expression in numexpr format</p>
+<p class="last">col_expr (str):         A row expression in numexpr format</p>
+</dd>
+<dt>Returns:</dt>
+<dd>Pandas DataFrame object with attributes in row and column indexes</dd>
+</dl>
+<p>Row and column expressions must be given in numexpr format (see <a class="reference external" href="https://github.com/pydata/numexpr">https://github.com/pydata/numexpr</a>). All row (column)
+attributes are available in the expression by simply using their names. Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">loom</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s2">&quot;GeneName==&#39;Actb&#39;&quot;</span><span class="p">,</span> <span class="s2">&quot;Tissue==&#39;cortex&#39;&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To select all rows (columns), use &#8220;True&#8221;. To select no rows (columns), use &#8220;False&#8221;.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="loom.LoomConnection.select_longform">
+<code class="descname">select_longform</code><span class="sig-paren">(</span><em>row_expr</em>, <em>col_expr</em>, <em>row_index</em>, <em>col_index</em>, <em>transpose=False</em><span class="sig-paren">)</span><a class="headerlink" href="#loom.LoomConnection.select_longform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Select a subset of the dataset in Pandas &#8216;longform&#8217; format suitable for statistical analysis.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">row_expr (str):         A row expression in numexpr format</p>
+<p>col_expr (str):         A row expression in numexpr format</p>
+<p>row_index (str):        The attribute to use as row index in the Pandas DataFrame</p>
+<p>col_index (str):        The attribute to use as column index in the Pandas DataFrame</p>
+<p class="last">transpose (bool):       Indicates if the result should be transposed</p>
+</dd>
+<dt>Returns:</dt>
+<dd>Pandas DataFrame object in &#8216;longform&#8217; layout.</dd>
+</dl>
+<p>Row and column expressions must be given in numexpr format (see <a class="reference external" href="https://github.com/pydata/numexpr">https://github.com/pydata/numexpr</a>). All row (column)
+attributes are available in the expression by simply using their names. Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">loom</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">select_longform</span><span class="p">(</span><span class="s2">&quot;GeneName==&#39;Actb&#39;&quot;</span><span class="p">,</span> <span class="s2">&quot;Tissue==&#39;cortex&#39;&quot;</span><span class="p">,</span> <span class="s2">&quot;TranscriptID&quot;</span><span class="p">,</span> <span class="s2">&quot;CellID&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To select all rows (columns), use &#8220;True&#8221;. To select no rows (columns), use &#8220;False&#8221;.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="loom.LoomConnection.set_attr">
+<code class="descname">set_attr</code><span class="sig-paren">(</span><em>name</em>, <em>values</em>, <em>axis=0</em><span class="sig-paren">)</span><a class="headerlink" href="#loom.LoomConnection.set_attr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create or modify an attribute.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">name (str):                     Name of the attribute</p>
+<p>values (numpy.ndarray): Array of values of length equal to the axis length</p>
+<p class="last">axis (int):                             Axis of the attribute (0 = rows, 1 = columns)</p>
+</dd>
+<dt>Returns:</dt>
+<dd>Nothing.</dd>
+</dl>
+<p>This will overwrite any existing attribute of the same name.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="loom.LoomConnection.set_attr_bydict">
+<code class="descname">set_attr_bydict</code><span class="sig-paren">(</span><em>name</em>, <em>fromattr</em>, <em>dict</em>, <em>axis=0</em>, <em>default=None</em><span class="sig-paren">)</span><a class="headerlink" href="#loom.LoomConnection.set_attr_bydict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create or modify an attribute by mapping source values to target values.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">name (str):                     Name of the destination attribute</p>
+<p>fromattr (str):                 Name of the source attribute</p>
+<p>dict (dict):                    Key-value mapping from source to target values</p>
+<p>axis (int):                             Axis of the attribute (0 = rows, 1 = columns)</p>
+<p class="last">default: (float or str):        Default target value to use if no mapping exists for a source value</p>
+</dd>
+<dt>Returns:</dt>
+<dd>Nothing.</dd>
+</dl>
+<p>This will overwrite any existing attribute of the same name. It is perfectly possible to map an
+attribute to itself (in-place).</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><span>Index</span></a></li>
+<li><a class="reference internal" href="py-modindex.html"><span>Module Index</span></a></li>
+<li><a class="reference internal" href="search.html"><span>Search Page</span></a></li>
+</ul>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Sten Linnarsson.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
