@@ -1,4 +1,4 @@
-# loom.py
+# loompy
 
 `.loom` is an efficient file format for very large omics datasets, 
 consisting of a main matrix and a variable number of row and column 
