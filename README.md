@@ -9,8 +9,10 @@ contain metadata for genes and cells, such as `Name`, `Chromosome`,
 `Position` (for genes), and `Strain`, `Sex`, `Age` (for cells).
 
 Loom files (`.loom`) are created in the HDF5 file format, which 
-contains an internal collection of numerical multidimensional datasets.
-See *Internals* below.
+supports an internal collection of numerical multidimensional datasets.
+See *Internals* below. HDF is supported by many computer languages, 
+including Java, MATLAB, Mathematica, Python, R, and Julia. `.loom`
+files are accessible from any language that supports HDF5.
 
 ## Installation
 
@@ -40,7 +42,7 @@ maybe update some attributes.
 
 ### Reading and writing
 
-Loom files are based on HDF5, a file format suitable for large multidimensional
+Loom files are based on [HDF5](https://en.wikipedia.org/wiki/Hierarchical_Data_Format), a file format suitable for large multidimensional
 datasets. They are designed to be mostly created once, then used as read-only. 
 They **do not** support writing and reading concurrently. They also
 do no support journalling, so if something happens during a write, the 
