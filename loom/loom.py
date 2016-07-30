@@ -44,8 +44,11 @@ def create(filename, matrix, row_attrs, col_attrs):
 
 	Args:
 		filename (str):			The filename (typically using a '.loom' file extension)
+		
 		matrix (numpy.ndarray):	Two-dimensional (N-by-M) numpy ndarray of float values
+		
 		row_attrs (dict):		Row attributes, where keys are attribute names and values are numpy arrays (float or string) of length N
+		
 		col_attrs (dict):		Column attributes, where keys are attribute names and values are numpy arrays (float or string) of length M
 
 	Returns:
@@ -97,6 +100,7 @@ def create_from_cef(cef_file, loom_file):
 
 	Args:
 		cef_file (str):		filename of the input CEF file
+		
 		loom_file (str):	filename of the output .loom file (will be created)
 	
 	Returns:
@@ -112,6 +116,7 @@ def create_from_pandas(df, loom_file):
 
 	Args:
 		df (pd.DataFrame):	Pandas DataFrame
+		
 		loom_file (str):	Name of the output .loom file (will be created)
 
 	Returns:
@@ -147,7 +152,7 @@ def connect(filename):
 		filename (str):		Name of the .loom file to open
 
 	Returns:
-		Nothing.
+		A LoomConnection instance.
 	"""
 	return LoomConnection(filename)
 
@@ -192,6 +197,7 @@ class LoomConnection(object):
 
 		Args:
 			submatrix (numpy.ndarray):	An N-by-M matrix of floats (N rows, M columns)
+			
 			col_attrs (dict):			Column attributes, where keys are attribute names and values are numpy arrays (float or string) of length M
 
 		Returns:
@@ -229,7 +235,9 @@ class LoomConnection(object):
 
 		Args:
 			name (str): 			Name of the attribute
+			
 			values (numpy.ndarray):	Array of values of length equal to the axis length
+			
 			axis (int):				Axis of the attribute (0 = rows, 1 = columns)
 
 		Returns:
@@ -260,9 +268,13 @@ class LoomConnection(object):
 
 		Args:
 			name (str): 			Name of the destination attribute
+			
 			fromattr (str):			Name of the source attribute
+			
 			dict (dict):			Key-value mapping from source to target values
+			
 			axis (int):				Axis of the attribute (0 = rows, 1 = columns)
+			
 			default: (float or str):	Default target value to use if no mapping exists for a source value
 
 		Returns:
@@ -296,9 +308,13 @@ class LoomConnection(object):
 
 		Args:
 			row_expr (str):		A row expression in numexpr format
+			
 			col_expr (str):		A row expression in numexpr format
+			
 			row_index (str):	The attribute to use as row index in the Pandas DataFrame
+			
 			col_index (str):	The attribute to use as column index in the Pandas DataFrame
+			
 			transpose (bool):	Indicates if the result should be transposed
 
 		Returns:
@@ -307,8 +323,8 @@ class LoomConnection(object):
 		Row and column expressions must be given in numexpr format (see https://github.com/pydata/numexpr). All row (column)
 		attributes are available in the expression by simply using their names. Example: 
 
-			data = loom.connect(filename)
-			df = data.select_longform("GeneName=='Actb'", "Tissue=='cortex'", "TranscriptID", "CellID")
+			>>> data = loom.connect(filename)
+			>>> df = data.select_longform("GeneName=='Actb'", "Tissue=='cortex'", "TranscriptID", "CellID")
 
 		To select all rows (columns), use "True". To select no rows (columns), use "False". 
 		"""
@@ -386,6 +402,7 @@ class LoomConnection(object):
 
 		Args:
 			row_expr (str):		A row expression in numexpr format
+			
 			col_expr (str):		A row expression in numexpr format
 
 		Returns:
@@ -394,8 +411,8 @@ class LoomConnection(object):
 		Row and column expressions must be given in numexpr format (see https://github.com/pydata/numexpr). All row (column)
 		attributes are available in the expression by simply using their names. Example: 
 
-			data = loom.connect(filename)
-			df = data.select("GeneName=='Actb'", "Tissue=='cortex'")
+			>>> data = loom.connect(filename)
+			>>> df = data.select("GeneName=='Actb'", "Tissue=='cortex'")
 
 		To select all rows (columns), use "True". To select no rows (columns), use "False". 
 		"""
@@ -455,7 +472,9 @@ class LoomConnection(object):
 
 		Args:
 			f (func):		Function that takes a numpy ndarray as argument
+			
 			axis (int):		Axis along which to apply the function (0 = rows, 1 = columns)
+			
 			chunksize (int): Number of values to load per chunk
 
 		Returns:
@@ -489,7 +508,9 @@ class LoomConnection(object):
 
 		Args:
 			axis (int):			The axis along which to compute the correlation matrix.
+			
 			log (bool):			If true, compute correlation on log(x+1) values
+		
 		Returns:
 			numpy.ndarray of float32 correlation coefficents
 
@@ -519,6 +540,7 @@ class LoomConnection(object):
 
 		Args:
 			ordering (list of int): 	The desired order along the axis
+			
 			axis (int):					The axis along which to permute
 
 		Returns:
@@ -553,6 +575,7 @@ class LoomConnection(object):
 	def feature_selection(self, n_genes):
 		"""
 		Fits a noise model (CV vs mean)
+		
 		Args:
 			n_genes (int):	number of genes to include
 
@@ -718,7 +741,9 @@ class LoomConnection(object):
 
 		Args:
 			x (int):	Horizontal tile index (0 is left-most)
+			
 			y (int): 	Vertical tile index (0 is top-most)
+			
 			z (int): 	Zoom level (8 is 'middle' where pixels correspond to data values)
 
 		Returns:
@@ -747,7 +772,9 @@ class LoomConnection(object):
 
 		Args:
 			x (int):	Horizontal tile index (0 is left-most)
+			
 			y (int): 	Vertical tile index (0 is top-most)
+			
 			z (int): 	Zoom level (8 is 'middle' where pixels correspond to data values)
 
 		Returns:

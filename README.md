@@ -8,7 +8,7 @@ column per cell, one row per gene); row and column annotations
 contain metadata for genes and cells, such as `Name`, `Chromosome`, 
 `Position` (for genes), and `Strain`, `Sex`, `Age` (for cells).
 
-Loom files (`.loom`) are created in the HDF5 file format, which 
+Loom files (`.loom`) are created in the [HDF5](https://en.wikipedia.org/wiki/Hierarchical_Data_Format) file format, which 
 supports an internal collection of numerical multidimensional datasets.
 HDF5 is supported by many computer languages, including Java, MATLAB, 
 Mathematica, Python, R, and Julia. `.loom` files are accessible from 
@@ -57,9 +57,12 @@ it safe.
 Loom files are great for distribution of large datasets, which are then
 used as read-only for analytical purposes.
 
+### Efficient indexing
+
+The main matrix is stored in *chunked* format. That is, instead of being
+stored by rows or by columns, it is stored as a sequence of little rectangles. 
+As a consequence, both rows and columns (as well as submatrices) can be efficiently 
+accessed. 
+
 ## Documentation
-
-### loom.create(filename)
-
-Create an empty `.loom` file. 
 
