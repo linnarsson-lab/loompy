@@ -66,3 +66,4 @@ accessed.
 
 ## Documentation
 
+The loompy API is documented at [loompy.readthedocs.org](loompy.readthedocs.org).
