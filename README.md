@@ -184,10 +184,7 @@ two different processes (sequentially, not simultaneously). In that case, the fi
 file by calling `close()` on the connection, before the second can start writing:
 
 ```python
-def close(self):
-    """
-    Close the connection. After this, the connection object becomes invalid.
-    """
+ds.close()
 ```
 
 
@@ -342,6 +339,15 @@ def map(self, f, axis = 0, chunksize = 100000000):
 ```
 
 The function will receive an array (of floats) as its only argument, and should return a single float value.
+
+Example:
+
+```python
+>>> import numpy as np
+>>> ds.map(np.mean)
+# Returns an array of row means
+np.array([1.23, 0.32, ...])   
+```
 
 
 #### Correlation matrix
