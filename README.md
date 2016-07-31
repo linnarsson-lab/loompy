@@ -68,4 +68,63 @@ accessed.
 
 ## Documentation
 
-The loompy API is documented at [loompy.readthedocs.org](http://loompy.readthedocs.org).
+### Creating `.loom` files
+
+Create from data:
+
+```python
+def create(filename, matrix, row_attrs, col_attrs):
+	"""
+	Create a new .loom file from the given data.
+
+	Args:
+		filename (str):			The filename (typically using a '.loom' file extension)
+		
+		matrix (numpy.ndarray):	Two-dimensional (N-by-M) numpy ndarray of float values
+		
+		row_attrs (dict):		Row attributes, where keys are attribute names and values are numpy arrays (float or string) of length N
+		
+		col_attrs (dict):		Column attributes, where keys are attribute names and values are numpy arrays (float or string) of length M
+
+	Returns:
+		Nothing. To work with the file, use loom.connect(filename).
+	"""
+```
+
+Create from an existing CEF file:
+
+```python
+def create_from_cef(cef_file, loom_file):
+	"""
+	Create a .loom file from a legacy CEF file.
+
+	Args:
+		cef_file (str):		filename of the input CEF file
+		
+		loom_file (str):	filename of the output .loom file (will be created)
+	
+	Returns:
+		Nothing.
+	"""
+```
+
+Create from a Pandas DataFram:
+
+```python
+def create_from_pandas(df, loom_file):
+	"""
+	Create a .loom file from a Pandas DataFrame.
+
+	Args:
+		df (pd.DataFrame):	Pandas DataFrame
+		
+		loom_file (str):	Name of the output .loom file (will be created)
+
+	Returns:
+		Nothing.
+
+	The DataFrame can contain multi-indexes on both axes, which will be turned into row and column attributes
+	of the .loom file. The main matrix of the DataFrame must contain only float values. The datatypes of the
+	attributes will be inferred as either float or string. 
+	"""
+```
