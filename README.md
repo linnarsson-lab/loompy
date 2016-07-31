@@ -71,7 +71,7 @@ accessed.
 
 ### Matrix and attributes
 
-The data model that loom supports is a two-dimensional matrix with named row and column attributes. 
+Loom files represent a two-dimensional matrix with named row and column attributes. 
 If the main matrix has N rows and M columns, then each row attribute has M elements (one per column) 
 and vice versa.
 
