@@ -38,6 +38,8 @@ from sklearn.decomposition import IncrementalPCA
 from sklearn.manifold import TSNE
 import __builtin__
 
+def _infer_type(array):
+	
 def create(filename, matrix, row_attrs, col_attrs):
 	"""
 	Create a new .loom file from the given data.
@@ -72,7 +74,7 @@ def create(filename, matrix, row_attrs, col_attrs):
 		if len(vals) != matrix.shape[0]:
 			raise ValueError, ("Row attribute %s has the wrong number of values (%s given, %s expected)" % (key, len(vals), matrix.shape[0]))
 		try:
-			vals = vals.astype('float32')
+			vals = vals.astype('float64')
 		except (ValueError, TypeError):
 			vals = vals.astype('S')
 		path = '/row_attrs/' + key
@@ -84,7 +86,7 @@ def create(filename, matrix, row_attrs, col_attrs):
 		if len(vals) != matrix.shape[1]:
 			raise ValueError, ("Column attribute %s has the wrong number of values (%s given, %s expected)" % (key, len(vals), matrix.shape[1]))
 		try:
-			vals = vals.astype('float32')
+			vals = vals.astype('float64')
 		except (ValueError, TypeError):
 			vals = vals.astype('S')
 		path = '/col_attrs/' + key
@@ -133,12 +135,12 @@ def create_from_pandas(df, loom_file):
 	f.create_dataset('matrix', data=df.values.astype('float32'), compression='lzf', maxshape=(n_rows, None), chunks=(100,100))
 	for attr in df.index.names:		
 		try:
-			f['/row_attrs/' + attr] = df.index.get_level_values(attr).values.astype('float32')
+			f['/row_attrs/' + attr] = df.index.get_level_values(attr).values.astype('float64')
 		except ValueError, e:
 			f['/row_attrs/' + attr] = df.index.get_level_values(attr).values.astype('string')
 	for attr in df.columns.names:		
 		try:
-			f['/col_attrs/' + attr] = df.columns.get_level_values(attr).values.astype('float32')
+			f['/col_attrs/' + attr] = df.columns.get_level_values(attr).values.astype('float64')
 		except ValueError, e:
 			f['/col_attrs/' + attr] = df.columns.get_level_values(attr).values.astype('string')
 	f.close()	
