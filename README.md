@@ -1,6 +1,6 @@
 # loompy
 
-★ This repository is under construction, and not yet ready for public use. Be patient.
+★ loompy is under development. Be patient. ★
 
 `.loom` is an efficient file format for very large omics datasets, 
 consisting of a main matrix and a variable number of row and column 
@@ -54,7 +54,7 @@ main matrix remains on disk.
 Loom files are based on [HDF5](https://en.wikipedia.org/wiki/Hierarchical_Data_Format), a file format suitable for large multidimensional
 datasets. They are designed to be mostly created once, then used as read-only. 
 They **do not** support writing and reading concurrently. They also
-do no support journalling, so if something happens during a write, the 
+do not support journalling, so if something happens during a write, the 
 **entire file can be lost**. Therefore, do not use loom files as 
 your primary data storage. They are for working with data, not keeping 
 it safe.
