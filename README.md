@@ -434,3 +434,5 @@ def project_to_2d(self, perplexity = 20):
 The method will always perform both t-SNE and PCA and store the resulting coordinates as new column
 attributes _tSNE1, _tSNE2, _PCA1 and _PCA2.
 
+PCA will be performed incrementally (i.e. without loading the entire matrix), and t-SNE will be 
+performed on the top principal components. Thus the full dataset is never loaded into memory.

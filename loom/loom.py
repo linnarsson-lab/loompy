@@ -26,7 +26,6 @@ from __future__ import division
 import math
 import numpy as np
 import h5py
-import numexpr as ne
 #from cmdstan import CmdStan
 import os.path
 import pandas as pd
