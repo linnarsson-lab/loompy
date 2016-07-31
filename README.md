@@ -46,6 +46,9 @@ Loom files are stored on disk and are never loaded entirely. They
 are more like databases: you connect, retrieve some subset of the data,
 maybe update some attributes.
 
+When you connect, all attributes are read into memory for quick access, but the 
+main matrix remains on disk.
+
 ### Reading and writing
 
 Loom files are based on [HDF5](https://en.wikipedia.org/wiki/Hierarchical_Data_Format), a file format suitable for large multidimensional
@@ -181,10 +184,10 @@ two different processes (sequentially, not simultaneously). In that case, the fi
 file by calling `close()` on the connection, before the second can start writing:
 
 ```python
-	def close(self):
-		"""
-		Close the connection. After this, the connection object becomes invalid.
-		"""
+def close(self):
+    """
+    Close the connection. After this, the connection object becomes invalid.
+    """
 ```
 
 
@@ -312,4 +315,122 @@ You need to provide a submatrix corresponding to the columns, as well as a dicti
 with values for all the new columns. 
 
 **Note:** It is not possible to add rows. 
+
+
+### Mathematical operations
+
+#### Map
+
+You can map a function across all rows (all columns), while avoiding loading the entire
+dataset into memory:
+
+```python
+def map(self, f, axis = 0, chunksize = 100000000):
+    """
+    Apply a function along an axis without loading the entire dataset in memory.
+
+    Args:
+        f (func):		Function that takes a numpy ndarray as argument
+        
+        axis (int):		Axis along which to apply the function (0 = rows, 1 = columns)
+        
+        chunksize (int): Number of values to load per chunk
+
+    Returns:
+        numpy.ndarray result of function application
+    """
+```
+
+The function will receive an array (of floats) as its only argument, and should return a single float value.
+
+
+#### Correlation matrix
+
+Numpy can compute correlation matrices but will internally cast float32 to float64. This leads to
+unnecessarily large memory consumption. The following method computes the correlation matrix
+while avoiding float64s:
+
+```python
+def corr_matrix(self, axis = 0, log=False):
+    """
+    Compute correlation matrix without casting to float64.
+
+    Args:
+        axis (int):			The axis along which to compute the correlation matrix.
+        
+        log (bool):			If true, compute correlation on log(x+1) values
+    
+    Returns:
+        numpy.ndarray of float32 correlation coefficents
+
+    This function avoids casting intermediate values to double (float64), to reduce memory footprint.
+    If row attribute _Excluded exists, those rows will be excluded.
+    """
+```
+
+The method will also respect the "_Excluded" row attribute, if it exists, and omit those rows from
+the calculation.
+
+#### Permutation
+
+Permute the order of the rows (or columns):
+
+```python
+def permute(self, ordering, axis):
+    """
+    Permute the dataset along the indicated axis.
+
+    Args:
+        ordering (list of int): 	The desired order along the axis
+        
+        axis (int):					The axis along which to permute
+
+    Returns:
+        Nothing.
+    """
+```
+
+#### Feature selection
+
+Select genes (rows) based on a CV vs mean fit:
+
+```python
+def feature_selection(self, n_genes):
+    """
+    Fits a noise model (CV vs mean)
+    
+    Args:
+        n_genes (int):	number of genes to include
+
+    Returns:
+        Nothing.
+    
+    This method creates new row attributes _LogMean, _LogCV, _Noise (CV relative to predicted CV), _Excluded (1/0) 
+    and now column attribute _TotalRNA
+    """
+```
+
+#### Projection (t-SNE and PCA)
+
+To perform a projection of the columns onto the 2D plane:
+
+```python
+def project_to_2d(self, perplexity = 20):
+    """
+    Project to 2D and create new column attributes _tSNE1, _tSNE2 and _PC1, _PC2.
+
+    Args:
+        perplexity (int): 	Perplexity to use for tSNE
+
+    Returns:
+        Nothing.
+
+    This method first computes a PCA using scikit-learn IncrementalPCA (which doesn't load the whole
+    dataset in RAM), then uses the top principal components to compute a tSNE projection. If row 
+    attribute '_Excluded' exists, the projection will be based only on non-excluded genes.
+    """
+```
+
+The method will always perform both t-SNE and PCA and store the resulting coordinates as new column
+attributes _tSNE1, _tSNE2, _PCA1 and _PCA2.
 
