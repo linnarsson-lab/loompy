@@ -82,8 +82,8 @@ a good idea to put genes in the rows (since you will likely always work with the
 
 Loom supports a tiny subset of numpy data types:
 
-* The main matrix is always a two-dimensionl array of type `float32`
-* Attributes are one-dimensionl arrays of either `float64` or `string`
+* The main matrix is always a two-dimensional array of type `float32`
+* Attributes are one-dimensional arrays of either `float64` or `string`
 
 Note that there is no integer attribute type. However, float64s are large enough to 
 represent all integers up to and including 9,007,199,254,740,992 without loss.
@@ -175,6 +175,18 @@ ds = loom.connect("filename.loom")
 ```
 
 In the rest of the documentation below, `ds` is assumed to be an instance of `LoomConnection` obtained by connecting to a `.loom` file.
+
+Note: there is usually no need to close the connection. The exception is if you need to write to the loom file from
+two different processes (sequentially, not simultaneously). In that case, the first process needs to let go of the 
+file by calling `close()` on the connection, before the second can start writing:
+
+```python
+	def close(self):
+		"""
+		Close the connection. After this, the connection object becomes invalid.
+		"""
+```
+
 
 ### Shape, indexing and slicing
 

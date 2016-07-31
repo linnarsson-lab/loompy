@@ -193,6 +193,16 @@ class LoomConnection(object):
 		"""
 		return self.file['matrix'].__getitem__(slice)
 
+	def close(self):
+		"""
+		Close the connection. After this, the connection object becomes invalid.
+		"""
+		self.file.close()
+		self.file = None
+		self.row_attrs = {}
+		self.col_attrs = {}
+		self.shape = (0,0)
+
 	def add_columns(self, submatrix, col_attrs):
 		"""
 		Add columns of data and attribute values to the dataset.
