@@ -108,7 +108,7 @@ def create_from_cef(cef_file, loom_file):
 	"""
 ```
 
-Create from a Pandas DataFram:
+Create from a Pandas DataFrame:
 
 ```python
 def create_from_pandas(df, loom_file):
@@ -128,3 +128,61 @@ def create_from_pandas(df, loom_file):
 	attributes will be inferred as either float or string. 
 	"""
 ```
+
+### Connecting
+
+Establish a connection to an existing `.loom` file:
+
+```python
+def connect(filename):
+	"""
+	Establish a connection to a .loom file.
+
+	Args:
+		filename (str):		Name of the .loom file to open
+
+	Returns:
+		A LoomConnection instance.
+	"""
+```
+
+Example:
+
+```python
+ds = loom.connect("filename.loom")
+```
+
+In the rest of the documentation below, `ds` is assumed to be an instance of `LoomConnection` obtained by connecting to a `.loom` file.
+
+### Shape, indexing and slicing
+
+The `shape` property returns the row and column count as a tuple:
+
+```python
+>>> ds.shape
+(100,2345)
+```
+
+The data stored in the main matrix can be retrieved by indexing and slicing. The following are supported:
+
+* Indices: anything that can be converted to a Python long
+* Slices (i.e. `:` or `0:10`)
+* Lists of the rows/columns you want (i.e. `[0, 34, 576]`)
+* Mask arrays (i.e. numpy array of bool indicating the rows/columns you want)
+
+Lists and mask arrays are supported along one dimension at a time only. Note that performance will
+be poor if you select many rows (columns) out of a large matrix. It may be better to load the
+entire matrix and then perform the sub-selection in memory (using numpy slicing).
+
+Since the main matrix is two-dimensional, two arguments are always needed. Examples:
+
+```python
+
+ds[:, :]          # Return the entire matrix
+ds[0:10, 0:10]    # Return the 10x10 submatrix starting at row and column zero 
+ds[99, :]         # Return the 100th row 
+ds[:, 99]         # Return the 100th column
+ds[[0,3,5], :]    # Return rows with index 0, 3 and 5
+ds[:, bool_array] # Return columns where bool_array elements are True
+```
+
