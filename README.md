@@ -236,7 +236,7 @@ Attributes are accessed as dictionaries on `row_attrs` and `col_attrs`, respecti
 ```python
 ds.row_attrs.keys()       # Return list of row attribute names
 ds.col_attrs.keys()       # Return list of column attribute names
-ds.row_attrs["GeneName"]  # Return a numpy array of gene names (assuming the attirbute exists)
+ds.row_attrs["GeneName"]  # Return a numpy array of gene names (assuming the attribute exists)
 ```
 
 Note that these dictionaries are **read-only**. Do not attempt to change the value of an attribute (see below for
