@@ -36,8 +36,6 @@ from scipy.optimize import minimize
 from sklearn.decomposition import IncrementalPCA
 from sklearn.manifold import TSNE
 import __builtin__
-
-def _infer_type(array):
 	
 def create(filename, matrix, row_attrs, col_attrs):
 	"""
@@ -180,6 +178,58 @@ class LoomConnection(object):
 		for x in self.file['col_attrs'].keys():
 			self.col_attrs[x] = self.file['col_attrs'][x][:]
 	
+	def _repr_html_(self):
+		"""
+		Return an HTML representation of the loom file, showing the upper-left 10x10 corner.
+		"""
+		html = "<p>" + str(self.shape) + "</p>"
+		html += "<table>"
+		# Emit column attributes
+		for ca in self.col_attrs.keys():
+			html += "<tr>"
+			for ra in self.row_attrs.keys():
+				html += "<td>&nbsp;</td>"  # Space for row attrs 
+			html += "<td><strong>" + ca + "</strong></td>"  # Col attr name
+			for v in self.col_attrs[ca][:10]:
+				html += "<td>" + str(v) + "</td>"
+			if self.shape[1] > 10:
+				html += "<td>...</td>"
+			html += "</tr>"
+			
+		# Emit row attribute names
+		html += "<tr>"
+		for ra in self.row_attrs.keys():
+			html += "<td><strong>" + ra + "</strong></td>"  # Row attr name 
+		html += "<td>&nbsp;</td>"  # Space for col attrs 
+		for v in xrange(10):
+			html += "<td>&nbsp;</td>"
+		if self.shape[1] > 10:
+			html += "<td>...</td>"
+		html += "</tr>"
+
+		# Emit row attr values and matrix values
+		for row in xrange(10):
+			html += "<tr>"
+			for ra in self.row_attrs.keys():
+				html += "<td>" + str(self.row_attrs[ra][row]) + "</td>"  # Row attr name 
+			html += "<td>&nbsp;</td>"  # Space for col attrs 
+
+			for v in self[0,:10]:
+				html += "<td>" + str(v) + "</td>"
+			if self.shape[1] > 10:
+				html += "<td>...</td>"
+			html += "</tr>"
+		# Emit ellipses
+		if self.shape[0] > 10:
+			html += "<tr>"
+			for v in xrange(11 + len(self.row_attrs.keys())):
+				html += "<td>...</td>"
+			if self.shape[1] > 10:
+				html += "<td>...</td>"
+			html += "</tr>"        
+		html += "</table>"
+		return html
+		
 	def __getitem__(self, slice):
 		"""
 		Get a slice of the main matrix.

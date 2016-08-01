@@ -2,14 +2,14 @@ from setuptools import setup, find_packages
 
 setup(
     name = "loompy",
-    version = "0.2",
+    version = "0.3",
     packages = find_packages(),
     install_requires = [
-        'scikit-learn>=0.17.1',
-        'h5py>=2.6.0', 
-        'pandas>=0.18.1', 
-        'scipy>=0.18.0',
-        'numpy>=1.11.1', 
+        'scikit-learn',
+        'h5py', 
+        'pandas', 
+        'scipy',
+        'numpy', 
     ],
 
     # metadata for upload to PyPI
