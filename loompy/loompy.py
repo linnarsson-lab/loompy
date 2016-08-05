@@ -156,9 +156,10 @@ def create_from_cellranger(folder, loom_file, sample_annotation = {}):
 	Returns:
 		Nothing, but creates loom_file
 	"""
-	matrix = mmread(os.path.join(folder, "matrix.mtx"))
-	col_attrs = np.loadtxt(os.path.join(folder, "barcodes.tsv"), delimiter="\t", dtype="string")
-	row_attrs = np.loadtxt(os.path.join(folder, "genes.tsv"), delimiter="\t", dtype="string")
+	matrix = mmread(os.path.join(folder, "matrix.mtx")).astype("float32").todense()
+	col_attrs = {"CellBarcode": np.loadtxt(os.path.join(folder, "barcodes.tsv"), delimiter="\t", dtype="string")}
+	temp = np.loadtxt(os.path.join(folder, "genes.tsv"), delimiter="\t", dtype="string")
+	row_attrs = {"Accession": temp[:, 0], "Gene": temp[:,1]}
 	for key in sample_annotation.keys():
 		col_attrs[key] = np.array([sample_annotation[key]]*matrix.shape[1])
 
