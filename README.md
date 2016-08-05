@@ -33,8 +33,8 @@ already been installed.
 Run the following in a Jupyter notebook:
 
 ```python
->>> import loom
->>> ds = loom.connect("cortex.loom")
+>>> import loompy
+>>> ds = loompy.connect("cortex.loom")
 >>> ds
 ```
 
@@ -121,7 +121,7 @@ def create(filename, matrix, row_attrs, col_attrs):
 		col_attrs (dict):		Column attributes, where keys are attribute names and values are numpy arrays (float or string) of length M
 
 	Returns:
-		Nothing. To work with the file, use loom.connect(filename).
+		Nothing. To work with the file, use loompy.connect(filename).
 	"""
 ```
 
@@ -183,7 +183,7 @@ def connect(filename):
 Example:
 
 ```python
-ds = loom.connect("filename.loom")
+ds = loompy.connect("filename.loom")
 ```
 
 In the rest of the documentation below, `ds` is assumed to be an instance of `LoomConnection` obtained by connecting to a `.loom` file.

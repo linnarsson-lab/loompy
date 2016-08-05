@@ -337,7 +337,7 @@ class LoomConnection(object):
 			if not other.col_attrs.has_key(ca):
 				raise ValueError, "Column attribute %s is missing in the other loom file" % ca
 
-		self.add_columns(other[:,:]), other.col_attrs)				
+		self.add_columns(other[:,:], other.col_attrs)				
 
 	def set_attr(self, name, values, axis = 0):
 		"""
