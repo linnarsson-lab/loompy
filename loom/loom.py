@@ -32,6 +32,7 @@ import pandas as pd
 import scipy
 import scipy.misc
 import scipy.ndimage
+from scipy.io import mmread
 from scipy.optimize import minimize
 from sklearn.decomposition import IncrementalPCA
 from sklearn.manifold import TSNE
@@ -91,7 +92,7 @@ def create(filename, matrix, row_attrs, col_attrs):
 		#f[path] = vals
 
 	f.flush()
-	f.close()
+	f.close()	
 
 def create_from_cef(cef_file, loom_file):
 	"""
@@ -142,6 +143,26 @@ def create_from_pandas(df, loom_file):
 			f['/col_attrs/' + attr] = df.columns.get_level_values(attr).values.astype('string')
 	f.close()	
 	pass
+
+def create_from_cellranger(folder, loom_file, sample_annotation = {}):
+	"""
+	Create a .loom file from 10X Genomics cellranger output
+
+	Args:
+		folder (str):				path to the cellranger output folder (containing the "matrix.mtx" file)
+		loom_file (str):			full path of the resulting loom file
+		sample_annotation (dict): 	dict of additional sample attributes
+
+	Returns:
+		Nothing, but creates loom_file
+	"""
+	matrix = mmread(os.path.join(folder, "matrix.mtx"))
+	col_attrs = np.loadtxt(os.path.join(folder, "barcodes.tsv"), delimiter="\t", dtype="string")
+	row_attrs = np.loadtxt(os.path.join(folder, "genes.tsv"), delimiter="\t", dtype="string")
+	for key in sample_annotation.keys():
+		col_attrs[key] = np.array([sample_annotation[key]]*matrix.shape[1])
+
+	create(loom_file, matrix, row_attrs, col_attrs)
 
 def connect(filename):
 	"""
@@ -289,6 +310,34 @@ class LoomConnection(object):
 		self.file['/matrix'][:,self.shape[1]:n_cols] = submatrix
 		self.shape = (self.shape[0], n_cols)
 		self.file.flush()
+
+	def add_loom(self, other_file):
+		"""
+		Add the content of another loom file
+
+		Args:
+			other_file (str):	filename of the loom file to append
+
+		Returns:
+			Nothing, but adds the loom file. Note that the other loom file must have exactly the same
+			number of rows, in the same order, and must have exactly the same column attributes.
+		"""
+		# Connect to the loom files
+		other = connect(other_file)
+
+		# Sanity checks
+		if other.shape[0] != self.shape[0]:
+			raise ValueError, "The two loom files have different numbers of rows"
+		
+		for ca in other.col_attrs.keys():
+			if not self.col_attrs.has_key(ca):
+				raise ValueError, "The other loom file has column attribute %s which is not in this file" % ca
+		
+		for ca in self.col_attrs.keys():
+			if not other.col_attrs.has_key(ca):
+				raise ValueError, "Column attribute %s is missing in the other loom file" % ca
+
+		self.add_columns(other[:,:]), other.col_attrs)				
 
 	def set_attr(self, name, values, axis = 0):
 		"""
