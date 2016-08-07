@@ -46,6 +46,13 @@ This shows the upper-left 10x10 corner of the matrix along with its attributes:
 In this example, the total size of the dataset is 18539 rows (genes) by 1715 columns (cells). There are 
 three column attributes (`Cell_type`, `Cell_ID` and `Timepoint`) and one row attribute (`Gene`).
 
+```python
+ds[ds.Gene == "Actb", :]
+```
+
+This returns an array of the expression values for *Actb*. Note the use of `ds.Gene == ...` to pick out rows (columns) that match some criterion, and the use of ds[..., ...] to select subsets of the data. 
+
+Refer to the API Documentation below to learn more about creating and manipulating loom files.
 
 ## Understanding the semantics of loom files
 
