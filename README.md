@@ -46,6 +46,8 @@ This shows the upper-left 10x10 corner of the matrix along with its attributes:
 In this example, the total size of the dataset is 18539 rows (genes) by 1715 columns (cells). There are 
 three column attributes (`Cell_type`, `Cell_ID` and `Timepoint`) and one row attribute (`Gene`).
 
+Next, try this:
+
 ```python
 ds[ds.Gene == "Actb", :]
 ```
