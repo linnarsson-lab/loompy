@@ -106,41 +106,39 @@ represent all integers up to and including 9,007,199,254,740,992 without loss.
 
 Create from data:
 
-```python
-def create(filename, matrix, row_attrs, col_attrs):
-	"""
-	Create a new .loom file from the given data.
+>**create**(*filename*, *matrix*, *row_attrs*, *col_attrs*):
 
-	Args:
-		filename (str):			The filename (typically using a '.loom' file extension)
-		
-		matrix (numpy.ndarray):	Two-dimensional (N-by-M) numpy ndarray of float values
-		
-		row_attrs (dict):		Row attributes, where keys are attribute names and values are numpy arrays (float or string) of length N
-		
-		col_attrs (dict):		Column attributes, where keys are attribute names and values are numpy arrays (float or string) of length M
+>>Create a new .loom file from the given data.
 
-	Returns:
-		Nothing. To work with the file, use loompy.connect(filename).
-	"""
-```
+>>Args:
+
+>>>*filename* (str):	The filename (typically using a '.loom' file extension)
+
+>>>*matrix* (numpy.ndarray):	Two-dimensional (N-by-M) numpy ndarray of float values
+
+>>>*row_attrs* (dict):	Row attributes, where keys are attribute names and values are numpy arrays (float or string) of length N
+
+>>>*col_attrs* (dict):	Column attributes, where keys are attribute names and values are numpy arrays (float or string) of length M
+
+>>Returns:
+
+>>>Nothing. To work with the file, use loompy.connect(filename).
+
 
 Create from an existing CEF file:
 
-```python
-def create_from_cef(cef_file, loom_file):
-	"""
-	Create a .loom file from a legacy CEF file.
+>**create_from_cef**(*cef_file*, *loom_file*):
 
-	Args:
-		cef_file (str):		filename of the input CEF file
+>>Create a .loom file from a legacy CEF file.
+
+>>Args:
+>>>*cef_file* (str):	filename of the input CEF file
 		
-		loom_file (str):	filename of the output .loom file (will be created)
-	
-	Returns:
-		Nothing.
-	"""
-```
+>>>*loom_file* (str):	filename of the output .loom file (will be created)
+
+>>Returns:
+>>>Nothing.
+
 
 Create from a Pandas DataFrame:
 
