@@ -337,6 +337,23 @@ with values for all the new columns.
 
 **Note:** It is not possible to add rows. 
 
+You can also add the contents of another .loom file:
+
+```python
+	def add_loom(self, other_file):
+		"""
+		Add the content of another loom file
+
+		Args:
+			other_file (str):	filename of the loom file to append
+
+		Returns:
+			Nothing, but adds the loom file. Note that the other loom file must have exactly the same
+			number of rows, in the same order, and must have exactly the same column attributes.
+		"""
+```
+
+The content of the other file is added as columns on the right of the current dataset. The rows must match for this to work. That is, the two files must have exactly the same rows (genes) in exactly the same order. Furthermore, the two datasets must have the same column attributes (but of coure can have different *values* for those attributes at each column).
 
 ### Mathematical operations
 
