@@ -254,8 +254,22 @@ ds.col_attrs.keys()       # Return list of column attribute names
 ds.row_attrs["GeneName"]  # Return a numpy array of gene names (assuming the attribute exists)
 ```
 
-Note that these dictionaries are **read-only**. Do not attempt to change the value of an attribute (see below for
-how to add and modify attributes).
+Note that these dictionaries are **read-only**. Any modifications will not be saved in the .loom file and will cause internal inconsistencies in the `LoomConnection` object. Use *set_attr()* (below) to add or modify attributes.
+
+For convenience, attributes are also available directly on the `LoomConnection` object:
+
+```python
+ds.GeneName		# Equivalent to ds.row_attrs["GeneName"]
+```
+
+There are some limitations: 
+
+* Custom attributes do not override existing `LoomConnection` attributes, such as method names. For example, if your .loom file has a row attribute `shape`, then `ds.shape` will not return that attribute, but will still return the shape of the main matrix. 
+* Column attributes take precedence. For example, if you have both `ds.row_attrs["Name"]` and `ds.col_attrs["Name"]`, then `ds.Name` returns the column attribute, not the row attribute.
+
+Note again, that you should not assign to these attributes, because your assignment will not be saved in the .loom file and will cause internal inconsistencies in the `LoomConnection` object. Use *set_attr()* (below) to add or modify attributes.
+
+
 
 ### Adding attributes and columns
 
