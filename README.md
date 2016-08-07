@@ -159,6 +159,25 @@ def create_from_pandas(df, loom_file):
 	"""
 ```
 
+Create from a 10X Genomics [cellranger](http://support.10xgenomics.com/single-cell/software/pipelines/latest/what-is-cell-ranger) output folder:
+
+```python
+def create_from_cellranger(folder, loom_file, sample_annotation = {}):
+	"""
+	Create a .loom file from 10X Genomics cellranger output
+
+	Args:
+		folder (str):				path to the cellranger output folder (containing the "matrix.mtx" file)
+		loom_file (str):			full path of the resulting loom file
+		sample_annotation (dict): 	dict of additional sample attributes
+
+	Returns:
+		Nothing, but creates loom_file
+	"""
+```
+
+You can use the *sample_annotation* dictionary to add column (cell) annotations to all cells in the dataset. For example, this is useful to add a sample ID to each of several datasets before combining them into a single .loom file.
+
 ### Connecting
 
 Establish a connection to an existing `.loom` file:
