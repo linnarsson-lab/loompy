@@ -195,11 +195,15 @@ class LoomConnection(object):
 		self.row_attrs = {}
 		for x in self.file['row_attrs'].keys():
 			self.row_attrs[x] = self.file['row_attrs'][x][:]
+			if not hasattr(self, x):
+				setattr(self, x, self.row_attrs[x])
 
 		self.col_attrs = {}
 		for x in self.file['col_attrs'].keys():
 			self.col_attrs[x] = self.file['col_attrs'][x][:]
-	
+			if not hasattr(self, x):
+				setattr(self, x, self.col_attrs[x])
+
 	def _repr_html_(self):
 		"""
 		Return an HTML representation of the loom file, showing the upper-left 10x10 corner.
@@ -364,6 +368,8 @@ class LoomConnection(object):
 				del self.file['/row_attrs/' + name]
 			self.file['/row_attrs/' + name] = values
 			self.row_attrs[name] = self.file['/row_attrs/' + name][:]
+			if not hasattr(self, name):
+				setattr(self, name, self.row_attrs[x])
 		else:
 			if len(values) != self.shape[1]:
 				raise ValueError("Column attribute must have %d values" % self.shape[1])
@@ -371,6 +377,8 @@ class LoomConnection(object):
 				del self.file['/col_attrs/' + name]
 			self.file['/col_attrs/' + name] = values
 			self.col_attrs[name] = self.file['/col_attrs/' + name][:]
+			if not hasattr(self, name):
+				setattr(self, name, self.col_attrs[x])
 		self.file.flush()
 
 	def set_attr_bydict(self, name, fromattr, dict, axis = 0, default = None):
