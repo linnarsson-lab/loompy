@@ -131,6 +131,29 @@ def create(filename, matrix, row_attrs, col_attrs):
    """
 ```
 
+Create by combining existing .loom files:
+
+```python
+def combine(files, output_file):
+	"""
+	Combine two or more loom files and save as a new loom file
+
+	Args:
+		files (list of str):	the list of input files (full paths)
+		
+		output_file (str):		full path of the output loom file
+	
+	Returns:
+		Nothing, but creates a new loom file combining the input files.
+
+	The input files must (1) have exactly the same number of rows and in the same order, (2) have
+	exactly the same sets of row and column attributes. 
+	"""
+```
+
+(see also **add_loom()** below)
+
+
 Create from an existing CEF file:
 
 ```python
