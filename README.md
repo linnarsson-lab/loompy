@@ -147,7 +147,6 @@ def create_from_pandas(df, loom_file):
 
 	Args:
 		df (pd.DataFrame):	Pandas DataFrame
-		
 		loom_file (str):	Name of the output .loom file (will be created)
 
 	Returns:
@@ -305,10 +304,8 @@ def set_attr(self, name, values, axis = 0):
 
     Args:
         name (str): 			Name of the attribute
-        
-        values (numpy.ndarray):	Array of values of length equal to the axis length
-        
-        axis (int):				Axis of the attribute (0 = rows, 1 = columns)
+        values (numpy.ndarray):		Array of values of length equal to the axis length
+        axis (int):			Axis of the attribute (0 = rows, 1 = columns)
 
     Returns:
         Nothing.
@@ -330,13 +327,9 @@ def set_attr_bydict(self, name, fromattr, dict, axis = 0, default = None):
 
     Args:
         name (str): 			Name of the destination attribute
-        
         fromattr (str):			Name of the source attribute
-        
         dict (dict):			Key-value mapping from source to target values
-        
         axis (int):				Axis of the attribute (0 = rows, 1 = columns)
-        
         default: (float or str):	Default target value to use if no mapping exists for a source value
 
     Returns:
@@ -356,7 +349,6 @@ def add_columns(self, submatrix, col_attrs):
 
     Args:
         submatrix (numpy.ndarray):	An N-by-M matrix of floats (N rows, M columns)
-        
         col_attrs (dict):			Column attributes, where keys are attribute names and values are numpy arrays (float or string) of length M
 
     Returns:
@@ -403,9 +395,7 @@ def map(self, f, axis = 0, chunksize = 100000000):
 
     Args:
         f (func):		Function that takes a numpy ndarray as argument
-        
         axis (int):		Axis along which to apply the function (0 = rows, 1 = columns)
-        
         chunksize (int): Number of values to load per chunk
 
     Returns:
@@ -438,7 +428,6 @@ def corr_matrix(self, axis = 0, log=False):
 
     Args:
         axis (int):			The axis along which to compute the correlation matrix.
-        
         log (bool):			If true, compute correlation on log(x+1) values
     
     Returns:
@@ -463,7 +452,6 @@ def permute(self, ordering, axis):
 
     Args:
         ordering (list of int): 	The desired order along the axis
-        
         axis (int):					The axis along which to permute
 
     Returns:
