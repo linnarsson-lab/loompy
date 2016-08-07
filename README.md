@@ -140,7 +140,6 @@ def combine(files, output_file):
 
 	Args:
 		files (list of str):	the list of input files (full paths)
-		
 		output_file (str):		full path of the output loom file
 	
 	Returns:
@@ -150,8 +149,6 @@ def combine(files, output_file):
 	exactly the same sets of row and column attributes. 
 	"""
 ```
-
-(see also **add_loom()** below)
 
 
 Create from an existing CEF file:
