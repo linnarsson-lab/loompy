@@ -100,7 +100,7 @@ Loom supports a tiny subset of numpy data types:
 Note that there is no integer attribute type. However, float64s are large enough to 
 represent all integers up to and including 9,007,199,254,740,992 without loss.
 
-## Documentation
+## API Documentation
 
 ### Creating `.loom` files
 
