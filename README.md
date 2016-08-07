@@ -106,8 +106,9 @@ represent all integers up to and including 9,007,199,254,740,992 without loss.
 
 Create from data:
 
-```
-create(filename, matrix, row_attrs, col_attrs):
+```python
+def create(filename, matrix, row_attrs, col_attrs):
+   """
    Create a new .loom file from the given data.
 
   Args:
@@ -118,12 +119,14 @@ create(filename, matrix, row_attrs, col_attrs):
 
   Returns:
    Nothing. To work with the file, use loompy.connect(filename).
+   """
 ```
 
 Create from an existing CEF file:
 
-```
-create_from_cef(cef_file, loom_file):
+```python
+def create_from_cef(cef_file, loom_file):
+   """
    Create a .loom file from a legacy CEF file.
 
  Args:
@@ -132,6 +135,7 @@ create_from_cef(cef_file, loom_file):
 
  Returns:
    Nothing.
+   """
 ```
 
 Create from a Pandas DataFrame:
