@@ -262,6 +262,26 @@ For convenience, attributes are also available directly on the `LoomConnection` 
 ds.GeneName		# Equivalent to ds.row_attrs["GeneName"]
 ```
 
+Using attributes in this way results in a very compact and readable syntax for selecting subarrays:
+
+```python
+>>> ds[ds.Gene == "Actb",:]
+array([[  2.,   9.,   9., ...,   0.,  14.,   0.]], dtype=float32)
+
+>>> ds[np.logical_or(ds.Gene == "Actb", ds.Gene == "Gapdh"),:]
+array([[  2.,   9.,   9., ...,   0.,  14.,   0.],
+       [  0.,   1.,   4., ...,   0.,  14.,   3.]], dtype=float32)
+
+>>> ds[:, ds.CellID == "AAACATACATTCTC-1"]
+array([[ 0.],
+       [ 0.],
+       [ 0.],
+       ..., 
+       [ 0.],
+       [ 0.],
+       [ 0.]], dtype=float32)
+```
+
 There are some limitations: 
 
 * Custom attributes do not override existing `LoomConnection` attributes, such as method names. For example, if your .loom file has a row attribute `shape`, then `ds.shape` will not return that attribute, but will still return the shape of the main matrix. 
