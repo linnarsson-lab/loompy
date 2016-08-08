@@ -443,6 +443,57 @@ Example:
 np.array([1.23, 0.32, ...])   
 ```
 
+### Pairwise function application (chunked)
+
+Like **map**() but applies a function of two vectors to all pairs of rows (or columns). This is useful e.g. to
+compute distance or similarity matrices on datasets that are too large to fit in memory. 
+
+```python
+def pairwise(self, f, asfile, axis=0, chunksize=10000, pass_attrs=False):
+	"""
+	Compute a matrix of pairwise values by applying f to each pair of rows (columns)
+
+	Args:
+		f (lambda):			The function f(a,b) which will be called with vectors a and b and should return a single float
+		asfile (str):		The name of a new loom file which will be created to hold the result
+		axis (int):			The axis over which to apply the function (0 = rows, 1 = columns)
+		chunksize (int):	Number of rows (columns) to load in each chunk during computation
+		pass_attrs (bool):	If true, dicts of attributes will be passed as extra arguments to f(a,b,attr1,attr2)
+	Returns:
+		Nothing, but a new .loom file will be created
+	
+	The function f() will be called with two vectors, a and b, corresponding to pairs of rows (if axis = 0) or
+	columns (if axis = 1). Optionally, the corresponding row (column) attributes will be passed as two extra
+	arguments to f, each as a dictionary of key/value pairs.
+
+	Note that the full result does not need to fit in main memory. A new loom file will be created with the same 
+	row attributes (if axis == 0) or column attributes (if axis == 1) as the current file, but they will be 
+	duplicated as both row and column attributes.
+	"""
+```
+
+To see how this works, first create a small test dataset:
+
+```python
+>>> import numpy as np
+>>> import loompy
+>>> loompy.create("test.loom", np.random.rand(5,5), {"GeneID": np.array([1,2,3,4,5])},{"CellID": np.array([1,2,3,4,5])})
+>>> ds = loompy.connect("test.loom")
+>>> ds
+```
+
+<table><tbody><tr><td>&nbsp;</td><td><strong>CellID</strong></td><td>1.0</td><td>2.0</td><td>3.0</td><td>4.0</td><td>5.0</td></tr><tr><td><strong>GeneID</strong></td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr><tr><td>1.0</td><td>&nbsp;</td><td>0.457577</td><td>0.97785</td><td>0.29075</td><td>0.36729</td><td>0.214238</td></tr><tr><td>2.0</td><td>&nbsp;</td><td>0.48472</td><td>0.88837</td><td>0.875613</td><td>0.215415</td><td>0.220159</td></tr><tr><td>3.0</td><td>&nbsp;</td><td>0.295911</td><td>0.488949</td><td>0.723754</td><td>0.912776</td><td>0.00727398</td></tr><tr><td>4.0</td><td>&nbsp;</td><td>0.855562</td><td>0.678321</td><td>0.543205</td><td>0.585814</td><td>0.933781</td></tr><tr><td>5.0</td><td>&nbsp;</td><td>0.649782</td><td>0.538834</td><td>0.698622</td><td>0.48766</td><td>0.85858</td></tr></tbody></table>
+
+Then compute the pairwise cosine distances of the rows:
+
+```python
+>>> import scipy.spatial.distance as dist
+>>> ds.pairwise(dist.cosine, "cosine_dists.loom")
+>>> ds2 = loompy.connect("cosine_dists.loom")
+>>> ds2
+```
+
+<table><tbody><tr><td>&nbsp;</td><td><strong>GeneID</strong></td><td>1.0</td><td>2.0</td><td>3.0</td><td>4.0</td><td>5.0</td></tr><tr><td><strong>GeneID</strong></td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr><tr><td>1.0</td><td>&nbsp;</td><td>-4.95241e-08</td><td>0.104276</td><td>0.252157</td><td>0.172125</td><td>0.211965</td></tr><tr><td>2.0</td><td>&nbsp;</td><td>0.104276</td><td>4.11353e-08</td><td>0.208817</td><td>0.191669</td><td>0.160971</td></tr><tr><td>3.0</td><td>&nbsp;</td><td>0.252157</td><td>0.208817</td><td>-4.90684e-09</td><td>0.287634</td><td>0.261851</td></tr><tr><td>4.0</td><td>&nbsp;</td><td>0.172125</td><td>0.191669</td><td>0.287634</td><td>2.79894e-08</td><td>0.0149973</td></tr><tr><td>5.0</td><td>&nbsp;</td><td>0.211965</td><td>0.160971</td><td>0.261851</td><td>0.0149973</td><td>1.20838e-08</td></tr></tbody></table>
 
 #### Correlation matrix
 
