@@ -495,6 +495,10 @@ Then compute the pairwise cosine distances of the rows:
 
 <table><tbody><tr><td>&nbsp;</td><td><strong>GeneID</strong></td><td>1.0</td><td>2.0</td><td>3.0</td><td>4.0</td><td>5.0</td></tr><tr><td><strong>GeneID</strong></td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr><tr><td>1.0</td><td>&nbsp;</td><td>-4.95241e-08</td><td>0.104276</td><td>0.252157</td><td>0.172125</td><td>0.211965</td></tr><tr><td>2.0</td><td>&nbsp;</td><td>0.104276</td><td>4.11353e-08</td><td>0.208817</td><td>0.191669</td><td>0.160971</td></tr><tr><td>3.0</td><td>&nbsp;</td><td>0.252157</td><td>0.208817</td><td>-4.90684e-09</td><td>0.287634</td><td>0.261851</td></tr><tr><td>4.0</td><td>&nbsp;</td><td>0.172125</td><td>0.191669</td><td>0.287634</td><td>2.79894e-08</td><td>0.0149973</td></tr><tr><td>5.0</td><td>&nbsp;</td><td>0.211965</td><td>0.160971</td><td>0.261851</td><td>0.0149973</td><td>1.20838e-08</td></tr></tbody></table>
 
+Notice how the row attributes from the original file become both row and column attributes of the newly generated file. If you have several attributes, they all propagate to the generated file in the same manner. Conversely, if you apply pairwise() to columns, the column attributes become both row and column attributes of the new file.
+
+
+
 #### Correlation matrix
 
 Numpy can compute correlation matrices but will internally cast float32 to float64. This leads to
