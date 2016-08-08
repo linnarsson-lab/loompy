@@ -36,6 +36,7 @@ from scipy.io import mmread
 from scipy.optimize import minimize
 from sklearn.decomposition import IncrementalPCA
 from sklearn.manifold import TSNE
+from shutil import copyfile
 import __builtin__
 	
 def create(filename, matrix, row_attrs, col_attrs):
@@ -61,9 +62,9 @@ def create(filename, matrix, row_attrs, col_attrs):
 
 	# Create the file
 	f = h5py.File(filename, 'w')
-
+	
 	# Save the main matrix
-	f.create_dataset('matrix', data=matrix.astype('float32'), dtype='float32', compression='lzf', maxshape=(matrix.shape[0], None), chunks=(10,10))
+	f.create_dataset('matrix', data=matrix.astype('float32'), dtype='float32', compression='lzf', maxshape=(matrix.shape[0], None), chunks=(min(10,matrix.shape[0]),min(10,matrix.shape[1])))
 
 	# Create the row and columns attributes and associate them with the main matrix 
 	f.create_group('/row_attrs')
@@ -150,7 +151,9 @@ def create_from_cellranger(folder, loom_file, sample_annotation = {}):
 
 	Args:
 		folder (str):				path to the cellranger output folder (containing the "matrix.mtx" file)
+
 		loom_file (str):			full path of the resulting loom file
+		
 		sample_annotation (dict): 	dict of additional sample attributes
 
 	Returns:
@@ -164,6 +167,31 @@ def create_from_cellranger(folder, loom_file, sample_annotation = {}):
 		col_attrs[key] = np.array([sample_annotation[key]]*matrix.shape[1])
 
 	create(loom_file, matrix, row_attrs, col_attrs)
+
+def combine(files, output_file):
+	"""
+	Combine two or more loom files and save as a new loom file
+
+	Args:
+		files (list of str):	the list of input files (full paths)
+		
+		output_file (str):		full path of the output loom file
+	
+	Returns:
+		Nothing, but creates a new loom file combining the input files.
+
+	The input files must (1) have exactly the same number of rows and in the same order, (2) have
+	exactly the same sets of row and column attributes. 
+	"""
+	if len(files) == 0:
+		raise ValueError, "The input file list was empty"
+	
+	copyfile(files[0], output_file)
+
+	if len(files) >= 2:
+		ds = connect(output_file)
+		for f in files[1:]:
+			ds.add_loom(f)
 
 def connect(filename):
 	"""
@@ -208,6 +236,8 @@ class LoomConnection(object):
 		"""
 		Return an HTML representation of the loom file, showing the upper-left 10x10 corner.
 		"""
+		rm = min(10,self.shape[0])
+		cm = min(10,self.shape[1])
 		html = "<p>" + str(self.shape) + "</p>"
 		html += "<table>"
 		# Emit column attributes
@@ -216,9 +246,9 @@ class LoomConnection(object):
 			for ra in self.row_attrs.keys():
 				html += "<td>&nbsp;</td>"  # Space for row attrs 
 			html += "<td><strong>" + ca + "</strong></td>"  # Col attr name
-			for v in self.col_attrs[ca][:10]:
+			for v in self.col_attrs[ca][:cm]:
 				html += "<td>" + str(v) + "</td>"
-			if self.shape[1] > 10:
+			if self.shape[1] > cm:
 				html += "<td>...</td>"
 			html += "</tr>"
 			
@@ -227,30 +257,30 @@ class LoomConnection(object):
 		for ra in self.row_attrs.keys():
 			html += "<td><strong>" + ra + "</strong></td>"  # Row attr name 
 		html += "<td>&nbsp;</td>"  # Space for col attrs 
-		for v in xrange(10):
+		for v in xrange(cm):
 			html += "<td>&nbsp;</td>"
-		if self.shape[1] > 10:
+		if self.shape[1] > cm:
 			html += "<td>...</td>"
 		html += "</tr>"
 
 		# Emit row attr values and matrix values
-		for row in xrange(10):
+		for row in xrange(rm):
 			html += "<tr>"
 			for ra in self.row_attrs.keys():
 				html += "<td>" + str(self.row_attrs[ra][row]) + "</td>"  # Row attr name 
 			html += "<td>&nbsp;</td>"  # Space for col attrs 
 
-			for v in self[0,:10]:
+			for v in self[row,:cm]:
 				html += "<td>" + str(v) + "</td>"
-			if self.shape[1] > 10:
+			if self.shape[1] > cm:
 				html += "<td>...</td>"
 			html += "</tr>"
 		# Emit ellipses
-		if self.shape[0] > 10:
+		if self.shape[0] > rm:
 			html += "<tr>"
-			for v in xrange(11 + len(self.row_attrs.keys())):
+			for v in xrange(rm + 1 + len(self.row_attrs.keys())):
 				html += "<td>...</td>"
-			if self.shape[1] > 10:
+			if self.shape[1] > cm:
 				html += "<td>...</td>"
 			html += "</tr>"        
 		html += "</table>"
@@ -421,7 +451,7 @@ class LoomConnection(object):
 			self.set_attr(name, values, axis = 1)
 		self.file.flush()
 
-	def map(self, f, axis = 0, chunksize = 100000000):
+	def map(self, f, axis = 0, chunksize = 10000):
 		"""
 		Apply a function along an axis without loading the entire dataset in memory.
 
@@ -430,33 +460,109 @@ class LoomConnection(object):
 			
 			axis (int):		Axis along which to apply the function (0 = rows, 1 = columns)
 			
-			chunksize (int): Number of values to load per chunk
+			chunksize (int): Number of rows (columns) to load per chunk
 
 		Returns:
 			numpy.ndarray result of function application
 		"""
 		if axis == 0:
-			rows_per_chunk = chunksize//self.shape[1]
+			rows_per_chunk = chunksize
 			result = np.zeros(self.shape[0])
 			ix = 0
 			while ix < self.shape[0]:
 				rows_per_chunk = min(self.shape[0] - ix, rows_per_chunk)
-				chunk = self.file['matrix'][ix:ix + rows_per_chunk,:]
+				chunk = self[ix:ix + rows_per_chunk,:]
 				result[ix:ix + rows_per_chunk] = np.apply_along_axis(f, 1, chunk)
 				ix = ix + rows_per_chunk
 			return result
 		elif axis == 1:
-			cols_per_chunk = chunksize//self.shape[0]
+			cols_per_chunk = chunksize
 			result = np.zeros(self.shape[1])
 			ix = 0
 			while ix < self.shape[1]:
 				cols_per_chunk = min(self.shape[1] - ix, cols_per_chunk)
-				chunk = self.file['matrix'][:,ix:ix + cols_per_chunk]
+				chunk = self[:,ix:ix + cols_per_chunk]
 				result[ix:ix + cols_per_chunk] = np.apply_along_axis(f, 0, chunk)
 				ix = ix + cols_per_chunk
 			return result
 
-	
+	def pairwise(self, f, asfile, axis=0, chunksize=10000, pass_attrs=False):
+		"""
+		Compute a matrix of pairwise values by applying f to each pair of rows (columns)
+
+		Args:
+			f (lambda):			The function f(a,b) which will be called with vectors a and b and should return a single float
+			asfile (str):		The name of a new loom file which will be created to hold the result
+			axis (int):			The axis over which to apply the function (0 = rows, 1 = columns)
+			chunksize (int):	Number of rows (columns) to load in each chunk during computation
+			pass_attrs (bool):	If true, dicts of attributes will be passed as extra arguments to f(a,b,attr1,attr2)
+		Returns:
+			Nothing, but a new .loom file will be created
+		
+		The function f() will be called with two vectors, a and b, corresponding to pairs of rows (if axis = 0) or
+		columns (if axis = 1). Optionally, the corresponding row (column) attributes will be passed as two extra
+		arguments to f, each as a dictionary of key/value pairs.
+
+		Note that the full result does not need to fit in main memory. A new loom file will be created with the same 
+		row attributes (if axis == 0) or column attributes (if axis == 1) as the current file, but they will be 
+		duplicated as both row and column attributes.
+		"""
+		ds = None  # The loom output dataset connection
+		if axis == 0:
+			ix = 0
+			rows_per_chunk = chunksize
+			while ix < self.shape[0]:
+				a = self[ix:ix + rows_per_chunk,:]
+				submatrix = np.zeros((self.shape[0], a.shape[0]))
+				jx = 0
+				while jx < self.shape[0]:
+					b = self[jx:jx + rows_per_chunk,:]				
+					for i in xrange(a.shape[0]):
+						for j in xrange(b.shape[0]):
+							if pass_attrs:
+								attr1 = {key: v[ix + i] for (key,v) in self.row_attrs.iteritems()}
+								attr2 = {key: v[jx + j] for (key,v) in self.row_attrs.iteritems()}
+								submatrix[jx + j, i] = f(a[i],b[j],attr1,attr2)
+							else:
+								submatrix[jx + j, i] = f(a[i], b[j])
+					jx += rows_per_chunk
+				# Get the subset of row attrs for this chunk
+				ca = {key: v[ix:ix + rows_per_chunk] for (key,v) in self.row_attrs.iteritems()}
+				if ds == None:
+					create(asfile, submatrix, self.row_attrs, ca)
+					ds = connect(asfile)
+				else:
+					ds.add_columns(submatrix, ca)
+				ix += rows_per_chunk
+		if axis == 1:
+			ix = 0
+			cols_per_chunk = chunksize
+			while ix < self.shape[1]:
+				a = self[:,ix:ix + cols_per_chunk]
+				submatrix = np.zeros((self.shape[1], a.shape[1]))
+				jx = 0
+				while jx < self.shape[1]:
+					b = self[:,jx:jx + cols_per_chunk]				
+					for i in xrange(a.shape[1]):
+						for j in xrange(b.shape[1]):
+							if pass_attrs:
+								attr1 = {key: v[ix + i] for (key,v) in self.col_attrs.iteritems()}
+								attr2 = {key: v[jx + j] for (key,v) in self.col_attrs.iteritems()}
+								submatrix[jx + j, i] = f(a[i],b[j],attr1,attr2)
+							else:
+								submatrix[jx + j, i] = f(a[i], b[j])
+					jx += cols_per_chunk
+				# Get the subset of row attrs for this chunk
+				ca = {key: v[ix:ix + cols_per_chunk] for (key,v) in self.col_attrs.iteritems()}
+				if ds == None:
+					create(asfile, submatrix, self.col_attrs, ca)
+					ds = connect(asfile)
+				else:
+					ds.add_columns(submatrix, ca)
+				ix += cols_per_chunk
+		if ds != None:		
+			ds.close()
+
 	def corr_matrix(self, axis = 0, log=False):
 		"""
 		Compute correlation matrix without casting to float64.
