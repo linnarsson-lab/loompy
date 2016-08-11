@@ -464,6 +464,9 @@ class LoomConnection(object):
 
 		Returns:
 			numpy.ndarray result of function application
+
+			If you supply a list of functions, the result will be a list of numpy arrays. This is more
+			efficient than repeatedly calling map() one function at a time.
 		"""
 		f_list = f
 		if hasattr(f, '__call__'):
@@ -495,7 +498,7 @@ class LoomConnection(object):
 		if hasattr(f, '__call__'):
 			return result[0]
 		return result
-		
+
 	def pairwise(self, f, asfile, axis=0, chunksize=10000, pass_attrs=False):
 		"""
 		Compute a matrix of pairwise values by applying f to each pair of rows (columns)
@@ -696,12 +699,30 @@ class LoomConnection(object):
 		Args:
 
 		Returns:
-			Nothing, but adds row and column attributes _Mean, _Stdev, _LogMean, _LogCV, _Total
+			Nothing, but adds row and column attributes _LogMean, _LogCV, _Total
 		"""
+		(mu, std, sums) = self.map(np.mean, np.std, np.sum, axis=0)
+		log2_m = np.log2(mu)
+		excluded = (log2_m == float("-inf"))
+		log2_m[log2_m == float("-inf")] = 0
+		log2_cv = np.log2(std/mu)
+		excluded = np.logical_or(excluded, log2_cv == float("nan"))
+		log2_cv = np.nan_to_num(log2_cv)
+		self.set_attr("_LogMean", log2_m, axis=0)
+		self.set_attr("_LogCV", log2_cv, axis=0)
+		self.set_attr("_Total", sums, axis=0)
 
-		row_means = self.map(np.mean, axis=0)
-		row_stdevs = self.map(np.std, axis=0)
-		row_sum = self.map(np.sum, axis=0)
+		(mu, std, sums) = self.map(np.mean, np.std, np.sum, axis=1)
+		log2_m = np.log2(mu)
+		excluded = (log2_m == float("-inf"))
+		log2_m[log2_m == float("-inf")] = 0
+		log2_cv = np.log2(std/mu)
+		excluded = np.logical_or(excluded, log2_cv == float("nan"))
+		log2_cv = np.nan_to_num(log2_cv)
+		self.set_attr("_LogMean", log2_m, axis=1)
+		self.set_attr("_LogCV", log2_cv, axis=1)
+		self.set_attr("_Total", sums, axis=1)
+
 
 	##############
 	# PROJECTION #
