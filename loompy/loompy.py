@@ -456,7 +456,7 @@ class LoomConnection(object):
 		Apply a function along an axis without loading the entire dataset in memory.
 
 		Args:
-			f (func):		Function that takes a numpy ndarray as argument
+			f (func or list of func):		Function(s) that takes a numpy ndarray as argument
 			
 			axis (int):		Axis along which to apply the function (0 = rows, 1 = columns)
 			
@@ -465,27 +465,37 @@ class LoomConnection(object):
 		Returns:
 			numpy.ndarray result of function application
 		"""
+		f_list = f
+		if hasattr(f, '__call__'):
+			f_list = [f]
+		
 		if axis == 0:
 			rows_per_chunk = chunksize
-			result = np.zeros(self.shape[0])
+			result = []
+			for i in xrange(len(f_list)):
+				result.append(np.zeros(self.shape[0]))
 			ix = 0
 			while ix < self.shape[0]:
 				rows_per_chunk = min(self.shape[0] - ix, rows_per_chunk)
 				chunk = self[ix:ix + rows_per_chunk,:]
-				result[ix:ix + rows_per_chunk] = np.apply_along_axis(f, 1, chunk)
+				for i in xrange(len(f_list)):
+					result[i][ix:ix + rows_per_chunk] = np.apply_along_axis(f_list[i], 1, chunk)
 				ix = ix + rows_per_chunk
-			return result
 		elif axis == 1:
 			cols_per_chunk = chunksize
-			result = np.zeros(self.shape[1])
+			for i in xrange(len(f_list)):
+				result.append(np.zeros(self.shape[1]))
 			ix = 0
 			while ix < self.shape[1]:
 				cols_per_chunk = min(self.shape[1] - ix, cols_per_chunk)
 				chunk = self[:,ix:ix + cols_per_chunk]
-				result[ix:ix + cols_per_chunk] = np.apply_along_axis(f, 0, chunk)
+				for i in xrange(len(f_list)):
+					result[i][ix:ix + cols_per_chunk] = np.apply_along_axis(f_list[i], 0, chunk)
 				ix = ix + cols_per_chunk
-			return result
-
+		if hasattr(f, '__call__'):
+			return result[0]
+		return result
+		
 	def pairwise(self, f, asfile, axis=0, chunksize=10000, pass_attrs=False):
 		"""
 		Compute a matrix of pairwise values by applying f to each pair of rows (columns)
@@ -679,15 +689,30 @@ class LoomConnection(object):
 		self.set_attr("_Excluded", excluded, axis = 0)		
 
 
+	def compute_stats(self):
+		"""
+		Compute standard aggregate statistics
+		
+		Args:
+
+		Returns:
+			Nothing, but adds row and column attributes _Mean, _Stdev, _LogMean, _LogCV, _Total
+		"""
+
+		row_means = self.map(np.mean, axis=0)
+		row_stdevs = self.map(np.std, axis=0)
+		row_sum = self.map(np.sum, axis=0)
+
 	##############
 	# PROJECTION #
 	##############
 
-	def project_to_2d(self, perplexity = 20):
+	def project_to_2d(self, axis = 1, perplexity = 20):
 		"""
 		Project to 2D and create new column attributes _tSNE1, _tSNE2 and _PC1, _PC2.
 
 		Args:
+			axis (int):			Axis to project (0 for rows, 1 for columns)
 			perplexity (int): 	Perplexity to use for tSNE
 
 		Returns:
