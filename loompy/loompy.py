@@ -751,7 +751,7 @@ class LoomConnection(object):
 		Project to 2D and create new column attributes _tSNE1, _tSNE2 and _PC1, _PC2.
 
 		Args:
-			axis (int):			Axis to project (0 for rows, 1 for columns)
+			axis (int):			Axis to project (0 for rows, 1 for columns, 2 for both)
 			perplexity (int): 	Perplexity to use for tSNE
 
 		Returns:
@@ -761,51 +761,96 @@ class LoomConnection(object):
 		dataset in RAM), then uses the top principal components to compute a tSNE projection. If row 
 		attribute '_Excluded' exists, the projection will be based only on non-excluded genes.
 		"""
-		# First perform PCA out of band
-		batch_size = 1000
-		selection = np.ones(self.shape[0]).astype('bool')
-		if self.row_attrs.__contains__("_Excluded"):
-			selection = (1-self.row_attrs["_Excluded"]).astype('bool')
+		if axis == 0 or axis == 2:
+			# First perform PCA out of band
+			batch_size = 1000
 
-		ipca = IncrementalPCA(n_components=int(math.sqrt(selection.sum())/2))
-		col = 0
-		while col < self.shape[1]:
-			batch = self[selection,col:col+batch_size].T
-			batch = np.log2(batch + 1)
-			ipca.partial_fit(batch)
-			col = col + batch_size
+			ipca = IncrementalPCA(n_components=int(math.sqrt(self.shape[0])/2))
+			row = 0
+			while row < self.shape[0]:
+				batch = self[row:row+batch_size,:].T
+				batch = np.log2(batch + 1)
+				ipca.partial_fit(batch)
+				row = row + batch_size
 
-		# Project to PCA space
-		Xtransformed = []
-		col = 0
-		while col < self.shape[1]:
-			batch = self.file['matrix'][selection,col:col+batch_size].T
-			batch = np.log2(batch + 1)
-			Xbatch = ipca.transform(batch)
-			Xtransformed.append(Xbatch)
-			col = col + batch_size
-		Xtransformed = np.concatenate(Xtransformed)
+			# Project to PCA space
+			Xtransformed = []
+			row = 0
+			while row < self.shape[0]:
+				batch = self[row:row+batch_size,:].T
+				batch = np.log2(batch + 1)
+				Xbatch = ipca.transform(batch)
+				Xtransformed.append(Xbatch)
+				row = row + batch_size
+			Xtransformed = np.concatenate(Xtransformed)
 
-		# Save first two dimensions as column attributes
-		pc1 = Xtransformed[:,0]	
-		pc2 = Xtransformed[:,1]
-		self.set_attr("_PC1", pc1, axis = 1)
-		self.set_attr("_PC2", pc2, axis = 1)
+			# Save first two dimensions as column attributes
+			pc1 = Xtransformed[:,0]	
+			pc2 = Xtransformed[:,1]
+			self.set_attr("_PC1", pc1, axis = 0)
+			self.set_attr("_PC2", pc2, axis = 0)
 
-		# Then, perform tSNE based on the top components
-		# Precumpute the distance matrix
-		# This is necessary to work around a bug in sklearn TSNE 0.17
-		# (caused because pairwise_distances may give very slightly negative distances)
-		dists = pairwise_distances(Xtransformed, metric="correlation")
-		np.clip(dists, 0, 1, dists)	
-		model = TSNE(metric='precomputed', perplexity=perplexity)
-		tsne = model.fit_transform(dists) 
-		
-		# Save first two dimensions as column attributes
-		tsne1 = tsne[:,0]	
-		tsne2 = tsne[:,1]	
-		self.set_attr("_tSNE1", tsne1, axis = 1)
-		self.set_attr("_tSNE2", tsne2, axis = 1)
+			# Then, perform tSNE based on the top components
+			# Precumpute the distance matrix
+			# This is necessary to work around a bug in sklearn TSNE 0.17
+			# (caused because pairwise_distances may give very slightly negative distances)
+			dists = pairwise_distances(Xtransformed, metric="correlation")
+			np.clip(dists, 0, 1, dists)	
+			model = TSNE(metric='precomputed', perplexity=perplexity)
+			tsne = model.fit_transform(dists) 
+			
+			# Save first two dimensions as column attributes
+			tsne1 = tsne[:,0]	
+			tsne2 = tsne[:,1]	
+			self.set_attr("_tSNE1", tsne1, axis = 0)
+			self.set_attr("_tSNE2", tsne2, axis = 0)
+
+		if axis == 1 or axis == 2:
+			# First perform PCA out of band
+			batch_size = 1000
+			selection = np.ones(self.shape[0]).astype('bool')
+			if self.row_attrs.__contains__("_Excluded"):
+				selection = (1-self.row_attrs["_Excluded"]).astype('bool')
+
+			ipca = IncrementalPCA(n_components=int(math.sqrt(selection.sum())/2))
+			col = 0
+			while col < self.shape[1]:
+				batch = self[selection,col:col+batch_size].T
+				batch = np.log2(batch + 1)
+				ipca.partial_fit(batch)
+				col = col + batch_size
+
+			# Project to PCA space
+			Xtransformed = []
+			col = 0
+			while col < self.shape[1]:
+				batch = self.file['matrix'][selection,col:col+batch_size].T
+				batch = np.log2(batch + 1)
+				Xbatch = ipca.transform(batch)
+				Xtransformed.append(Xbatch)
+				col = col + batch_size
+			Xtransformed = np.concatenate(Xtransformed)
+
+			# Save first two dimensions as column attributes
+			pc1 = Xtransformed[:,0]	
+			pc2 = Xtransformed[:,1]
+			self.set_attr("_PC1", pc1, axis = 1)
+			self.set_attr("_PC2", pc2, axis = 1)
+
+			# Then, perform tSNE based on the top components
+			# Precumpute the distance matrix
+			# This is necessary to work around a bug in sklearn TSNE 0.17
+			# (caused because pairwise_distances may give very slightly negative distances)
+			dists = pairwise_distances(Xtransformed, metric="correlation")
+			np.clip(dists, 0, 1, dists)	
+			model = TSNE(metric='precomputed', perplexity=perplexity)
+			tsne = model.fit_transform(dists) 
+			
+			# Save first two dimensions as column attributes
+			tsne1 = tsne[:,0]	
+			tsne2 = tsne[:,1]	
+			self.set_attr("_tSNE1", tsne1, axis = 1)
+			self.set_attr("_tSNE2", tsne2, axis = 1)
 
 	#############
 	# DEEP ZOOM #
