@@ -37,6 +37,7 @@ from scipy.optimize import minimize
 from sklearn.decomposition import IncrementalPCA
 from sklearn.manifold import TSNE
 from shutil import copyfile
+import logging
 import __builtin__
 	
 def create(filename, matrix, row_attrs, col_attrs):
@@ -59,6 +60,8 @@ def create(filename, matrix, row_attrs, col_attrs):
 		raise KeyError, "At least one row attribute must be supplied."
 	if len(col_attrs) == 0:
 		raise KeyError, "At least one column attribute must be supplied."
+	if not numpy.isfinite(matrix).all():
+		raise ValueError, "INF and NaN not allowed in loom matrix"
 
 	# Create the file
 	f = h5py.File(filename, 'w')
@@ -70,6 +73,9 @@ def create(filename, matrix, row_attrs, col_attrs):
 	f.create_group('/row_attrs')
 	for key, vals in row_attrs.iteritems():
 		vals = np.array(vals)
+		if np.issubdtype(vals.dtype, np.number):
+			if not numpy.isfinite(vals).all():
+				raise ValueError, "INF and NaN not allowed in numeric attribute"
 		if len(vals) != matrix.shape[0]:
 			raise ValueError, ("Row attribute %s has the wrong number of values (%s given, %s expected)" % (key, len(vals), matrix.shape[0]))
 		try:
@@ -82,6 +88,9 @@ def create(filename, matrix, row_attrs, col_attrs):
 	f.create_group('/col_attrs')
 	for key, vals in col_attrs.iteritems():
 		vals = np.array(vals)
+		if np.issubdtype(vals.dtype, np.number):
+			if not numpy.isfinite(vals).all():
+				raise ValueError, "INF and NaN not allowed in numeric attribute"
 		if len(vals) != matrix.shape[1]:
 			raise ValueError, ("Column attribute %s has the wrong number of values (%s given, %s expected)" % (key, len(vals), matrix.shape[1]))
 		try:
@@ -322,6 +331,9 @@ class LoomConnection(object):
 
 		Note that this will modify the underlying HDF5 file, which will interfere with any concurrent readers.
 		"""
+		if not numpy.isfinite(submatrix).all():
+			raise ValueError, "INF and NaN not allowed in loom matrix"
+
 		if submatrix.shape[0] != self.shape[0]:
 			raise ValueError, "New submatrix must have same number of rows as existing matrix"
 
@@ -338,6 +350,10 @@ class LoomConnection(object):
 		n_cols = submatrix.shape[1] + self.shape[1]
 		for key,vals in col_attrs.iteritems():
 			vals = np.array(vals).astype("string" if self.col_attrs[key].dtype.name[0:6] == "string" else "float32")
+			if np.issubdtype(vals.dtype, np.number):
+				if not numpy.isfinite(vals).all():
+					raise ValueError, "INF and NaN not allowed in numeric attribute"
+
 			self.file['/col_attrs/' + key].resize(n_cols, axis = 0)
 			self.file['/col_attrs/' + key][self.shape[1]:] = vals
 			self.col_attrs[key] = self.file['/col_attrs/' + key]
@@ -390,6 +406,11 @@ class LoomConnection(object):
 
 		This will overwrite any existing attribute of the same name.
 		"""
+		if np.issubdtype(values.dtype,np.number):
+			if not numpy.isfinite(values).all():
+				raise ValueError("INF, NaN not allowed in .loom attributes")
+			values = values.astype("float32")
+
 		# Add annotation along the indicated axis
 		if axis == 0:
 			if len(values) != self.shape[0]:
@@ -685,9 +706,6 @@ class LoomConnection(object):
 
 		total_rna = self.map(np.sum, axis = 1)
 
-		self.set_attr("_TotalRNA", total_rna, axis = 1)
-		self.set_attr("_LogMean", log2_m, axis = 0)
-		self.set_attr("_LogCV", log2_cv, axis = 0)
 		self.set_attr("_Noise", score, axis = 0)
 		self.set_attr("_Excluded", excluded, axis = 0)		
 
