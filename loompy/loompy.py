@@ -62,7 +62,7 @@ def create(filename, matrix, row_attrs, col_attrs):
 		raise KeyError, "At least one row attribute must be supplied."
 	if len(col_attrs) == 0:
 		raise KeyError, "At least one column attribute must be supplied."
-	if not numpy.isfinite(matrix).all():
+	if not np.isfinite(matrix).all():
 		raise ValueError, "INF and NaN not allowed in loom matrix"
 
 	# Create the file
@@ -76,7 +76,7 @@ def create(filename, matrix, row_attrs, col_attrs):
 	for key, vals in row_attrs.iteritems():
 		vals = np.array(vals)
 		if np.issubdtype(vals.dtype, np.number):
-			if not numpy.isfinite(vals).all():
+			if not np.isfinite(vals).all():
 				raise ValueError, "INF and NaN not allowed in numeric attribute"
 		if len(vals) != matrix.shape[0]:
 			raise ValueError, ("Row attribute %s has the wrong number of values (%s given, %s expected)" % (key, len(vals), matrix.shape[0]))
@@ -91,7 +91,7 @@ def create(filename, matrix, row_attrs, col_attrs):
 	for key, vals in col_attrs.iteritems():
 		vals = np.array(vals)
 		if np.issubdtype(vals.dtype, np.number):
-			if not numpy.isfinite(vals).all():
+			if not np.isfinite(vals).all():
 				raise ValueError, "INF and NaN not allowed in numeric attribute"
 		if len(vals) != matrix.shape[1]:
 			raise ValueError, ("Column attribute %s has the wrong number of values (%s given, %s expected)" % (key, len(vals), matrix.shape[1]))
@@ -333,7 +333,7 @@ class LoomConnection(object):
 
 		Note that this will modify the underlying HDF5 file, which will interfere with any concurrent readers.
 		"""
-		if not numpy.isfinite(submatrix).all():
+		if not np.isfinite(submatrix).all():
 			raise ValueError, "INF and NaN not allowed in loom matrix"
 
 		if submatrix.shape[0] != self.shape[0]:
@@ -353,7 +353,7 @@ class LoomConnection(object):
 		for key,vals in col_attrs.iteritems():
 			vals = np.array(vals).astype("string" if self.col_attrs[key].dtype.name[0:6] == "string" else "float32")
 			if np.issubdtype(vals.dtype, np.number):
-				if not numpy.isfinite(vals).all():
+				if not np.isfinite(vals).all():
 					raise ValueError, "INF and NaN not allowed in numeric attribute"
 
 			self.file['/col_attrs/' + key].resize(n_cols, axis = 0)
@@ -409,7 +409,7 @@ class LoomConnection(object):
 		This will overwrite any existing attribute of the same name.
 		"""
 		if np.issubdtype(values.dtype,np.number):
-			if not numpy.isfinite(values).all():
+			if not np.isfinite(values).all():
 				raise ValueError("INF, NaN not allowed in .loom attributes")
 			values = values.astype("float32")
 
@@ -730,7 +730,7 @@ class LoomConnection(object):
 		Returns:
 			Nothing, but adds row and column attributes _LogMean, _LogCV, _Total
 		"""
-		(mu, std, sums) = self.map(np.mean, np.std, np.sum, axis=0)
+		(mu, std, sums) = self.map((np.mean, np.std, np.sum), axis=0)
 		log2_m = np.log2(mu)
 		excluded = (log2_m == float("-inf"))
 		log2_m[log2_m == float("-inf")] = 0
