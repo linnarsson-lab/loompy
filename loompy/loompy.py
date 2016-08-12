@@ -495,9 +495,9 @@ class LoomConnection(object):
 		if hasattr(f, '__call__'):
 			f_list = [f]
 		
+		result = []
 		if axis == 0:
 			rows_per_chunk = chunksize
-			result = []
 			for i in xrange(len(f_list)):
 				result.append(np.zeros(self.shape[0]))
 			ix = 0
@@ -741,7 +741,7 @@ class LoomConnection(object):
 		self.set_attr("_LogCV", log2_cv, axis=0)
 		self.set_attr("_Total", sums, axis=0)
 
-		(mu, std, sums) = self.map(np.mean, np.std, np.sum, axis=1)
+		(mu, std, sums) = self.map((np.mean, np.std, np.sum), axis=1)
 		log2_m = np.log2(mu)
 		excluded = (log2_m == float("-inf"))
 		log2_m[log2_m == float("-inf")] = 0
