@@ -480,7 +480,7 @@ def _divide_to_2and_resort(sorted_data, wid, iters_spin=8, stop_const = 1.15, lo
 			genesgr2 = array([IN])
 			genesgr1 = setdiff1d(genesgr1, IN)
 		
-		logging.debug("Splitting %s in %s and %s" % (str(sorted_data.shape),str((genesgr1.shape[0],gr1.shape[0])),str((genesgr2.shape[0],gr2.shape[0])))
+		logging.debug("Splitting %s in %s and %s" % (str(sorted_data.shape),str((genesgr1.shape[0],gr1.shape[0])),str((genesgr2.shape[0],gr2.shape[0]))))
 
 		# Data of group1
 		datagr1 = sorted_data[ix_(genesgr1,gr1)]
