@@ -682,8 +682,8 @@ class LoomConnection(object):
 		
 		This method creates new row attributes _Noise (CV relative to predicted CV), _Excluded (1/0).
 		"""
-		mu = self.map(np.mean)
-		cv = self.map(np.std)/mu
+		(mu,std) = self.map((np.mean,np.std),axis=0)
+		cv = std/mu
 		log2_m = np.log2(mu)
 		excluded = (log2_m == float("-inf"))
 		log2_m[log2_m == float("-inf")] = 0
@@ -695,8 +695,11 @@ class LoomConnection(object):
 		if method == "SVR":
 			svr_gamma = 1000./len(mu)
 			clf = SVR(gamma=svr_gamma)
-			clf.fit(log2_m, log2_cv)	# log2_m[:,newaxis]
+			clf.fit(log2_m[:,np.newaxis], log2_cv)
 			fitted_fun = clf.predict
+			# Score is the relative position with respect of the fitted curve
+			score = np.log2(cv) - fitted_fun(log2_m[:,np.newaxis])
+			score = np.nan_to_num(score)
 		else:
 			#Define the objective function to fit (least squares)
 			fun = lambda x, log2_m, log2_cv: sum(abs( np.log2( (2.**log2_m)**(-x[0])+x[1]) - log2_cv ))
@@ -707,9 +710,10 @@ class LoomConnection(object):
 			#The fitted function
 			fitted_fun = lambda log_mu: np.log2( (2.**log_mu)**(-params[0]) + params[1])
 
-		# Score is the relative position with respect of the fitted curve
-		score = np.log2(cv) - fitted_fun(np.log2(mu))
-		score = np.nan_to_num(score)
+			# Score is the relative position with respect of the fitted curve
+			score = np.log2(cv) - fitted_fun(np.log2(mu))
+			score = np.nan_to_num(score)
+
 		threshold = np.percentile(score, 100 - n_genes/self.shape[0]*100)
 		excluded = np.logical_or(excluded, (score < threshold)).astype('int')
 
@@ -883,6 +887,7 @@ class LoomConnection(object):
 
 	def prepare_heatmap(self):
 		if self.file.__contains__("tiles"):
+			logging.debug("Removing previous tile pyramid")
 			del self.file['tiles']
 		self.dz_get_zoom_image(0,0,8)
         
@@ -893,6 +898,7 @@ class LoomConnection(object):
 		try:
 			maxes = self.file['tiles/maxvalues']
 		except KeyError:
+			logging.debug("Calculating and cacheing max values by row")
 			maxes = self.map(max, 0)
 			self.file['tiles/maxvalues'] = maxes
 			self.file.flush()
@@ -905,6 +911,7 @@ class LoomConnection(object):
 		try:
 			mins = self.file['tiles/minvalues']
 		except KeyError:
+			logging.debug("Calculating and cacheing min values by row")
 			mins = self.map(min, 0)
 			self.file['tiles/minvalues'] = mins
 			self.file.flush()
@@ -975,6 +982,7 @@ class LoomConnection(object):
 		Returns:
 			Numpy ndarray of shape (256,256)
 		"""
+		logging.debug("Computing tile at x=%i y=%i z=%i" % (x,y,z))
 		(zmin, zmid, zmax) = self.dz_zoom_range()
 		if z < zmin:
 			raise ValueError, ("z cannot be less than %s" % zmin)

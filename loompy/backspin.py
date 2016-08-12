@@ -544,33 +544,34 @@ def loom_backspin(ds):
 	stop_const = 1.15 # -k
 	low_thrs=0.2 # -r
 
-	logging.info("BackSPIN started")
 	logging.debug("  numLevels: " + str(numLevels))
 	logging.debug("  first_run_iters: " + str(first_run_iters))
-	logging.debug("  first_run_steps: " + str(first_run_steps))
+	logging.debug("  first_run_step: " + str(first_run_step))
 	logging.debug("  runs_iters: " + str(runs_iters))
-	logging.debug("  runs_steps: " + str(runs_steps))
+	logging.debug("  runs_step: " + str(runs_step))
 	logging.debug("  split_limit_g: " + str(split_limit_g))
 	logging.debug("  split_limit_c: " + str(split_limit_c))
 	logging.debug("  stop_const: " + str(stop_const))
 	logging.debug("  low_thrs: " + str(low_thrs))
 
 	if ds.row_attrs.has_key("_Excluded"):
-		data = ds[1 - ds._Excluded, :]
+		data = ds[(1 - ds._Excluded).astype("bool"), :]
 	else:
 		logging.warn("No genes have been excluded, running BackSPIN on entire matrix")
 		data = ds[:,:]
 
-	logging.info("Using %i genes and %i cells")
+	logging.info("Using %i genes and %i cells" % data.shape)
 	results = backSPIN(data, numLevels, first_run_iters, first_run_step, runs_iters, runs_step,\
 		split_limit_g, split_limit_c, stop_const, low_thrs)
 
 	logging.debug("Writing result to file")
 
 	for level, groups in enumerate( results.genes_gr_level.T ):
-		ds.set_attr('BackSPIN_level_%i_group' % level, [int(el) for el in groups], axis=0)
+		temp = zeros((ds.shape[0],))
+		temp[where(ds._Excluded == 0)] = array([int(el) for el in groups])
+		ds.set_attr('BackSPIN_level_%i_group' % level, temp, axis=0)
 	for level, groups in enumerate( results.cells_gr_level.T ):
-		ds.set_attr('BackSPIN_level_%i_group' % level, [int(el) for el in groups], axis=1)
+		ds.set_attr('BackSPIN_level_%i_group' % level, array([int(el) for el in groups]), axis=1)
 
 	logging.info("BackSPIN all done")
 
