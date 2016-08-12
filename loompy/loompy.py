@@ -773,10 +773,13 @@ class LoomConnection(object):
 		attribute '_Excluded' exists, the projection will be based only on non-excluded genes.
 		"""
 		if axis == 0 or axis == 2:
+			logging.debug("Projection on rows")
+
 			# First perform PCA out of band
 			batch_size = 1000
-
-			ipca = IncrementalPCA(n_components=int(math.sqrt(self.shape[0])/2))
+			n_components = int(math.sqrt(self.shape[0])/2)
+			logging.debug("Incremental PCA with " + str(n_components) + " components")
+			ipca = IncrementalPCA(n_components=n_components)
 			row = 0
 			while row < self.shape[0]:
 				batch = self[row:row+batch_size,:].T
@@ -802,11 +805,13 @@ class LoomConnection(object):
 			self.set_attr("_PC2", pc2, axis = 0)
 
 			# Then, perform tSNE based on the top components
-			# Precumpute the distance matrix
+			# Precompute the distance matrix
 			# This is necessary to work around a bug in sklearn TSNE 0.17
 			# (caused because pairwise_distances may give very slightly negative distances)
+			logging.debug("Computing distance matrix")
 			dists = pairwise_distances(Xtransformed, metric="correlation")
 			np.clip(dists, 0, 1, dists)	
+			logging.debug("Computing t-SNE")
 			model = TSNE(metric='precomputed', perplexity=perplexity)
 			tsne = model.fit_transform(dists) 
 			
@@ -815,15 +820,20 @@ class LoomConnection(object):
 			tsne2 = tsne[:,1]	
 			self.set_attr("_tSNE1", tsne1, axis = 0)
 			self.set_attr("_tSNE2", tsne2, axis = 0)
+			logging.debug("Row projection completed")
 
 		if axis == 1 or axis == 2:
+			logging.debug("Projection on columns")
+
 			# First perform PCA out of band
 			batch_size = 1000
 			selection = np.ones(self.shape[0]).astype('bool')
 			if self.row_attrs.__contains__("_Excluded"):
 				selection = (1-self.row_attrs["_Excluded"]).astype('bool')
 
-			ipca = IncrementalPCA(n_components=int(math.sqrt(selection.sum())/2))
+			n_components = int(math.sqrt(selection.sum())/2)
+			logging.debug("Incremental PCA with " + str(n_components) + " components")
+			ipca = IncrementalPCA(n_components=n_components)
 			col = 0
 			while col < self.shape[1]:
 				batch = self[selection,col:col+batch_size].T
@@ -849,11 +859,13 @@ class LoomConnection(object):
 			self.set_attr("_PC2", pc2, axis = 1)
 
 			# Then, perform tSNE based on the top components
-			# Precumpute the distance matrix
+			# Precompute the distance matrix
 			# This is necessary to work around a bug in sklearn TSNE 0.17
 			# (caused because pairwise_distances may give very slightly negative distances)
+			logging.debug("Computing distance matrix")
 			dists = pairwise_distances(Xtransformed, metric="correlation")
 			np.clip(dists, 0, 1, dists)	
+			logging.debug("Computing t-SNE")
 			model = TSNE(metric='precomputed', perplexity=perplexity)
 			tsne = model.fit_transform(dists) 
 			
@@ -862,6 +874,7 @@ class LoomConnection(object):
 			tsne2 = tsne[:,1]	
 			self.set_attr("_tSNE1", tsne1, axis = 1)
 			self.set_attr("_tSNE2", tsne2, axis = 1)
+			logging.debug("Column projection completed")
 
 	#############
 	# DEEP ZOOM #
