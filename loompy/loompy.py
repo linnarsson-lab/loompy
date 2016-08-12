@@ -422,7 +422,7 @@ class LoomConnection(object):
 			self.file['/row_attrs/' + name] = values
 			self.row_attrs[name] = self.file['/row_attrs/' + name][:]
 			if not hasattr(self, name):
-				setattr(self, name, self.row_attrs[x])
+				setattr(self, name, self.row_attrs[name])
 		else:
 			if len(values) != self.shape[1]:
 				raise ValueError("Column attribute must have %d values" % self.shape[1])
@@ -431,7 +431,7 @@ class LoomConnection(object):
 			self.file['/col_attrs/' + name] = values
 			self.col_attrs[name] = self.file['/col_attrs/' + name][:]
 			if not hasattr(self, name):
-				setattr(self, name, self.col_attrs[x])
+				setattr(self, name, self.col_attrs[name])
 		self.file.flush()
 
 	def set_attr_bydict(self, name, fromattr, dict, axis = 0, default = None):
