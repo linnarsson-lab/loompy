@@ -36,9 +36,11 @@ from scipy.io import mmread
 from scipy.optimize import minimize
 from sklearn.decomposition import IncrementalPCA
 from sklearn.manifold import TSNE
+from sklearn.svm import SVR
 from shutil import copyfile
 import logging
 import __builtin__
+from backspin import loom_backspin
 	
 def create(filename, matrix, row_attrs, col_attrs):
 	"""
@@ -667,7 +669,7 @@ class LoomConnection(object):
 	#####################
 
 
-	def feature_selection(self, n_genes):
+	def feature_selection(self, n_genes, method="SVR"):
 		"""
 		Fits a noise model (CV vs mean)
 		
@@ -677,8 +679,7 @@ class LoomConnection(object):
 		Returns:
 			Nothing.
 		
-		This method creates new row attributes _LogMean, _LogCV, _Noise (CV relative to predicted CV), _Excluded (1/0) 
-        and now column attribute _TotalRNA
+		This method creates new row attributes _Noise (CV relative to predicted CV), _Excluded (1/0).
 		"""
 		mu = self.map(np.mean)
 		cv = self.map(np.std)/mu
@@ -689,27 +690,34 @@ class LoomConnection(object):
 		excluded = np.logical_or(excluded, log2_cv == float("nan"))
 		log2_cv = np.nan_to_num(log2_cv)
 
-		
-		#Define the objective function to fit (least squares)
-		fun = lambda x, log2_m, log2_cv: sum(abs( np.log2( (2.**log2_m)**(-x[0])+x[1]) - log2_cv ))
-		#Fit using Nelder-Mead algorythm
-		x0=[0.5,0.5]
-		optimization =  minimize(fun, x0, args=(log2_m,log2_cv), method='Nelder-Mead')
-		params = optimization.x
-		#The fitted function
-		fitted_fun = lambda log_mu: np.log2( (2.**log_mu)**(-params[0]) + params[1])
+
+		if method == "SVR":
+			svr_gamma = 1000./len(mu)
+			clf = SVR(gamma=svr_gamma)
+			clf.fit(log2_m, log2_cv)	# log2_m[:,newaxis]
+			fitted_fun = clf.predict
+		else:
+			#Define the objective function to fit (least squares)
+			fun = lambda x, log2_m, log2_cv: sum(abs( np.log2( (2.**log2_m)**(-x[0])+x[1]) - log2_cv ))
+			#Fit using Nelder-Mead algorythm
+			x0=[0.5,0.5]
+			optimization =  minimize(fun, x0, args=(log2_m,log2_cv), method='Nelder-Mead')
+			params = optimization.x
+			#The fitted function
+			fitted_fun = lambda log_mu: np.log2( (2.**log_mu)**(-params[0]) + params[1])
+
 		# Score is the relative position with respect of the fitted curve
 		score = np.log2(cv) - fitted_fun(np.log2(mu))
 		score = np.nan_to_num(score)
 		threshold = np.percentile(score, 100 - n_genes/self.shape[0]*100)
 		excluded = np.logical_or(excluded, (score < threshold)).astype('int')
 
-		total_rna = self.map(np.sum, axis = 1)
-
 		self.set_attr("_Noise", score, axis = 0)
 		self.set_attr("_Excluded", excluded, axis = 0)		
 
-
+	def cluster(self, method="backspin"):
+		loom_backspin(self)
+		
 	def compute_stats(self):
 		"""
 		Compute standard aggregate statistics
