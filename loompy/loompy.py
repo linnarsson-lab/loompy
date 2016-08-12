@@ -35,7 +35,7 @@ import scipy.ndimage
 from scipy.io import mmread
 from scipy.optimize import minimize
 from sklearn.decomposition import IncrementalPCA
-from scipy.spatial.distance import pdist
+from scipy.spatial.distance import pdist, squareform
 from sklearn.manifold import TSNE
 from sklearn.svm import SVR
 from shutil import copyfile
@@ -810,7 +810,7 @@ class LoomConnection(object):
 			# This is necessary to work around a bug in sklearn TSNE 0.17
 			# (caused because pairwise_distances may give very slightly negative distances)
 			logging.debug("Computing distance matrix")
-			dists = pdist(Xtransformed, "cosine")
+			dists = squareform(pdist(Xtransformed, "cosine"))
 			np.clip(dists, 0, 1, dists)	
 			logging.debug("Computing t-SNE")
 			model = TSNE(metric='precomputed', perplexity=perplexity)
@@ -864,7 +864,7 @@ class LoomConnection(object):
 			# This is necessary to work around a bug in sklearn TSNE 0.17
 			# (caused because pairwise_distances may give very slightly negative distances)
 			logging.debug("Computing distance matrix")
-			dists = pdist(Xtransformed, "cosine")
+			dists = squareform(pdist(Xtransformed, "cosine"))
 			np.clip(dists, 0, 1, dists)	
 			logging.debug("Computing t-SNE")
 			model = TSNE(metric='precomputed', perplexity=perplexity)
