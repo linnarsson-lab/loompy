@@ -135,8 +135,6 @@ def sort_mat_by_neighborhood(dist_matrix, wid, times):
 		parameter that controls the width of the neighbourood
 	times: int
 		number of repetitions
-	verbose: bool
-		print the progress
 	Returns
 	-------
 	indexes: 1-D array
@@ -181,7 +179,7 @@ def _generate_widlist(data, axis=1, step=0.6):
 
 
 
-def SPIN(dt, widlist=[10,1], iters=30, axis='both', verbose=False):
+def SPIN(dt, widlist=[10,1], iters=30, axis='both'):
 	"""Run the original SPIN algorithm
 	Parameters
 	----------
@@ -259,7 +257,7 @@ def SPIN(dt, widlist=[10,1], iters=30, axis='both', verbose=False):
 
 
 def backSPIN(data, numLevels=2, first_run_iters=10, first_run_step=0.05, runs_iters=8 ,runs_step=0.25,\
-	split_limit_g=2, split_limit_c=2, stop_const = 1.15, low_thrs=0.2, verbose=False):
+	split_limit_g=2, split_limit_c=2, stop_const = 1.15, low_thrs=0.2):
 	'''Run the backSPIN algorithm
 	Parameters
 	----------
@@ -328,7 +326,7 @@ def backSPIN(data, numLevels=2, first_run_iters=10, first_run_step=0.05, runs_it
 
 	# Do a Preparatory SPIN on cells
 	logging.debug("Preparatory SPIN")
-	ix1 = SPIN(data, widlist=_generate_widlist(data, axis=1, step=first_run_step), iters=first_run_iters, axis=1, verbose=verbose)
+	ix1 = SPIN(data, widlist=_generate_widlist(data, axis=1, step=first_run_step), iters=first_run_iters, axis=1)
 	cells_order = cells_order[ix1]
 
 	#For every level of depth DO:
@@ -345,10 +343,10 @@ def backSPIN(data, numLevels=2, first_run_iters=10, first_run_step=0.05, runs_it
 				# Split and SPINsort the two halves
 				if i == numLevels-1:
 					divided = _divide_to_2and_resort(datatmp, wid=runs_step, iters_spin=runs_iters,\
-						stop_const=stop_const, low_thrs=low_thrs, sort_genes=True, verbose=verbose)
+						stop_const=stop_const, low_thrs=low_thrs, sort_genes=True)
 				else:
 					divided = _divide_to_2and_resort(datatmp, wid=runs_step, iters_spin=runs_iters,\
-						stop_const=stop_const, low_thrs=low_thrs, sort_genes=False,verbose=verbose)
+						stop_const=stop_const, low_thrs=low_thrs, sort_genes=False)
 				# _divide_to_2and_resort retruns an empty array in gr2 if the splitting condition was not satisfied
 				if divided:
 					sorted_data_resort1, genes_resort1, cells_resort1,\
@@ -372,7 +370,7 @@ def backSPIN(data, numLevels=2, first_run_iters=10, first_run_step=0.05, runs_it
 					# if it is the deepest level: perform gene sorting
 					if i == numLevels-1:
 						if (datatmp.shape[0] > 2 )and (datatmp.shape[1] > 2):
-							genes_resort1 = SPIN(datatmp, widlist=runs_step, iters=runs_iters, axis=0, verbose=verbose)
+							genes_resort1 = SPIN(datatmp, widlist=runs_step, iters=runs_iters, axis=0)
 							genes_order[g_settmp] = genes_order[g_settmp[genes_resort1]]
 					cells_gr_level[c_settmp,i+1] = k
 					cells_gr_level_sc[c_settmp,i+1] = cells_gr_level_sc[c_settmp,i]
@@ -405,7 +403,7 @@ def backSPIN(data, numLevels=2, first_run_iters=10, first_run_step=0.05, runs_it
 	
 	
 
-def _divide_to_2and_resort(sorted_data, wid, iters_spin=8, stop_const = 1.15, low_thrs=0.2 , sort_genes=True, verbose=False):
+def _divide_to_2and_resort(sorted_data, wid, iters_spin=8, stop_const = 1.15, low_thrs=0.2 , sort_genes=True):
 	'''Core function of backSPIN: split the datamatrix in two and resort the two halves
 
 	Parameters
@@ -419,8 +417,6 @@ def _divide_to_2and_resort(sorted_data, wid, iters_spin=8, stop_const = 1.15, lo
 	low_thrs: float
 		if the difference between the average expression of two groups is lower than threshold the algorythm 
 		uses higly correlated gens to assign the gene to one of the two groups
-	verbose: bool
-		information about the split is printed
 
 	Returns
 	-------
@@ -493,9 +489,9 @@ def _divide_to_2and_resort(sorted_data, wid, iters_spin=8, stop_const = 1.15, lo
 		# Resort group1
 		if min( datagr1.shape ) > 1:
 			if sort_genes:
-				genesorder1,cellorder1 = SPIN(datagr1, widlist=wid, iters=iters_spin, axis='both', verbose=verbose)
+				genesorder1,cellorder1 = SPIN(datagr1, widlist=wid, iters=iters_spin, axis='both')
 			else:
-				cellorder1 = SPIN(datagr1, widlist=wid, iters=iters_spin, axis=1, verbose=verbose)
+				cellorder1 = SPIN(datagr1, widlist=wid, iters=iters_spin, axis=1)
 				genesorder1 = arange(datagr1.shape[0])
 		elif len(genesgr1) == 1:
 			genesorder1 = 0
@@ -511,9 +507,9 @@ def _divide_to_2and_resort(sorted_data, wid, iters_spin=8, stop_const = 1.15, lo
 		# Resort group2
 		if min( datagr2.shape )>1:
 			if sort_genes:
-				genesorder2, cellorder2 = SPIN(datagr2, widlist=wid, iters=iters_spin, axis='both',verbose=verbose)
+				genesorder2, cellorder2 = SPIN(datagr2, widlist=wid, iters=iters_spin, axis='both')
 			else:
-				cellorder2 = SPIN(datagr2, widlist=wid, iters=iters_spin, axis=1,verbose=verbose)
+				cellorder2 = SPIN(datagr2, widlist=wid, iters=iters_spin, axis=1)
 				genesorder2 = arange(datagr2.shape[0])
 		elif len(genesgr2) == 1:
 			genesorder2 = 0
@@ -538,8 +534,6 @@ def _divide_to_2and_resort(sorted_data, wid, iters_spin=8, stop_const = 1.15, lo
 
 	
 def loom_backspin(ds):
-	input_path = None
-	outfiles_path = None
 	numLevels=2 # -d
 	first_run_iters=10 # -t
 	first_run_step=0.1 # -s
@@ -549,25 +543,29 @@ def loom_backspin(ds):
 	split_limit_c=2 # -c
 	stop_const = 1.15 # -k
 	low_thrs=0.2 # -r
-	normal_spin = False #-b
-	normal_spin_axis = 'both'
-	verbose=False # -v
 
 	logging.info("BackSPIN started")
-	logging.debug("  numLevels: " + numLevels)
-	logging.debug("  first_run_iters: " + first_run_iters)
-	logging.debug("  first_run_steps: " + first_run_steps)
-	logging.debug("  runs_iters: " + runs_iters)
-	logging.debug("  runs_steps: " + runs_steps)
-	logging.debug("  split_limit_g: " + split_limit_g)
-	logging.debug("  split_limit_c: " + split_limit_c)
-	logging.debug("  stop_const: " + stop_const)
-	logging.debug("  low_thrs: " + low_thrs)
+	logging.debug("  numLevels: " + str(numLevels))
+	logging.debug("  first_run_iters: " + str(first_run_iters))
+	logging.debug("  first_run_steps: " + str(first_run_steps))
+	logging.debug("  runs_iters: " + str(runs_iters))
+	logging.debug("  runs_steps: " + str(runs_steps))
+	logging.debug("  split_limit_g: " + str(split_limit_g))
+	logging.debug("  split_limit_c: " + str(split_limit_c))
+	logging.debug("  stop_const: " + str(stop_const))
+	logging.debug("  low_thrs: " + str(low_thrs))
 
+	if ds.row_attrs.has_key("_Excluded"):
+		data = ds[1 - ds._Excluded, :]
+	else:
+		logging.warn("No genes have been excluded, running BackSPIN on entire matrix")
+		data = ds[:,:]
+
+	logging.info("Using %i genes and %i cells")
 	results = backSPIN(data, numLevels, first_run_iters, first_run_step, runs_iters, runs_step,\
-		split_limit_g, split_limit_c, stop_const, low_thrs, verbose)
+		split_limit_g, split_limit_c, stop_const, low_thrs)
 
-	logging.info("BackSPIN completed, writing result to file")
+	logging.debug("Writing result to file")
 
 	for level, groups in enumerate( results.genes_gr_level.T ):
 		ds.set_attr('BackSPIN_level_%i_group' % level, [int(el) for el in groups], axis=0)
