@@ -715,9 +715,12 @@ class LoomConnection(object):
 		self.set_attr("_Noise", score, axis = 0)
 		self.set_attr("_Excluded", excluded, axis = 0)		
 
-	def cluster(self, method="backspin"):
+	def cluster(self, n_genes=500, method="backspin"):
+		logging.info("Selecting %i genes" % n_genes)
+		self.feature_selection(n_genes)
+		logging.info("Starting BackSPIN")
 		loom_backspin(self)
-		
+
 	def compute_stats(self):
 		"""
 		Compute standard aggregate statistics
