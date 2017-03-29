@@ -50,7 +50,7 @@ def strip(s: str) -> str:
 	return s
 
 
-def create(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], col_attrs: Dict[str, np.ndarray], file_attrs: Dict[str, str] = None, chunks: Tuple[int, int] = (64, 64), chunk_cache: int = 512, matrix_dtype: str = "float32", compression_opts: str = None) -> LoomConnection:
+def create(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], col_attrs: Dict[str, np.ndarray], file_attrs: Dict[str, str] = None, chunks: Tuple[int, int] = (64, 64), chunk_cache: int = 512, dtype: str = "float32", compression_opts: str = None) -> LoomConnection:
 	"""
 	Create a new .loom file from the given data.
 
@@ -77,40 +77,17 @@ def create(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], 
 	"""
 	if file_attrs is None:
 		file_attrs = {}
-	if not np.isfinite(matrix).all():
-		raise ValueError("INF and NaN not allowed in loom matrix")
 
-	# Create the file.
+	# Create the file (empty).
 	f = h5py.File(name=filename, mode='w')
-
-	# make sure chunk size is not bigger than actual matrix size
-	chunks = (min(chunks[0], matrix.shape[0]), min(chunks[1], matrix.shape[1]))
-	# Save the main matrix
-	if compression_opts is None:
-		f.create_dataset(
-			'matrix',
-			data=matrix.astype(matrix_dtype),
-			maxshape=(matrix.shape[0], None),
-			chunks=chunks,
-			fletcher32=True
-		)
-	else:
-		f.create_dataset(
-			'matrix',
-			data=matrix.astype(matrix_dtype),
-			maxshape=(matrix.shape[0], None),
-			chunks=chunks,
-			fletcher32=True,
-			compression="gzip",
-			shuffle=False,
-			compression_opts=compression_opts
-		)
+	f.create_group('/layers')
 	f.create_group('/row_attrs')
 	f.create_group('/col_attrs')
 	f.flush()
 	f.close()
 
 	ds = connect(filename)
+	ds.set_layer("$DEFAULT", matrix, chunks, chunk_cache, dtype, compression_opts)
 
 	for key, vals in row_attrs.items():
 		ds.set_attr(key, vals, axis=0)
@@ -126,80 +103,6 @@ def create(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], 
 	ds.attrs['creation_date'] = time.strftime('%Y/%m/%d %H:%M:%S', currentTime)
 	ds.attrs['chunks'] = str(chunks)
 	return ds
-
-
-def create_from_loom(infile: str, outfile: str, chunks: Tuple[int, int] = (64, 64), chunk_cache: int = 512, compression_opts: str = None, shuffle: bool = False, fletcher32: bool = True) -> LoomConnection:
-	"""
-	Create a new .loom file from another .loom file, with potentially different HDF5 settings.
-
-	Args:
-		infile (str):           The input loomfile
-		outfile (str):          The output loomfile
-		chunks (tuple):         The chunking of the matrix. Small chunks are slow
-								when loading a large batch of rows/columns in sequence,
-								but fast for single column/row retrieval.
-								Defaults to (64,64).
-		chunk_cache (int):      Sets the chunk cache used by the HDF5 format inside
-								the loom file, in MB. If the cache is too small to
-								contain all chunks of a row/column in memory, then
-								sequential row/column access will be a lot slower.
-								Defaults to 512.
-		compression_opts (int): Strenght of the gzip compression. Default None.
-	Returns:
-		LoomConnection to created loom file.
-	"""
-	# open the old file in read-only mode
-	ds = connect(infile, 'r')
-	matrix = ds._file['matrix'][()]
-	if not np.isfinite(matrix).all():
-		raise ValueError("INF and NaN not allowed in loom matrix")
-
-	# Create the file.
-	f = h5py.File(name=outfile, mode='w')
-	# make sure chunk size is not bigger than actual matrix size
-	chunks = (min(chunks[0], matrix.shape[0]), min(chunks[1], matrix.shape[1]))
-	# Save the main matrix
-	if compression_opts is None:
-		f.create_dataset(
-			'matrix',
-			data=matrix.astype("float16"),
-			maxshape=(matrix.shape[0], None),
-			chunks=chunks,
-			fletcher32=fletcher32
-		)
-	else:
-		f.create_dataset(
-			'matrix',
-			data=matrix.astype("float16"),
-			maxshape=(matrix.shape[0], None),
-			chunks=chunks,
-			fletcher32=fletcher32,
-			compression="gzip",
-			shuffle=shuffle,
-			compression_opts=compression_opts
-		)
-	f.create_group('/row_attrs')
-	f.create_group('/col_attrs')
-	f.flush()
-	f.close()
-
-	new_ds = connect(outfile)
-
-	for key, vals in ds.row_attrs.items():
-		new_ds.set_attr(key, vals, axis=0)
-
-	for key, vals in ds.col_attrs.items():
-		new_ds.set_attr(key, vals, axis=1)
-
-	# Not sure why mypy is complaining about this for loop?
-	for key in ds.attrs:
-		new_ds.attrs[key] = ds.attrs[key]
-
-	# store creation date
-	currentTime = time.localtime(time.time())
-	new_ds.attrs['creation_date'] = time.strftime('%Y/%m/%d %H:%M:%S', currentTime)
-	new_ds.attrs['chunks'] = str(chunks)
-	return new_ds
 
 
 def create_from_cellranger(folder: str, loom_file: str, cell_id_prefix: str = '', sample_annotation: Dict[str, np.ndarray] = None, genome: str = 'mm10') -> LoomConnection:
@@ -342,7 +245,20 @@ class LoomAttributeManager(object):
 			return default
 
 
-class LoomConnection(object):
+class LoomLayer():
+	def __init__(self, ds: LoomConnection, name: str, dtype: str) -> None:
+		self.ds = ds
+		self.name = name
+		self.dtype = dtype
+
+	def __getitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]]) -> np.ndarray:
+		return self.ds._file['/layers/' + self.name].__getitem__(slice)
+
+	def __setitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]], data: np.ndarray) -> None:
+		self.ds._file['/layers/' + self.name].__setitem__(slice, data.astype(self.dtype))
+
+
+class LoomConnection:
 	def __init__(self, filename: str, mode: str = 'r+') -> None:
 		"""
 		Establish a connection to a .loom file.
@@ -367,10 +283,15 @@ class LoomConnection(object):
 		self.mode = mode
 		self.filename = filename
 		self._file = h5py.File(filename, mode)
-		self.shape = self._file['matrix'].shape
+		self.shape = [0, 0]  # The correct shape gets assigned when the layers are loaded
+
+		self.layer = {}  # type: Dict[str, LoomLayer]
+		for key in self._file["/layers"].keys():
+			self.layer[key] = LoomLayer(self, key, self._file["/layers/" + key].dtype)
+			if key == "@DEFAULT":
+				self.shape == self._file["/layers/" + key].shape
 
 		self.row_attrs = {}  # type: Dict[str, np.ndarray]
-
 		for key in self._file['row_attrs'].keys():
 			self._load_attr(key, axis=0)
 			v = self.row_attrs[key]
@@ -509,7 +430,7 @@ class LoomConnection(object):
 		Returns:
 			A numpy matrix
 		"""
-		return self._file['matrix'].__getitem__(slice)
+		return self.layer["@DEFAULT"][slice]
 
 	def __setitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]], data: np.ndarray) -> None:
 		"""
@@ -521,7 +442,7 @@ class LoomConnection(object):
 		Returns:
 			Nothing.
 		"""
-		self._file['matrix'].__setitem__(slice, data)
+		self.layer["@DEFAULT"][slice] = data
 
 	def close(self) -> None:
 		"""
@@ -531,7 +452,43 @@ class LoomConnection(object):
 		self._file = None
 		self.row_attrs = {}
 		self.col_attrs = {}
-		self.shape = (0, 0)
+		self.shape = [0, 0]
+
+	def set_layer(self, name: str, matrix: np.ndarray, chunks: Tuple[int, int] = (64, 64), chunk_cache: int = 512, dtype: str = "float32", compression_opts: str = None) -> None:
+		if self.mode != "r+":
+			raise IOError("Cannot save attributes when connected in read-only mode")
+		if not np.isfinite(matrix).all():
+			raise ValueError("INF and NaN not allowed in loom matrix")
+		# make sure chunk size is not bigger than actual matrix size
+		chunks = (min(chunks[0], matrix.shape[0]), min(chunks[1], matrix.shape[1]))
+		path = "/layers/" + name
+		if self._file["/layers"].__contains__(name):
+			del self._file[path]
+		
+		# Save the main matrix
+		if compression_opts is None:
+			self._file.create_dataset(
+				path,
+				data=matrix.astype(dtype),
+				maxshape=(matrix.shape[0], None),
+				chunks=chunks,
+				fletcher32=True
+			)
+		else:
+			self._file.create_dataset(
+				path,
+				data=matrix.astype(dtype),
+				maxshape=(matrix.shape[0], None),
+				chunks=chunks,
+				fletcher32=True,
+				compression="gzip",
+				shuffle=False,
+				compression_opts=compression_opts
+			)
+		
+		self.layer[name] = LoomLayer(self, name, dtype)
+		if name == "@DEFAULT":
+			self.shape = matrix.shape
 
 	def add_columns(self, submatrix: np.ndarray, col_attrs: Dict[str, np.ndarray], fill_values: Dict[str, np.ndarray] = None) -> None:
 		"""
@@ -612,7 +569,7 @@ class LoomConnection(object):
 			self.col_attrs[key] = self._file['/col_attrs/' + key]
 		self._file['/matrix'].resize(n_cols, axis=1)
 		self._file['/matrix'][:, self.shape[1]:n_cols] = submatrix
-		self.shape = (self.shape[0], n_cols)
+		self.shape = [self.shape[0], n_cols]
 		self._file.flush()
 
 	def add_loom(self, other_file: str, fill_values: Dict[str, np.ndarray] = None) -> None:
