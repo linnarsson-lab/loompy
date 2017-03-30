@@ -170,7 +170,7 @@ class LoomConnection:
 			values = np.array([x.encode('ascii', 'ignore') for x in values])
 
 		a = ["/row_attrs/", "/col_attrs/"][axis]
-		if len(values) != self.shape[axis]:
+		if self.shape[axis] != 0 and len(values) != self.shape[axis]:
 			raise ValueError("Attribute must have exactly %d values" % self.shape[axis])
 		if self._file[a].__contains__(name):
 			del self._file[a + name]
@@ -734,7 +734,7 @@ def create(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], 
 	f.close()
 
 	ds = connect(filename)
-	ds.set_layer("$DEFAULT", matrix, chunks, chunk_cache, dtype, compression_opts)
+	ds.set_layer("@DEFAULT", matrix, chunks, chunk_cache, dtype, compression_opts)
 
 	for key, vals in row_attrs.items():
 		ds.set_attr(key, vals, axis=0)
