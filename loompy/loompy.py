@@ -42,164 +42,13 @@ from shutil import copyfile
 import logging
 import requests
 import time
+import loompy
 
 
 def strip(s: str) -> str:
 	if s[0:2] == "b'" and s[-1] == "'":
 		return s[2:-1]
 	return s
-
-
-def create(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], col_attrs: Dict[str, np.ndarray], file_attrs: Dict[str, str] = None, chunks: Tuple[int, int] = (64, 64), chunk_cache: int = 512, dtype: str = "float32", compression_opts: str = None) -> LoomConnection:
-	"""
-	Create a new .loom file from the given data.
-
-	Args:
-		filename (str):         The filename (typically using a `.loom` file extension)
-		matrix (numpy.ndarray): Two-dimensional (N-by-M) numpy ndarray of float values
-		row_attrs (dict):       Row attributes, where keys are attribute names and values
-								are numpy arrays (float or string) of length N
-		col_attrs (dict):       Column attributes, where keys are attribute names and
-								values are numpy arrays (float or string) of length M
-		chunks (tuple):         The chunking of the matrix. Small chunks are slow
-								when loading a large batch of rows/columns in sequence,
-								but fast for single column/row retrieval.
-								Defaults to (64,64).
-		chunk_cache (int):      Sets the chunk cache used by the HDF5 format inside
-								the loom file, in MB. If the cache is too small to
-								contain all chunks of a row/column in memory, then
-								sequential row/column access will be a lot slower.
-								Defaults to 512.
-		matrix_dtype (str):     Dtype of the matrix. Default float32 (uint16, float16 could be used)
-		compression_opts (int): Strenght of the gzip compression. Default None.
-	Returns:
-		LoomConnection to created loom file.
-	"""
-	if file_attrs is None:
-		file_attrs = {}
-
-	# Create the file (empty).
-	f = h5py.File(name=filename, mode='w')
-	f.create_group('/layers')
-	f.create_group('/row_attrs')
-	f.create_group('/col_attrs')
-	f.flush()
-	f.close()
-
-	ds = connect(filename)
-	ds.set_layer("$DEFAULT", matrix, chunks, chunk_cache, dtype, compression_opts)
-
-	for key, vals in row_attrs.items():
-		ds.set_attr(key, vals, axis=0)
-
-	for key, vals in col_attrs.items():
-		ds.set_attr(key, vals, axis=1)
-
-	for vals in file_attrs:
-		ds.attrs[vals] = file_attrs[vals]
-
-	# store creation date
-	currentTime = time.localtime(time.time())
-	ds.attrs['creation_date'] = time.strftime('%Y/%m/%d %H:%M:%S', currentTime)
-	ds.attrs['chunks'] = str(chunks)
-	return ds
-
-
-def create_from_cellranger(folder: str, loom_file: str, cell_id_prefix: str = '', sample_annotation: Dict[str, np.ndarray] = None, genome: str = 'mm10') -> LoomConnection:
-	"""
-	Create a .loom file from 10X Genomics cellranger output
-
-	Args:
-		folder (str):				path to the cellranger output folder (usually called `outs`)
-		loom_file (str):			full path of the resulting loom file
-		cell_id_prefix (str):		prefix to add to cell IDs (e.g. the sample id for this sample)
-		sample_annotation (dict): 	dict of additional sample attributes
-		genome (str):				genome build to load (e.g. 'mm10')
-
-	Returns:
-		Nothing, but creates loom_file
-	"""
-	if sample_annotation is None:
-		sample_annotation = {}
-	matrix_folder = os.path.join(folder, 'filtered_gene_bc_matrices', genome)
-	matrix = mmread(os.path.join(matrix_folder, "matrix.mtx")).astype("float32").todense()
-
-	barcodes = np.loadtxt(os.path.join(matrix_folder, "barcodes.tsv"), delimiter="\t", dtype="unicode")
-	col_attrs = {"CellID": np.array([(cell_id_prefix + strip(bc)[2:-1]) for bc in barcodes])}
-
-	temp = np.loadtxt(os.path.join(matrix_folder, "genes.tsv"), delimiter="\t", dtype="unicode")
-	row_attrs = {"Accession": temp[:, 0], "Gene": temp[:, 1]}
-
-	for key in sample_annotation.keys():
-		col_attrs[key] = np.array([sample_annotation[key]] * matrix.shape[1])
-
-	tsne_file = os.path.join(folder, "analysis", "tsne", "projection.csv")
-	# In cellranger V2 the file moved one level deeper
-	if not os.path.exists(tsne_file):
-		tsne_file = os.path.join(folder, "analysis", "tsne", "2_components", "projection.csv")
-	if os.path.exists(tsne_file):
-		tsne = np.loadtxt(tsne_file, usecols=(1, 2), delimiter=',', skiprows=1)
-		col_attrs["_tSNE1"] = tsne[:, 0].astype('float64')
-		col_attrs["_tSNE2"] = tsne[:, 1].astype('float64')
-
-	pca_file = os.path.join(folder, "analysis", "pca", "projection.csv")
-	if os.path.exists(pca_file):
-		pca = np.loadtxt(pca_file, usecols=(1, 2), delimiter=',', skiprows=1)
-		col_attrs["_PC1"] = pca[:, 0].astype('float64')
-		col_attrs["_PC2"] = pca[:, 1].astype('float64')
-
-	kmeans = np.loadtxt(os.path.join(folder, "analysis", "kmeans", "10_clusters", "clusters.csv"), usecols=(1, ), delimiter=',', skiprows=1)
-	col_attrs["_KMeans_10"] = kmeans.astype('float64')
-
-	return create(loom_file, matrix, row_attrs, col_attrs)
-
-
-def combine(files: List[str], output_file: str, file_attrs: Dict[str, str] = None) -> None:
-	"""
-	Combine two or more loom files and save as a new loom file
-
-	Args:
-		files (list of str):	the list of input files (full paths)
-		output_file (str):		full path of the output loom file
-		file_attrs (dict):		file attributes (title, description, url, etc.)
-
-	Returns:
-		Nothing, but creates a new loom file combining the input files.
-
-	The input files must (1) have exactly the same number of rows and in the same order, (2) have
-	exactly the same sets of row and column attributes.
-	"""
-	if file_attrs is None:
-		file_attrs = {}
-
-	if len(files) == 0:
-		raise ValueError("The input file list was empty")
-
-	copyfile(files[0], output_file)
-
-	ds = connect(output_file)
-	for a in file_attrs:
-		ds.attrs[a] = file_attrs[a]
-
-	if len(files) >= 2:
-		for f in files[1:]:
-			ds.add_loom(f)
-	ds.close()
-
-
-def connect(filename: str, mode: str = 'r+') -> LoomConnection:
-	"""
-	Establish a connection to a .loom file.
-
-	Args:
-		filename (str):     Name of the .loom file to open
-		mode (str):         read/write mode, accepts 'r+' (read/write) or
-							'r' (read-only), defaults to 'r+'
-
-	Returns:
-		A LoomConnection instance.
-	"""
-	return LoomConnection(filename, mode)
 
 
 class LoomAttributeManager(object):
@@ -245,19 +94,6 @@ class LoomAttributeManager(object):
 			return default
 
 
-class LoomLayer():
-	def __init__(self, ds: LoomConnection, name: str, dtype: str) -> None:
-		self.ds = ds
-		self.name = name
-		self.dtype = dtype
-
-	def __getitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]]) -> np.ndarray:
-		return self.ds._file['/layers/' + self.name].__getitem__(slice)
-
-	def __setitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]], data: np.ndarray) -> None:
-		self.ds._file['/layers/' + self.name].__setitem__(slice, data.astype(self.dtype))
-
-
 class LoomConnection:
 	def __init__(self, filename: str, mode: str = 'r+') -> None:
 		"""
@@ -285,11 +121,16 @@ class LoomConnection:
 		self._file = h5py.File(filename, mode)
 		self.shape = [0, 0]  # The correct shape gets assigned when the layers are loaded
 
-		self.layer = {}  # type: Dict[str, LoomLayer]
-		for key in self._file["/layers"].keys():
-			self.layer[key] = LoomLayer(self, key, self._file["/layers/" + key].dtype)
-			if key == "@DEFAULT":
-				self.shape == self._file["/layers/" + key].shape
+		if self._file.__contains__("/matrix"):
+			self.layer = {
+				"@DEFAULT": LoomLayer(self, "@DEFAULT", self._file["/matrix"].dtype)
+			}
+			self.shape = self._file["/matrix"].shape
+			if self._file.__contains__("/layers"):
+				for key in self._file["/layers"].keys():
+					self.layer[key] = LoomLayer(self, key, self._file["/layers/" + key].dtype)
+		else:
+			self.layer = {}
 
 		self.row_attrs = {}  # type: Dict[str, np.ndarray]
 		for key in self._file['row_attrs'].keys():
@@ -459,10 +300,16 @@ class LoomConnection:
 			raise IOError("Cannot save attributes when connected in read-only mode")
 		if not np.isfinite(matrix).all():
 			raise ValueError("INF and NaN not allowed in loom matrix")
+
+		if not self._file.__contains__("/layers"):
+			self._file.create_group("/layers")
+
 		# make sure chunk size is not bigger than actual matrix size
 		chunks = (min(chunks[0], matrix.shape[0]), min(chunks[1], matrix.shape[1]))
 		path = "/layers/" + name
-		if self._file["/layers"].__contains__(name):
+		if name == "@DEFAULT":
+			path = "/matrix"
+		if self._file.__contains__(path):
 			del self._file[path]
 		
 		# Save the main matrix
@@ -489,6 +336,7 @@ class LoomConnection:
 		self.layer[name] = LoomLayer(self, name, dtype)
 		if name == "@DEFAULT":
 			self.shape = matrix.shape
+		self._file.flush()
 
 	def add_columns(self, submatrix: np.ndarray, col_attrs: Dict[str, np.ndarray], fill_values: Dict[str, np.ndarray] = None) -> None:
 		"""
@@ -572,7 +420,7 @@ class LoomConnection:
 		self.shape = [self.shape[0], n_cols]
 		self._file.flush()
 
-	def add_loom(self, other_file: str, fill_values: Dict[str, np.ndarray] = None) -> None:
+	def add_loom(self, other_file: str, key: str = None, fill_values: Dict[str, np.ndarray] = None) -> None:
 		"""
 		Add the content of another loom file
 
@@ -588,6 +436,14 @@ class LoomConnection:
 			raise IOError("Cannot add data when connected in read-only mode")
 		# Connect to the loom files
 		other = connect(other_file)
+		# Verify that the row keys are identical
+		if key is not None:
+			pk1 = other.row_attrs[key]
+			pk2 = self.row_attrs[key]
+			for ix, val in enumerate(pk1):
+				if pk2[ix] != val:
+					raise ValueError("Primary keys are not identical")
+
 		self.add_columns(other[:, :], other.col_attrs, fill_values)
 		other.close()
 
@@ -822,3 +678,174 @@ class LoomConnection:
 			for key in self.col_attrs.keys():
 				self.col_attrs[key] = self.col_attrs[key][ordering]
 			self._file.flush()
+
+
+class LoomLayer():
+	def __init__(self, ds: LoomConnection, name: str, dtype: str) -> None:
+		self.ds = ds
+		self.name = name
+		self.dtype = dtype
+
+	def __getitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]]) -> np.ndarray:
+		if self.name == "@DEFAULT":
+			return self.ds._file['/matrix'].__getitem__(slice)
+		return self.ds._file['/layers/' + self.name].__getitem__(slice)
+
+	def __setitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]], data: np.ndarray) -> None:
+		if self.name == "@DEFAULT":
+			self.ds._file['/matrix'].__setitem__(slice, data.astype(self.dtype))
+		self.ds._file['/layers/' + self.name].__setitem__(slice, data.astype(self.dtype))
+
+
+def create(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], col_attrs: Dict[str, np.ndarray], file_attrs: Dict[str, str] = None, chunks: Tuple[int, int] = (64, 64), chunk_cache: int = 512, dtype: str = "float32", compression_opts: str = None) -> LoomConnection:
+	"""
+	Create a new .loom file from the given data.
+
+	Args:
+		filename (str):         The filename (typically using a `.loom` file extension)
+		matrix (numpy.ndarray): Two-dimensional (N-by-M) numpy ndarray of float values
+		row_attrs (dict):       Row attributes, where keys are attribute names and values
+								are numpy arrays (float or string) of length N
+		col_attrs (dict):       Column attributes, where keys are attribute names and
+								values are numpy arrays (float or string) of length M
+		chunks (tuple):         The chunking of the matrix. Small chunks are slow
+								when loading a large batch of rows/columns in sequence,
+								but fast for single column/row retrieval.
+								Defaults to (64,64).
+		chunk_cache (int):      Sets the chunk cache used by the HDF5 format inside
+								the loom file, in MB. If the cache is too small to
+								contain all chunks of a row/column in memory, then
+								sequential row/column access will be a lot slower.
+								Defaults to 512.
+		matrix_dtype (str):     Dtype of the matrix. Default float32 (uint16, float16 could be used)
+		compression_opts (int): Strenght of the gzip compression. Default None.
+	Returns:
+		LoomConnection to created loom file.
+	"""
+	if file_attrs is None:
+		file_attrs = {}
+
+	# Create the file (empty).
+	f = h5py.File(name=filename, mode='w')
+	f.create_group('/layers')
+	f.create_group('/row_attrs')
+	f.create_group('/col_attrs')
+	f.flush()
+	f.close()
+
+	ds = connect(filename)
+	ds.set_layer("$DEFAULT", matrix, chunks, chunk_cache, dtype, compression_opts)
+
+	for key, vals in row_attrs.items():
+		ds.set_attr(key, vals, axis=0)
+
+	for key, vals in col_attrs.items():
+		ds.set_attr(key, vals, axis=1)
+
+	for vals in file_attrs:
+		ds.attrs[vals] = file_attrs[vals]
+
+	# store creation date
+	currentTime = time.localtime(time.time())
+	ds.attrs['creation_date'] = time.strftime('%Y/%m/%d %H:%M:%S', currentTime)
+	ds.attrs['chunks'] = str(chunks)
+	return ds
+
+
+def create_from_cellranger(folder: str, loom_file: str, cell_id_prefix: str = '', sample_annotation: Dict[str, np.ndarray] = None, genome: str = 'mm10') -> LoomConnection:
+	"""
+	Create a .loom file from 10X Genomics cellranger output
+
+	Args:
+		folder (str):				path to the cellranger output folder (usually called `outs`)
+		loom_file (str):			full path of the resulting loom file
+		cell_id_prefix (str):		prefix to add to cell IDs (e.g. the sample id for this sample)
+		sample_annotation (dict): 	dict of additional sample attributes
+		genome (str):				genome build to load (e.g. 'mm10')
+
+	Returns:
+		Nothing, but creates loom_file
+	"""
+	if sample_annotation is None:
+		sample_annotation = {}
+	matrix_folder = os.path.join(folder, 'filtered_gene_bc_matrices', genome)
+	matrix = mmread(os.path.join(matrix_folder, "matrix.mtx")).astype("float32").todense()
+
+	barcodes = np.loadtxt(os.path.join(matrix_folder, "barcodes.tsv"), delimiter="\t", dtype="unicode")
+	col_attrs = {"CellID": np.array([(cell_id_prefix + strip(bc)[2:-1]) for bc in barcodes])}
+
+	temp = np.loadtxt(os.path.join(matrix_folder, "genes.tsv"), delimiter="\t", dtype="unicode")
+	row_attrs = {"Accession": temp[:, 0], "Gene": temp[:, 1]}
+
+	for key in sample_annotation.keys():
+		col_attrs[key] = np.array([sample_annotation[key]] * matrix.shape[1])
+
+	tsne_file = os.path.join(folder, "analysis", "tsne", "projection.csv")
+	# In cellranger V2 the file moved one level deeper
+	if not os.path.exists(tsne_file):
+		tsne_file = os.path.join(folder, "analysis", "tsne", "2_components", "projection.csv")
+	if os.path.exists(tsne_file):
+		tsne = np.loadtxt(tsne_file, usecols=(1, 2), delimiter=',', skiprows=1)
+		col_attrs["_tSNE1"] = tsne[:, 0].astype('float64')
+		col_attrs["_tSNE2"] = tsne[:, 1].astype('float64')
+
+	pca_file = os.path.join(folder, "analysis", "pca", "projection.csv")
+	if os.path.exists(pca_file):
+		pca = np.loadtxt(pca_file, usecols=(1, 2), delimiter=',', skiprows=1)
+		col_attrs["_PC1"] = pca[:, 0].astype('float64')
+		col_attrs["_PC2"] = pca[:, 1].astype('float64')
+
+	kmeans = np.loadtxt(os.path.join(folder, "analysis", "kmeans", "10_clusters", "clusters.csv"), usecols=(1, ), delimiter=',', skiprows=1)
+	col_attrs["_KMeans_10"] = kmeans.astype('float64')
+
+	return create(loom_file, matrix, row_attrs, col_attrs)
+
+
+def combine(files: List[str], output_file: str, key: str = None, file_attrs: Dict[str, str] = None) -> None:
+	"""
+	Combine two or more loom files and save as a new loom file
+
+	Args:
+		files (list of str):	the list of input files (full paths)
+		output_file (str):		full path of the output loom file
+		key (string):			Row attribute to use to verify row ordering
+		file_attrs (dict):		file attributes (title, description, url, etc.)
+
+	Returns:
+		Nothing, but creates a new loom file combining the input files.
+
+	The input files must (1) have exactly the same number of rows and in the same order, (2) have
+	exactly the same sets of row and column attributes.
+	"""
+	if file_attrs is None:
+		file_attrs = {}
+
+	if len(files) == 0:
+		raise ValueError("The input file list was empty")
+
+	copyfile(files[0], output_file)
+
+	ds = connect(output_file)
+	for a in file_attrs:
+		ds.attrs[a] = file_attrs[a]
+
+	if len(files) >= 2:
+		for f in files[1:]:
+			ds.add_loom(f, key)
+	ds.close()
+
+
+def connect(filename: str, mode: str = 'r+') -> LoomConnection:
+	"""
+	Establish a connection to a .loom file.
+
+	Args:
+		filename (str):     Name of the .loom file to open
+		mode (str):         read/write mode, accepts 'r+' (read/write) or
+							'r' (read-only), defaults to 'r+'
+
+	Returns:
+		A LoomConnection instance.
+	"""
+	return LoomConnection(filename, mode)
+
