@@ -319,7 +319,7 @@ class LoomConnection:
 				data=matrix.astype(dtype),
 				maxshape=(matrix.shape[0], None),
 				chunks=chunks,
-				fletcher32=True
+				fletcher32=False
 			)
 		else:
 			self._file.create_dataset(
@@ -327,7 +327,7 @@ class LoomConnection:
 				data=matrix.astype(dtype),
 				maxshape=(matrix.shape[0], None),
 				chunks=chunks,
-				fletcher32=True,
+				fletcher32=False,
 				compression="gzip",
 				shuffle=False,
 				compression_opts=compression_opts
@@ -444,7 +444,9 @@ class LoomConnection:
 				if pk2[ix] != val:
 					raise ValueError("Primary keys are not identical")
 
-		self.add_columns(other[:, :], other.col_attrs, fill_values)
+		for (ix, selection, vals) in other.batch_scan(axis=1):
+			ca = {key: v[selection] for key, v in other.col_attrs.items()}
+			self.add_columns(vals, ca, fill_values)
 		other.close()
 
 	def delete_attr(self, name: str, axis: int = 0, raise_on_missing: bool = True) -> None:
@@ -529,6 +531,10 @@ class LoomConnection:
 				raise ValueError("Nodes out of range")
 			if b.max() > self.shape[1] or b.min() < 0:
 				raise ValueError("Nodes out of range")
+			if self._file.__contains__("/col_edges/" + name):
+				del self._file["/col_edges/" + name + "/a"]
+				del self._file["/col_edges/" + name + "/b"]
+				del self._file["/col_edges/" + name + "/w"]
 			self._file["/col_edges/" + name + "/a"] = a
 			self._file["/col_edges/" + name + "/b"] = b
 			self._file["/col_edges/" + name + "/w"] = w
@@ -537,6 +543,10 @@ class LoomConnection:
 				raise ValueError("Nodes out of range")
 			if b.max() > self.shape[0] or b.min() < 0:
 				raise ValueError("Nodes out of range")
+			if self._file.__contains__("/row_edges/" + name):
+				del self._file["/row_edges/" + name + "/a"]
+				del self._file["/row_edges/" + name + "/b"]
+				del self._file["/row_edges/" + name + "/w"]
 			self._file["/row_edges/" + name + "/a"] = a
 			self._file["/row_edges/" + name + "/b"] = b
 			self._file["/row_edges/" + name + "/w"] = w
