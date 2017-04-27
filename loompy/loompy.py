@@ -330,7 +330,9 @@ class LoomConnection:
 		Add columns of data and attribute values to the dataset.
 
 		Args:
-			submatrix (numpy.ndarray):	An N-by-M matrix of float32s (N rows, M columns)
+			submatrix (dict or numpy.ndarray):	Either:
+												1) A N-by-M matrix of float32s (N rows, M columns) in this case columns are added at the @DEFAULT layer
+												2) A dict {layer_name : matrix} specified so that the matrix (N, M) will be added to layer `layer_name`
 
 			col_attrs (dict):			Column attributes, where keys are attribute names and values are numpy arrays (float or string) of length M
 
@@ -345,10 +347,15 @@ class LoomConnection:
 		if not np.isfinite(submatrix).all():
 			raise ValueError("INF and NaN not allowed in loom matrix")
 
+		if not type(submatrix) == dict:
+			submatrix_dict = dict()
+			submatrix_dict["@DEFAULT"] = submatrix
+		else:
+			submatrix_dict = cast(dict, submatrix)  # equivalent to submatrix_dict = submatrix # only avoids problems with type checker
+			submatrix = submatrix_dict["@DEFAULT"]
+
 		if submatrix.shape[0] != self.shape[0]:
 			raise ValueError("New submatrix must have same number of rows as existing matrix")
-
-		submatrix = submatrix.astype("float32")
 
 		did_remove = False
 		todel = []  # type: List[str]
@@ -402,10 +409,14 @@ class LoomConnection:
 			del self._file['/col_attrs/' + key]
 			self._file['/col_attrs/' + key] = temp
 			self.col_attrs[key] = self._file['/col_attrs/' + key]
-		self._file['/matrix'].resize(n_cols, axis=1)
-		self._file['/matrix'][:, self.shape[1]:n_cols] = submatrix
+		
 		self.shape = [self.shape[0], n_cols]
-		self._file.flush()
+
+		# Add the columns layerwise
+		for key in self.layer.keys():
+			self.layer[key].resize(n_cols, axis=1)
+			self.layer[key][:, self.shape[1]:n_cols] = submatrix[key].astype(self.layer[key].dtype)
+			self._file.flush()
 
 	def add_loom(self, other_file: str, key: str = None, fill_values: Dict[str, np.ndarray] = None) -> None:
 		"""
@@ -418,6 +429,7 @@ class LoomConnection:
 		Returns:
 			Nothing, but adds the loom file. Note that the other loom file must have exactly the same
 			number of rows, in the same order, and must have exactly the same column attributes.
+			The all the contents including layers but ignores layers in `other_file` that are not already persent in self
 		"""
 		if self.mode != "r+":
 			raise IOError("Cannot add data when connected in read-only mode")
@@ -430,8 +442,11 @@ class LoomConnection:
 			for ix, val in enumerate(pk1):
 				if pk2[ix] != val:
 					raise ValueError("Primary keys are not identical")
+		diff_layers = set(self.layer.keys()) - set(other.layer.keys())
+		if len(diff_layers) > 0:
+			raise ValueError("%s is missing a layer, cannot merge with current file. layers missing:%s" % (other_file, diff_layers))
 
-		for (ix, selection, vals) in other.batch_scan(axis=1):
+		for (ix, selection, vals) in other.batch_scan_layers(axis=1, layers=self.layer.keys()):
 			ca = {key: v[selection] for key, v in other.col_attrs.items()}
 			self.add_columns(vals, ca, fill_values)
 		other.close()
@@ -586,6 +601,58 @@ class LoomConnection:
 				yield (ix, ix + selection, vals)
 				ix += rows_per_chunk
 
+	def batch_scan_layers(self, cells: np.ndarray = None, genes: np.ndarray = None, axis: int = 0, batch_size: int = 1000, layers: Iterable = None) -> Iterable[Tuple[int, int, dict]]:
+		if cells is None:
+			cells = np.fromiter(range(self.shape[1]), dtype='int')
+		if genes is None:
+			genes = np.fromiter(range(self.shape[0]), dtype='int')
+		if layers is None:
+			layers = self.layer.keys()
+		if axis == 1:
+			cols_per_chunk = batch_size
+			ix = 0
+			while ix < self.shape[1]:
+				cols_per_chunk = min(self.shape[1] - ix, cols_per_chunk)
+
+				selection = cells - ix
+				# Pick out the cells that are in this batch
+				selection = selection[np.where(np.logical_and(selection >= 0, selection < cols_per_chunk))[0]]
+				if selection.shape[0] == 0:
+					ix += cols_per_chunk
+					continue
+
+				# Load the whole chunk from the file, then extract genes and cells using fancy indexing
+				vals = dict()
+				for key in layers:
+					vals[key] = self.layer[key][:, ix:ix + cols_per_chunk]
+					vals[key] = vals[key][genes, :]
+					vals[key] = vals[key][:, selection]
+
+				yield (ix, ix + selection, vals)
+				ix += cols_per_chunk
+
+		if axis == 0:
+			rows_per_chunk = batch_size
+			ix = 0
+			while ix < self.shape[0]:
+				rows_per_chunk = min(self.shape[0] - ix, rows_per_chunk)
+
+				selection = genes - ix
+				# Pick out the genes that are in this batch
+				selection = selection[np.where(np.logical_and(selection >= 0, selection < rows_per_chunk))[0]]
+				if selection.shape[0] == 0:
+					ix += rows_per_chunk
+					continue
+
+				# Load the whole chunk from the file, then extract genes and cells using fancy indexing
+				vals = dict()
+				for key in layers:
+					vals[key] = self.layer[key][ix:ix + rows_per_chunk, :]
+					vals[key] = vals[key][selection, :]
+					vals[key] = vals[key][:, cells]
+				yield (ix, ix + selection, vals)
+				ix += rows_per_chunk
+
 	def map(self, f_list: List[Callable[[np.ndarray], int]], axis: int = 0, chunksize: int = 1000, selection: np.ndarray = None) -> List[np.ndarray]:
 		"""
 		Apply a function along an axis without loading the entire dataset in memory.
@@ -691,8 +758,25 @@ class LoomLayer():
 	def __setitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]], data: np.ndarray) -> None:
 		if self.name == "@DEFAULT":
 			self.ds._file['/matrix'].__setitem__(slice, data.astype(self.dtype))
-		self.ds._file['/layers/' + self.name].__setitem__(slice, data.astype(self.dtype))
+		else:
+			self.ds._file['/layers/' + self.name].__setitem__(slice, data.astype(self.dtype))
 
+	def resize(self, size: Tuple[int, int], axis: int = None) -> None:
+		"""Resize the dataset, or the specified axis.
+		
+		The dataset must be stored in chunked format; it can be resized up to the "maximum shape" (keyword maxshape) specified at creation time.
+		The rank of the dataset cannot be changed.
+		"Size" should be a shape tuple, or if an axis is specified, an integer.
+		
+		BEWARE: This functions differently than the NumPy resize() method!
+		The data is not "reshuffled" to fit in the new shape; each axis is grown or shrunk independently.
+		The coordinates of existing data are fixed.
+		"""
+		if self.name == "@DEFAULT":
+			self.ds._file['/matrix'].resize(size, axis)
+		else:
+			self.ds._file['/layers/' + self.name].resize(size, axis)
+		
 
 def create(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], col_attrs: Dict[str, np.ndarray], file_attrs: Dict[str, str] = None, chunks: Tuple[int, int] = (64, 64), chunk_cache: int = 512, dtype: str = "float32", compression_opts: str = None) -> LoomConnection:
 	"""
@@ -845,4 +929,3 @@ def connect(filename: str, mode: str = 'r+') -> LoomConnection:
 		A LoomConnection instance.
 	"""
 	return LoomConnection(filename, mode)
-
