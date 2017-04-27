@@ -22,27 +22,14 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import math
 import numpy as np
 from typing import *
-import tempfile
 import h5py
 import os.path
-import pandas as pd
-import scipy
-import scipy.misc
-import scipy.ndimage
 from scipy.io import mmread
-from scipy.optimize import minimize
-from sklearn.decomposition import IncrementalPCA
-from scipy.spatial.distance import pdist, squareform
-from sklearn.manifold import TSNE
-from sklearn.svm import SVR
 from shutil import copyfile
 import logging
-import requests
 import time
-import loompy
 
 
 def strip(s: str) -> str:
