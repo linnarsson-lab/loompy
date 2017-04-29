@@ -330,11 +330,13 @@ class LoomConnection:
 		Add columns of data and attribute values to the dataset.
 
 		Args:
-			submatrix (dict or numpy.ndarray):	Either:
-												1) A N-by-M matrix of float32s (N rows, M columns) in this case columns are added at the @DEFAULT layer
-												2) A dict {layer_name : matrix} specified so that the matrix (N, M) will be added to layer `layer_name`
+			submatrix (dict or numpy.ndarray):
+				Either:
+				1) A N-by-M matrix of float32s (N rows, M columns) in this case columns are added at the @DEFAULT layer
+				2) A dict {layer_name : matrix} specified so that the matrix (N, M) will be added to layer `layer_name`
 
-			col_attrs (dict):			Column attributes, where keys are attribute names and values are numpy arrays (float or string) of length M
+			col_attrs (dict):
+				Column attributes, where keys are attribute names and values are numpy arrays (float or string) of length M
 
 		Returns:
 			Nothing.
