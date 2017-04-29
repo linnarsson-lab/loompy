@@ -640,6 +640,9 @@ class LoomConnection:
 			0:rows or 1:cols
 		batch_size: int
 			the chuncks returned at every element of the iterator
+		layers: iterable
+			if specified it will batch scan only accross some of the layers of the loom file 
+			i.g. if layers = ["@DEFAULT"] batch_scan_layers is equivalent to batch_scan
 
 		Returns
 		------
