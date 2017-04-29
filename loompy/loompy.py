@@ -555,7 +555,33 @@ class LoomConnection:
 		else:
 			raise ValueError("Axis must be 0 or 1")
 
-	def batch_scan(self, cells: np.ndarray = None, genes: np.ndarray = None, axis: int = 0, batch_size: int = 1000) -> Iterable[Tuple[int, int, np.ndarray]]:
+	def batch_scan(self, cells: np.ndarray = None, genes: np.ndarray = None, axis: int = 0, batch_size: int = 1000) -> Iterable[Tuple[int, np.ndarray, np.ndarray]]:
+		"""Performs a batch scan of the loom file
+
+		Args
+		----
+		cells: np.ndarray
+			the indexes [1,2,3,..,1000] of the cells to select
+		genes: np.ndarray
+			the indexes [1,2,3,..,1000] of the genes to select
+		axis: int
+			0:rows or 1:cols
+		batch_size: int
+			the chuncks returned at every element of the iterator
+
+		Returns
+		------
+		Iterable that yields triplets
+		(ix, indexes, vals)
+
+		ix: int
+			first position / how many rows/cols have been yielded alredy
+		indexes: np.ndarray[int]
+			the indexes with the same numbering of the input args cells / genes (i.e. np.arange(len(ds.shape[axis])))
+			this is ix + selection
+		vals: np.ndarray
+			the matrix corresponding to the chunk
+		"""
 		if cells is None:
 			cells = np.fromiter(range(self.shape[1]), dtype='int')
 		if genes is None:
@@ -601,7 +627,33 @@ class LoomConnection:
 				yield (ix, ix + selection, vals)
 				ix += rows_per_chunk
 
-	def batch_scan_layers(self, cells: np.ndarray = None, genes: np.ndarray = None, axis: int = 0, batch_size: int = 1000, layers: Iterable = None) -> Iterable[Tuple[int, int, dict]]:
+	def batch_scan_layers(self, cells: np.ndarray = None, genes: np.ndarray = None, axis: int = 0, batch_size: int = 1000, layers: Iterable = None) -> Iterable[Tuple[int, np.ndarray, Dict]]:
+		"""Performs a batch scan of the loom file dealing with multiple layer files
+
+		Args
+		----
+		cells: np.ndarray
+			the indexes [1,2,3,..,1000] of the cells to select
+		genes: np.ndarray
+			the indexes [1,2,3,..,1000] of the genes to select
+		axis: int
+			0:rows or 1:cols
+		batch_size: int
+			the chuncks returned at every element of the iterator
+
+		Returns
+		------
+		Iterable that yields triplets
+		(ix, indexes, vals)
+
+		ix: int
+			first position / how many rows/cols have been yielded alredy
+		indexes: np.ndarray[int]
+			the indexes with the same numbering of the input args cells / genes (i.e. np.arange(len(ds.shape[axis])))
+			this is ix + selection
+		vals: Dict[layername, np.ndarray]
+			a dictionary of the matrixes corresponding to the chunks of different layers
+		"""
 		if cells is None:
 			cells = np.fromiter(range(self.shape[1]), dtype='int')
 		if genes is None:
