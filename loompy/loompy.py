@@ -675,8 +675,8 @@ class LoomConnection:
 				submatrix = self._file['matrix'][:, start:start + chunksize]
 				self._file['matrix'][:, start:start + chunksize] = submatrix[ordering, :]
 				start = start + chunksize
-			for key in self.row_attrs.keys():
-				self.row_attrs[key] = self.row_attrs[key][ordering]
+			for key in list(self.row_attrs.keys()):
+				self.set_attr(key, self.row_attrs[key][ordering], axis=0)
 			self._file.flush()
 		if axis == 1:
 			chunksize = 100000000 // self.shape[1]
@@ -685,8 +685,8 @@ class LoomConnection:
 				submatrix = self._file['matrix'][start:start + chunksize, :]
 				self._file['matrix'][start:start + chunksize, :] = submatrix[:, ordering]
 				start = start + chunksize
-			for key in self.col_attrs.keys():
-				self.col_attrs[key] = self.col_attrs[key][ordering]
+			for key in list(self.col_attrs.keys()):
+				self.set_attr(key, self.col_attrs[key][ordering], axis=1)
 			self._file.flush()
 
 
