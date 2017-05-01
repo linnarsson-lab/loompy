@@ -197,7 +197,7 @@ class LoomConnection:
 		html = "<p>"
 		if self.attrs.__contains__("title"):
 			html += "<strong>" + self.attrs["title"] + "</strong> "
-		html += "(" + str(self.shape[0]) + " genes, " + str(self.shape[1]) + " cells)<br/>"
+		html += "(" + str(self.shape[0]) + " genes, " + str(self.shape[1]) + " cells, " + str(len(self.layer)) + " layers)<br/>"
 		html += self._file.filename + "<br/>"
 		if self.attrs.__contains__("description"):
 			html += "<em>" + self.attrs["description"] + "</em><br/>"
@@ -341,13 +341,15 @@ class LoomConnection:
 		Returns:
 			Nothing.
 
-		Note that this will modify the underlying HDF5 file, which will interfere with any concurrent readers.
-		Note that column attributes in the file that are NOT provided, will be deleted.
+		Notes
+		-----
+		- This will modify the underlying HDF5 file, which will interfere with any concurrent readers.
+		- Column attributes in the file that are NOT provided, will be deleted.
+		- Array with Nan should not be provided
+
 		"""
 		if self.mode != "r+":
 			raise IOError("Cannot add columns when connected in read-only mode")
-		if not np.isfinite(submatrix).all():
-			raise ValueError("INF and NaN not allowed in loom matrix")
 
 		if not type(submatrix) == dict:
 			submatrix_dict = dict()
@@ -355,6 +357,10 @@ class LoomConnection:
 		else:
 			submatrix_dict = cast(dict, submatrix)  # equivalent to submatrix_dict = submatrix # only avoids problems with type checker
 			submatrix = submatrix_dict["@DEFAULT"]
+		
+		# for k, v in submatrix_dict.items():
+		# 	if not np.isfinite(v).all():
+		# 		raise ValueError("INF and NaN not allowed in loom matrix")
 
 		if submatrix.shape[0] != self.shape[0]:
 			raise ValueError("New submatrix must have same number of rows as existing matrix")
@@ -404,8 +410,10 @@ class LoomConnection:
 				vals = np.array([x.encode('ascii', 'ignore') for x in vals])
 			temp = self._file['/col_attrs/' + key][:]
 			casting_rule_dtype = np.result_type(temp, vals)
-			vals = vals.astype(casting_rule_dtype)
-			temp = temp.astype(casting_rule_dtype)
+			if vals.dtype != casting_rule_dtype:
+				vals = vals.astype(casting_rule_dtype)
+			if temp.dtype != casting_rule_dtype:
+				temp = temp.astype(casting_rule_dtype)
 			temp.resize((n_cols,))
 			temp[self.shape[1]:] = vals
 			del self._file['/col_attrs/' + key]
@@ -417,7 +425,7 @@ class LoomConnection:
 		# Add the columns layerwise
 		for key in self.layer.keys():
 			self.layer[key].resize(n_cols, axis=1)
-			self.layer[key][:, self.shape[1]:n_cols] = submatrix[key].astype(self.layer[key].dtype)
+			self.layer[key][:, self.shape[1]:n_cols] = submatrix_dict[key].astype(self.layer[key].dtype)
 			self._file.flush()
 
 	def add_loom(self, other_file: str, key: str = None, fill_values: Dict[str, np.ndarray] = None) -> None:
@@ -806,6 +814,7 @@ class LoomLayer():
 		self.ds = ds
 		self.name = name
 		self.dtype = dtype
+		self.shape = ds.shape
 
 	def __getitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]]) -> np.ndarray:
 		if self.name == "@DEFAULT":
