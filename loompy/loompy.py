@@ -780,22 +780,32 @@ class LoomConnection:
 
 		ordering = list(np.array(ordering).flatten())  # Flatten the ordering, in case we got a column vector
 		if axis == 0:
-			chunksize = 5000
-			start = 0
-			while start < self.shape[1]:
-				submatrix = self._file['matrix'][:, start:start + chunksize]
-				self._file['matrix'][:, start:start + chunksize] = submatrix[ordering, :]
-				start = start + chunksize
+			for layer in self.layer:
+				if layer == "@DEFAULT":
+					obj = self._file['/matrix']
+				else:
+					obj = self._file['/layers/' + layer]
+				chunksize = 5000
+				start = 0
+				while start < self.shape[1]:
+					submatrix = obj[:, start:start + chunksize]
+					obj[:, start:start + chunksize] = submatrix[ordering, :]
+					start = start + chunksize
 			for key in list(self.row_attrs.keys()):
 				self.set_attr(key, self.row_attrs[key][ordering], axis=0)
 			self._file.flush()
 		if axis == 1:
-			chunksize = 100000000 // self.shape[1]
-			start = 0
-			while start < self.shape[0]:
-				submatrix = self._file['matrix'][start:start + chunksize, :]
-				self._file['matrix'][start:start + chunksize, :] = submatrix[:, ordering]
-				start = start + chunksize
+			for layer in self.layer:
+				if layer == "@DEFAULT":
+					obj = self._file['/matrix']
+				else:
+					obj = self._file['/layers/' + layer]
+				chunksize = 100000000 // self.shape[1]
+				start = 0
+				while start < self.shape[0]:
+					submatrix = obj[start:start + chunksize, :]
+					obj[start:start + chunksize, :] = submatrix[:, ordering]
+					start = start + chunksize
 			for key in list(self.col_attrs.keys()):
 				self.set_attr(key, self.col_attrs[key][ordering], axis=1)
 			self._file.flush()
