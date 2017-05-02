@@ -420,13 +420,13 @@ class LoomConnection:
 			self._file['/col_attrs/' + key] = temp
 			self.col_attrs[key] = self._file['/col_attrs/' + key]
 		
-		self.shape = [self.shape[0], n_cols]
-
 		# Add the columns layerwise
 		for key in self.layer.keys():
 			self.layer[key].resize(n_cols, axis=1)
 			self.layer[key][:, self.shape[1]:n_cols] = submatrix_dict[key].astype(self.layer[key].dtype)
 			self._file.flush()
+
+		self.shape = [self.shape[0], n_cols]
 
 	def add_loom(self, other_file: str, key: str = None, fill_values: Dict[str, np.ndarray] = None) -> None:
 		"""
