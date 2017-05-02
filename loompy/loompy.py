@@ -282,7 +282,7 @@ class LoomConnection:
 		self.col_attrs = {}
 		self.shape = [0, 0]
 
-	def set_layer(self, name: str, matrix: np.ndarray, chunks: Tuple[int, int] = (64, 64), chunk_cache: int = 512, dtype: str = "float32", compression_opts: str = None) -> None:
+	def set_layer(self, name: str, matrix: np.ndarray, chunks: Tuple[int, int] = (64, 64), chunk_cache: int = 512, dtype: str = "float32", compression_opts: int = 2) -> None:
 		if self.mode != "r+":
 			raise IOError("Cannot save attributes when connected in read-only mode")
 		if not np.isfinite(matrix).all():
@@ -845,7 +845,7 @@ class LoomLayer():
 			self.ds._file['/layers/' + self.name].resize(size, axis)
 		
 
-def create(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], col_attrs: Dict[str, np.ndarray], file_attrs: Dict[str, str] = None, chunks: Tuple[int, int] = (64, 64), chunk_cache: int = 512, dtype: str = "float32", compression_opts: str = None) -> LoomConnection:
+def create(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], col_attrs: Dict[str, np.ndarray], file_attrs: Dict[str, str] = None, chunks: Tuple[int, int] = (64, 64), chunk_cache: int = 512, dtype: str = "float32", compression_opts: int = 2) -> LoomConnection:
 	"""
 	Create a new .loom file from the given data.
 
