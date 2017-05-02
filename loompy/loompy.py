@@ -417,7 +417,7 @@ class LoomConnection:
 		# Add the columns layerwise
 		for key in self.layer.keys():
 			self.layer[key].resize(n_cols, axis=1)
-			self.layer[key][:, self.shape[1]:n_cols] = submatrix[key].astype(self.layer[key].dtype)
+			self.layer[key][:, self.shape[1]:n_cols] = submatrix_dict[key].astype(self.layer[key].dtype)
 			self._file.flush()
 
 	def add_loom(self, other_file: str, key: str = None, fill_values: Dict[str, np.ndarray] = None) -> None:
