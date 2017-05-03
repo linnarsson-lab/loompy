@@ -38,6 +38,14 @@ def strip(s: str) -> str:
 	return s
 
 
+def renumber(a: np.ndarray, keys: np.ndarray, values: np.ndarray) -> np.ndarray:
+	ordering = np.argsort(keys)
+	keys = keys[ordering]
+	values = keys[ordering]
+	index = np.digitize(a.ravel(), keys, right=True)
+	return(values[index].reshape(a.shape))
+
+
 class LoomAttributeManager(object):
 	__slots__ = ('f',)
 
@@ -524,6 +532,14 @@ class LoomConnection:
 		self._save_attr(name, values, axis)
 		self._load_attr(name, axis)
 
+	def list_edges(self, axis: int) -> List[str]:
+		if axis == 0 and "row_edges" in self._file:
+			return [k for k in self._file["row_edges"]]
+		elif axis == 1 and "col_edges" in self._file:
+			return [k for k in self._file["col_edges"]]
+		else:
+			return []
+
 	def get_edges(self, name: str, axis: int) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
 		if axis == 0:
 			return (self._file["/row_edges/" + name + "/a"][:], self._file["/row_edges/" + name + "/b"][:], self._file["/row_edges/" + name + "/w"][:])
@@ -801,8 +817,13 @@ class LoomConnection:
 					start = start + chunksize
 			for key in list(self.row_attrs.keys()):
 				self.set_attr(key, self.row_attrs[key][ordering], axis=0)
+			# Permute the edges
+			for name in self.list_edges(axis=0):
+				(a, b, w) = self.get_edges(name, axis=0)
+				self.set_edges(name, renumber(a, np.array(ordering), np.arange(a.shape[0])), renumber(b, np.array(ordering), np.arange(b.shape[0])), w)
 			self._file.flush()
 		if axis == 1:
+			# Permute the columns of each layer
 			for layer in self.layer:
 				if layer == "@DEFAULT":
 					obj = self._file['/matrix']
@@ -814,10 +835,47 @@ class LoomConnection:
 					submatrix = obj[start:start + chunksize, :]
 					obj[start:start + chunksize, :] = submatrix[:, ordering]
 					start = start + chunksize
+			# Permute the column attributes
 			for key in list(self.col_attrs.keys()):
 				self.set_attr(key, self.col_attrs[key][ordering], axis=1)
+			# Permute the edges
+			for name in self.list_edges(axis=1):
+				(a, b, w) = self.get_edges(name, axis=1)
+				self.set_edges(name, renumber(a, np.array(ordering), np.arange(a.shape[0])), renumber(b, np.array(ordering), np.arange(b.shape[0])), w)
 			self._file.flush()
 
+		def export(out_file: str, layer: str = None, format: str = "csv") -> None:
+			if format != "csv":
+				raise NotImplementedError("Only csv is supported")
+
+			with open(out_file, "w") as f:
+				# Emit column attributes
+				for ca in self.col_attrs.keys():
+					for ra in self.row_attrs.keys():
+						f.write("\t")
+					f.write(ca + "\t")
+					for v in self.col_attrs[ca]:
+						f.write(str(v) + "\t")
+					f.write("\n")
+
+				# Emit row attribute names
+				for ra in self.row_attrs.keys():
+					f.write(ra + "\t")
+				f.write("\t")
+				for v in range(self.shape[1]):
+					f.write("\t")
+				f.write("\n")
+
+				# Emit row attr values and matrix values
+				for row in range(self.shape[0]):
+					for ra in self.row_attrs.keys():
+						f.write(str(self.row_attrs[ra][row]) + "\t")
+					f.write("\t")
+
+					for v in self[row, :]:
+						f.write(str(v) + "\t")
+					f.write("\n")
+				
 
 class LoomLayer():
 	def __init__(self, ds: LoomConnection, name: str, dtype: str) -> None:
