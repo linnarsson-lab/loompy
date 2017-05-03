@@ -34,7 +34,7 @@ your old loom files won't break). To ensure that you have the latest version, do
 
 Alternatively, you can install the latest version from source:
 
-    git clone https://github.com/linnarsson-lab/loom-viewer.git
+    git clone https://github.com/linnarsson-lab/loompy.git
     python setup.py install
 
 If you just want to work with loom files within Python code, you should be all set! We also made a web-app to make it easier to browse the data, which you can install for local viewing, or set up for sharing loom files from your own website. See the [`loom-viewer`](https://github.com/linnarsson-lab/loom-viewer/) repository for more information.
