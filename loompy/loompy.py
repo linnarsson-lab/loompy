@@ -306,7 +306,7 @@ class LoomConnection:
 			path = "/matrix"
 		if self._file.__contains__(path):
 			del self._file[path]
-		
+
 		# Save the main matrix
 		if compression_opts is None:
 			self._file.create_dataset(
@@ -327,7 +327,7 @@ class LoomConnection:
 				shuffle=False,
 				compression_opts=compression_opts
 			)
-		
+
 		self.layer[name] = LoomLayer(self, name, dtype)
 		if name == "@DEFAULT":
 			self.shape = matrix.shape
@@ -365,7 +365,7 @@ class LoomConnection:
 		else:
 			submatrix_dict = cast(dict, submatrix)  # equivalent to submatrix_dict = submatrix # only avoids problems with type checker
 			submatrix = submatrix_dict["@DEFAULT"]
-		
+
 		# for k, v in submatrix_dict.items():
 		# 	if not np.isfinite(v).all():
 		# 		raise ValueError("INF and NaN not allowed in loom matrix")
@@ -427,7 +427,7 @@ class LoomConnection:
 			del self._file['/col_attrs/' + key]
 			self._file['/col_attrs/' + key] = temp
 			self.col_attrs[key] = self._file['/col_attrs/' + key]
-		
+
 		# Add the columns layerwise
 		for key in self.layer.keys():
 			self.layer[key].resize(n_cols, axis=1)
@@ -667,7 +667,7 @@ class LoomConnection:
 		batch_size: int
 			the chuncks returned at every element of the iterator
 		layers: iterable
-			if specified it will batch scan only accross some of the layers of the loom file 
+			if specified it will batch scan only accross some of the layers of the loom file
 			i.g. if layers = ["@DEFAULT"] batch_scan_layers is equivalent to batch_scan
 
 		Returns
@@ -844,38 +844,38 @@ class LoomConnection:
 				self.set_edges(name, renumber(a, np.array(ordering), np.arange(a.shape[0])), renumber(b, np.array(ordering), np.arange(b.shape[0])), w)
 			self._file.flush()
 
-		def export(out_file: str, layer: str = None, format: str = "csv") -> None:
-			if format != "csv":
-				raise NotImplementedError("Only csv is supported")
+	def export(out_file: str, layer: str = None, format: str = "csv") -> None:
+		if format != "csv":
+			raise NotImplementedError("Only csv is supported")
 
-			with open(out_file, "w") as f:
-				# Emit column attributes
-				for ca in self.col_attrs.keys():
-					for ra in self.row_attrs.keys():
-						f.write("\t")
-					f.write(ca + "\t")
-					for v in self.col_attrs[ca]:
-						f.write(str(v) + "\t")
-					f.write("\n")
-
-				# Emit row attribute names
+		with open(out_file, "w") as f:
+			# Emit column attributes
+			for ca in self.col_attrs.keys():
 				for ra in self.row_attrs.keys():
-					f.write(ra + "\t")
-				f.write("\t")
-				for v in range(self.shape[1]):
 					f.write("\t")
+				f.write(ca + "\t")
+				for v in self.col_attrs[ca]:
+					f.write(str(v) + "\t")
 				f.write("\n")
 
-				# Emit row attr values and matrix values
-				for row in range(self.shape[0]):
-					for ra in self.row_attrs.keys():
-						f.write(str(self.row_attrs[ra][row]) + "\t")
-					f.write("\t")
+			# Emit row attribute names
+			for ra in self.row_attrs.keys():
+				f.write(ra + "\t")
+			f.write("\t")
+			for v in range(self.shape[1]):
+				f.write("\t")
+			f.write("\n")
 
-					for v in self[row, :]:
-						f.write(str(v) + "\t")
-					f.write("\n")
-				
+			# Emit row attr values and matrix values
+			for row in range(self.shape[0]):
+				for ra in self.row_attrs.keys():
+					f.write(str(self.row_attrs[ra][row]) + "\t")
+				f.write("\t")
+
+				for v in self[row, :]:
+					f.write(str(v) + "\t")
+				f.write("\n")
+
 
 class LoomLayer():
 	def __init__(self, ds: LoomConnection, name: str, dtype: str) -> None:
@@ -897,11 +897,11 @@ class LoomLayer():
 
 	def resize(self, size: Tuple[int, int], axis: int = None) -> None:
 		"""Resize the dataset, or the specified axis.
-		
+
 		The dataset must be stored in chunked format; it can be resized up to the "maximum shape" (keyword maxshape) specified at creation time.
 		The rank of the dataset cannot be changed.
 		"Size" should be a shape tuple, or if an axis is specified, an integer.
-		
+
 		BEWARE: This functions differently than the NumPy resize() method!
 		The data is not "reshuffled" to fit in the new shape; each axis is grown or shrunk independently.
 		The coordinates of existing data are fixed.
@@ -910,7 +910,7 @@ class LoomLayer():
 			self.ds._file['/matrix'].resize(size, axis)
 		else:
 			self.ds._file['/layers/' + self.name].resize(size, axis)
-		
+
 
 def create(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], col_attrs: Dict[str, np.ndarray], file_attrs: Dict[str, str] = None, chunks: Tuple[int, int] = (64, 64), chunk_cache: int = 512, dtype: str = "float32", compression_opts: int = 2) -> LoomConnection:
 	"""
