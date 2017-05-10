@@ -4,38 +4,56 @@
 The `.loom` file format is designed to efficiently hold large omics datasets. Typically, such data takes the form of a large
 matrix of numbers, along with metadata for the rows and columns. For example, single-cell RNA-seq data consists of
 expression measurements for all genes (rows) in a large number of cells (columns), along with metadata for genes (e.g. `Chromosome`,
-`Strand`, `Location`, `Name`), and for cells (e.g. `Species`, `Sex`, `Strain`, `GFP positive`). 
+`Strand`, `Location`, `Name`), and for cells (e.g. `Species`, `Sex`, `Strain`, `GFP positive`).
 
 We designed `.loom` files to represent such datasets in a way that treats rows and columns the same. You may want to cluster
 both genes and cells, you may want to perform PCA on both of them, and filter based on quality controls. SQL databases
 and other data storage solutions almost always treat data as a *table*, not a matrix, and makes it very hard to add arbitrary
 metadata to rows and columns. In contrast, `.loom` makes this very easy.
 
-Furthermore, current and future datasets can have tens of thousands of rows (genes) and hundreds of thousands of columns (cells). We 
-designed `.loom` for efficient access to arbitrary rows and columns. 
+Furthermore, current and future datasets can have tens of thousands of rows (genes) and hundreds of thousands of columns (cells). We
+designed `.loom` for efficient access to arbitrary rows and columns.
 
 The annotated matrix format lends itself to very natural representation of common analysis tasks. For example, the result
-of a clustering algorithm can be stored simply as another attribute that gives the cluster ID for each cell. Dimensionality 
+of a clustering algorithm can be stored simply as another attribute that gives the cluster ID for each cell. Dimensionality
 reduction such as PCA or t-SNE, similarly, can be stored as two attributes giving the projection coordinates of each cell.
 
 Finally, we recognize the importance of graph-based analyses of such datasets. Loom supports graphs of both the rows (e.g. genes)
 and the columns (e.g. cells), and multiple graphs can be stored each file.
 
+## Installation
+
+You can install the loompy package from PyPi with:
+
+    pip install loompy
+
+Tip: the package is updated often (don't worry, the format is stable; even in the rare occasion that you need to update your code,
+your old loom files won't break). To ensure that you have the latest version, do this:
+
+    pip install -U loompy
+
+Alternatively, you can install the latest version from source:
+
+    git clone https://github.com/linnarsson-lab/loompy.git
+    python setup.py install
+
+If you just want to work with loom files within Python code, you should be all set! We also made a web-app to make it easier to browse the data, which you can install for local viewing, or set up for sharing loom files from your own website. See the [`loom-viewer`](https://github.com/linnarsson-lab/loom-viewer/) repository for more information.
+
 ## HDF5 concepts
 
-The `.loom` format is based on [HDF5](https://en.wikipedia.org/wiki/Hierarchical_Data_Format), a standard for storing large 
+The `.loom` format is based on [HDF5](https://en.wikipedia.org/wiki/Hierarchical_Data_Format), a standard for storing large
 numerical datasets. Quoting from h5py.org:
 
-> An HDF5 file is a container for two kinds of objects: datasets, which are array-like collections of data, 
-> and groups, which are folder-like containers that hold datasets and other groups. The most fundamental 
+> An HDF5 file is a container for two kinds of objects: datasets, which are array-like collections of data,
+> and groups, which are folder-like containers that hold datasets and other groups. The most fundamental
 > thing to remember when using h5py is: *Groups work like dictionaries, and datasets work like NumPy arrays*.
 
 A valid `.loom` file is simply an HDF5 file that contains specific *groups* representing the main matrix
 as well as row and column attributes. Because of this, `.loom` files can be created and read by any language
 that supports HDF5, including [Python](http://h5py.org),
-[R](http://bioconductor.org/packages/release/bioc/html/rhdf5.html), 
-[MATLAB](http://se.mathworks.com/help/matlab/low-level-functions.html), [Mathematica](https://reference.wolfram.com/language/ref/format/HDF5.html), 
-[C](https://www.hdfgroup.org/HDF5/doc/index.html), [C++](https://www.hdfgroup.org/HDF5/doc/cpplus_RM/), 
+[R](http://bioconductor.org/packages/release/bioc/html/rhdf5.html),
+[MATLAB](http://se.mathworks.com/help/matlab/low-level-functions.html), [Mathematica](https://reference.wolfram.com/language/ref/format/HDF5.html),
+[C](https://www.hdfgroup.org/HDF5/doc/index.html), [C++](https://www.hdfgroup.org/HDF5/doc/cpplus_RM/),
 [Java](https://www.hdfgroup.org/products/java/), and [Ruby](https://rubygems.org/gems/hdf5/versions/0.3.5).
 
 ## Example
@@ -55,12 +73,12 @@ Here's an example of the structure of a valid `.loom` file:
 
 A valid `.loom` file conforms to the following:
 
-* There MUST be a single dataset at `/matrix` 
+* There MUST be a single dataset at `/matrix`
 * There can OPTIONALLY be a subgroup `/layers` containing additional matrices (called "layers")
   * Each additional layer MUST have the same (N, M) shape
   * Each layer can have a different data type, compression, chunking etc.
-* There can OPTIONALLY be at least one [HDF5 attribute](https://www.hdfgroup.org/HDF5/Tutor/crtatt.html) on the root `/` group, which MUST be of type `string` and should be interpreted as attributes of the whole `.loom` file. 
-  The following HDF5 attributes are standard: 
+* There can OPTIONALLY be at least one [HDF5 attribute](https://www.hdfgroup.org/HDF5/Tutor/crtatt.html) on the root `/` group, which MUST be of type `string` and should be interpreted as attributes of the whole `.loom` file.
+  The following HDF5 attributes are standard:
   * `title`, a short title for the dataset
   * `description`, a longer description of the dataset
   * `url`, a link to a web page for the dataset
@@ -71,14 +89,14 @@ A valid `.loom` file conforms to the following:
 * There can OPTIONALLY be one or more datasets at `/col_attrs/{name}` of length M and type `float64`, `int` or `string`
 
 The datasets under `/row_attrs` should be semantically interpreted as row attributes, with one value
-per row of the main matrix, and in the same order. Therefore, all datasets under this group must 
+per row of the main matrix, and in the same order. Therefore, all datasets under this group must
 be one-dimensional arrays with exactly N elements, where N is the number of rows in the main matrix.
 
 The datasets under `/col_attrs` should be semantically interpreted as column attributes, with one value
-per column of the main matrix, and in the same order. Therefore, all datasets under this group must 
+per column of the main matrix, and in the same order. Therefore, all datasets under this group must
 be one-dimensional arrays with exactly M elements, where M is the number of columns in the main matrix.
 
-As noted above, only three datatypes are allowedfor attributes; `float64`, `int` or `string`. 
+As noted above, only three datatypes are allowedfor attributes; `float64`, `int` or `string`.
 
 
 
