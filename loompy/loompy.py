@@ -39,6 +39,9 @@ def strip(s: str) -> str:
 
 
 def renumber(a: np.ndarray, keys: np.ndarray, values: np.ndarray) -> np.ndarray:
+	"""
+	Renumber 'a' by replacing any occurrence of 'keys' by the corresponding 'values'
+	"""
 	ordering = np.argsort(keys)
 	keys = keys[ordering]
 	values = keys[ordering]
