@@ -851,9 +851,9 @@ class LoomConnection:
 				self.set_edges(name, a, b, w, 1)
 			self._file.flush()
 
-	def export(self, out_file: str, layer: str = None, format: str = "csv") -> None:
-		if format != "csv":
-			raise NotImplementedError("Only csv is supported")
+	def export(self, out_file: str, layer: str = None, format: str = "tab") -> None:
+		if format != "tab":
+			raise NotImplementedError("Only tab is supported")
 
 		with open(out_file, "w") as f:
 			# Emit column attributes
