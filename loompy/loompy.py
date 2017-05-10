@@ -550,7 +550,7 @@ class LoomConnection:
 			return (self._file["/col_edges/" + name + "/a"][:], self._file["/col_edges/" + name + "/b"][:], self._file["/col_edges/" + name + "/w"][:])
 		raise ValueError("Axis must be 0 or 1")
 
-	def set_edges(self, name: str, a: np.ndarray, b: np.ndarray, w: np.ndarray, axis: int = 0) -> None:
+	def set_edges(self, name: str, a: np.ndarray, b: np.ndarray, w: np.ndarray, axis: int) -> None:
 		if self.mode != "r+":
 			raise IOError("Cannot save edges when connected in read-only mode")
 		if not a.dtype.kind == 'i':
@@ -823,7 +823,9 @@ class LoomConnection:
 			# Permute the edges
 			for name in self.list_edges(axis=0):
 				(a, b, w) = self.get_edges(name, axis=0)
-				self.set_edges(name, renumber(a, np.array(ordering), np.arange(a.shape[0])), renumber(b, np.array(ordering), np.arange(b.shape[0])), w)
+				a = renumber(a, np.array(ordering), np.arange(self.shape[0]))
+				b = renumber(b, np.array(ordering), np.arange(self.shape[0]))
+				self.set_edges(name, a, b, w, 0)
 			self._file.flush()
 		if axis == 1:
 			# Permute the columns of each layer
@@ -843,9 +845,10 @@ class LoomConnection:
 				self.set_attr(key, self.col_attrs[key][ordering], axis=1)
 			# Permute the edges
 			for name in self.list_edges(axis=1):
-				logging.info("Permuting edges")
 				(a, b, w) = self.get_edges(name, axis=1)
-				self.set_edges(name, renumber(a, np.array(ordering), np.arange(a.shape[0])), renumber(b, np.array(ordering), np.arange(b.shape[0])), w)
+				a = renumber(a, np.array(ordering), np.arange(self.shape[1]))
+				b = renumber(b, np.array(ordering), np.arange(self.shape[1]))
+				self.set_edges(name, a, b, w, 1)
 			self._file.flush()
 
 	def export(self, out_file: str, layer: str = None, format: str = "csv") -> None:
