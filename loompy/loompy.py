@@ -843,11 +843,12 @@ class LoomConnection:
 				self.set_attr(key, self.col_attrs[key][ordering], axis=1)
 			# Permute the edges
 			for name in self.list_edges(axis=1):
+				logging.info("Permuting edges")
 				(a, b, w) = self.get_edges(name, axis=1)
 				self.set_edges(name, renumber(a, np.array(ordering), np.arange(a.shape[0])), renumber(b, np.array(ordering), np.arange(b.shape[0])), w)
 			self._file.flush()
 
-	def export(out_file: str, layer: str = None, format: str = "csv") -> None:
+	def export(self, out_file: str, layer: str = None, format: str = "csv") -> None:
 		if format != "csv":
 			raise NotImplementedError("Only csv is supported")
 
