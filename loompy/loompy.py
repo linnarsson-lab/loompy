@@ -921,6 +921,7 @@ class LoomLayer():
 
 
 def _create_sparse(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], col_attrs: Dict[str, np.ndarray], file_attrs: Dict[str, str] = None, chunks: Tuple[int, int] = (64, 64), chunk_cache: int = 512, dtype: str = "float32", compression_opts: int = 2) -> LoomConnection:
+	logging.info("Converting to csc format")
 	matrix = matrix.tocsc()
 	window = 5000
 	ix = 0
@@ -929,9 +930,10 @@ def _create_sparse(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.nd
 		ca = {key: val[ix:ix + window] for (key, val) in col_attrs.items()}
 		ra = {key: val[ix:ix + window] for (key, val) in row_attrs.items()}
 		if ds is None:
-			ds = create(filename, matrix[:, ix:ix + window], ra, ca, file_attrs, chunks, chunk_cache, dtype, compression_opts)
+			logging.info("Creating")
+			ds = create(filename, matrix[:, ix:ix + window].toarray(), ra, ca, file_attrs, chunks, chunk_cache, dtype, compression_opts)
 		else:
-			ds.add_columns(matrix[:, ix:ix + window], ca)
+			ds.add_columns(matrix[:, ix:ix + window].toarray(), ca)
 		ix += window
 	return ds
 
@@ -965,7 +967,7 @@ def create(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], 
 		file_attrs = {}
 
 	if sparse.issparse(matrix):
-		return _create_sparse(filename, matrix, row_attrs, col_attrs, file_attrs, chunks, chunk_cache, compression_opts)
+		return _create_sparse(filename, matrix, row_attrs, col_attrs, file_attrs, chunks, chunk_cache, dtype, compression_opts)
 
 	# Create the file (empty).
 	f = h5py.File(name=filename, mode='w')
