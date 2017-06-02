@@ -965,8 +965,7 @@ def create(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], 
 		file_attrs = {}
 
 	if sparse.issparse(matrix):
-		_create_sparse(filename, matrix, row_attrs, col_attrs, file_attrs, chunk, chunk_cache, compression_opts)
-		return
+		return _create_sparse(filename, matrix, row_attrs, col_attrs, file_attrs, chunks, chunk_cache, compression_opts)
 
 	# Create the file (empty).
 	f = h5py.File(name=filename, mode='w')
