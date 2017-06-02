@@ -921,6 +921,7 @@ class LoomLayer():
 
 
 def _create_sparse(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], col_attrs: Dict[str, np.ndarray], file_attrs: Dict[str, str] = None, chunks: Tuple[int, int] = (64, 64), chunk_cache: int = 512, dtype: str = "float32", compression_opts: int = 2) -> LoomConnection:
+	matrix = matrix.tocsc()
 	window = 5000
 	ix = 0
 	ds = None  # tyoe: LoomConnection
