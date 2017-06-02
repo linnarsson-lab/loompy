@@ -27,6 +27,7 @@ from typing import *
 import h5py
 import os.path
 from scipy.io import mmread
+import scipy.sparse as sparse
 from shutil import copyfile
 import logging
 import time
@@ -919,6 +920,21 @@ class LoomLayer():
 			self.ds._file['/layers/' + self.name].resize(size, axis)
 
 
+def _create_sparse(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], col_attrs: Dict[str, np.ndarray], file_attrs: Dict[str, str] = None, chunks: Tuple[int, int] = (64, 64), chunk_cache: int = 512, dtype: str = "float32", compression_opts: int = 2) -> LoomConnection:
+	window = 5000
+	ix = 0
+	ds = None  # tyoe: LoomConnection
+	while ix < window:
+		ca = {key: val[ix:ix + window] for (key, val) in col_attrs.items()}
+		ra = {key: val[ix:ix + window] for (key, val) in row_attrs.items()}
+		if ds is None:
+			ds = create(filename, matrix[:, ix:ix + window], ra, ca, file_attrs, chunks, chunk_cache, dtype, compression_opts)
+		else:
+			ds.add_columns(matrix[:, ix:ix + window], ca)
+		ix += window
+	return ds
+
+
 def create(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], col_attrs: Dict[str, np.ndarray], file_attrs: Dict[str, str] = None, chunks: Tuple[int, int] = (64, 64), chunk_cache: int = 512, dtype: str = "float32", compression_opts: int = 2) -> LoomConnection:
 	"""
 	Create a new .loom file from the given data.
@@ -946,6 +962,10 @@ def create(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], 
 	"""
 	if file_attrs is None:
 		file_attrs = {}
+
+	if sparse.issparse(matrix):
+		_create_sparse(filename, matrix, row_attrs, col_attrs, file_attrs, chunk, chunk_cache, compression_opts)
+		return
 
 	# Create the file (empty).
 	f = h5py.File(name=filename, mode='w')
