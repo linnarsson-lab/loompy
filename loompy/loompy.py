@@ -923,16 +923,16 @@ class LoomLayer():
 def _create_sparse(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], col_attrs: Dict[str, np.ndarray], file_attrs: Dict[str, str] = None, chunks: Tuple[int, int] = (64, 64), chunk_cache: int = 512, dtype: str = "float32", compression_opts: int = 2) -> LoomConnection:
 	logging.info("Converting to csc format")
 	matrix = matrix.tocsc()
-	window = 5000
+	window = 2000
 	ix = 0
-	ds = None  # tyoe: LoomConnection
-	while ix < window:
+	ds = None  # type: LoomConnection
+	while ix < matrix.shape[1]:
 		ca = {key: val[ix:ix + window] for (key, val) in col_attrs.items()}
-		ra = {key: val[ix:ix + window] for (key, val) in row_attrs.items()}
 		if ds is None:
 			logging.info("Creating")
-			ds = create(filename, matrix[:, ix:ix + window].toarray(), ra, ca, file_attrs, chunks, chunk_cache, dtype, compression_opts)
+			ds = create(filename, matrix[:, ix:ix + window].toarray(), row_attrs, ca, file_attrs, chunks, chunk_cache, dtype, compression_opts)
 		else:
+			logging.info("Adding columns")
 			ds.add_columns(matrix[:, ix:ix + window].toarray(), ca)
 		ix += window
 	return ds
