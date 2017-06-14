@@ -450,26 +450,35 @@ class LoomConnection:
 
 		Returns:
 			Nothing, but adds the loom file. Note that the other loom file must have exactly the same
-			number of rows, in the same order, and must have exactly the same column attributes.
+			number of rows, and must have exactly the same column attributes.
 			The all the contents including layers but ignores layers in `other_file` that are not already persent in self
 		"""
 		if self.mode != "r+":
 			raise IOError("Cannot add data when connected in read-only mode")
 		# Connect to the loom files
 		other = connect(other_file)
-		# Verify that the row keys are identical
+		# Verify that the row keys can be aligned
+		ordering = None
 		if key is not None:
-			pk1 = other.row_attrs[key]
-			pk2 = self.row_attrs[key]
+			# This is magic sauce for making the order of one list be like another
+			ordering = np.where(other.row_attrs[key][None, :] == self.row_attrs[key][:, None])[1]
+			logging.info(ordering)
+			pk1 = sorted(other.row_attrs[key])
+			pk2 = sorted(self.row_attrs[key])
 			for ix, val in enumerate(pk1):
 				if pk2[ix] != val:
-					raise ValueError("Primary keys are not identical")
+					raise ValueError("Primary keys are not 1-to-1 alignable!")
 		diff_layers = set(self.layer.keys()) - set(other.layer.keys())
 		if len(diff_layers) > 0:
 			raise ValueError("%s is missing a layer, cannot merge with current file. layers missing:%s" % (other_file, diff_layers))
 
 		for (ix, selection, vals) in other.batch_scan_layers(axis=1, layers=self.layer.keys()):
 			ca = {key: v[selection] for key, v in other.col_attrs.items()}
+			if ordering is not None:
+				logging.info(ordering.shape)
+				logging.info(self.shape)
+				logging.info(other.shape)
+				vals = {key: val[ordering, :] for key, val in vals.items()}
 			self.add_columns(vals, ca, fill_values)
 		other.close()
 
