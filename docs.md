@@ -110,61 +110,77 @@ represent all integers up to and including 9,007,199,254,740,992 without loss.
 Create from data:
 
 ```python
-def create(filename, matrix, row_attrs, col_attrs):
+
+def create(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], col_attrs: Dict[str, np.ndarray], file_attrs: Dict[str, str] = None, chunks: Tuple[int, int] = (64, 64), chunk_cache: int = 512, dtype: str = "float32", compression_opts: int = 2) -> LoomConnection:
 	"""
 	Create a new .loom file from the given data.
 
 	Args:
-		filename (str):			The filename (typically using a '.loom' file extension)		
-		matrix (numpy.ndarray):	Two-dimensional (N-by-M) numpy ndarray of float values
-		row_attrs (dict):		Row attributes, where keys are attribute names and values are numpy arrays (float or string) of length N		
-		col_attrs (dict):		Column attributes, where keys are attribute names and values are numpy arrays (float or string) of length M
-
-
+		filename (str):         The filename (typically using a `.loom` file extension)
+		matrix (numpy.ndarray): Two-dimensional (N-by-M) numpy ndarray of float values
+		row_attrs (dict):       Row attributes, where keys are attribute names and values
+								are numpy arrays (float or string) of length N
+		col_attrs (dict):       Column attributes, where keys are attribute names and
+								values are numpy arrays (float or string) of length M
+		chunks (tuple):         The chunking of the matrix. Small chunks are slow
+								when loading a large batch of rows/columns in sequence,
+								but fast for single column/row retrieval.
+								Defaults to (64,64).
+		chunk_cache (int):      Sets the chunk cache used by the HDF5 format inside
+								the loom file, in MB. If the cache is too small to
+								contain all chunks of a row/column in memory, then
+								sequential row/column access will be a lot slower.
+								Defaults to 512.
+		dtype (str):           Dtype of the matrix. Default float32 (uint16, float16 could be used)
+		compression_opts (int): Strenght of the gzip compression. Default None.
 	Returns:
-		A LoomConnection to the newly created Loom file
+		LoomConnection to created loom file.
 	"""
 ```
 
 Create by combining existing .loom files:
 
 ```python
-def combine(files, output_file, key):
+
+def combine(files: List[str], output_file: str, key: str = None, file_attrs: Dict[str, str] = None) -> None:
 	"""
 	Combine two or more loom files and save as a new loom file
 
 	Args:
 		files (list of str):	the list of input files (full paths)
 		output_file (str):		full path of the output loom file
-		key (str):		the row attribute to use as key
-		
+		key (string):			Row attribute to use to verify row ordering
+		file_attrs (dict):		file attributes (title, description, url, etc.)
+
 	Returns:
 		Nothing, but creates a new loom file combining the input files.
 
-	The input files must (1) have exactly the same number of rows  (2) have
-	exactly the same sets of row and column attributes. If key is given, then
-	the rows are reordered to line up the values of that row attribute.
+	The input files must (1) have exactly the same number of rows, (2) have
+	exactly the same sets of row and column attributes.
 	"""
 ```
 
 
 Create from a 10X Genomics [cellranger](http://support.10xgenomics.com/single-cell/software/pipelines/latest/what-is-cell-ranger) output folder:
 
-```python
-def create_from_cellranger(folder, loom_file, sample_annotation = {}, schema={}):
+
+```
+def create_from_cellranger(folder: str, loom_file: str, cell_id_prefix: str = '', sample_annotation: Dict[str, np.ndarray] = None, genome: str = 'mm10') -> LoomConnection:
 	"""
 	Create a .loom file from 10X Genomics cellranger output
 
 	Args:
 		folder (str):				path to the cellranger output folder (usually called `outs`)
 		loom_file (str):			full path of the resulting loom file
+		cell_id_prefix (str):		prefix to add to cell IDs (e.g. the sample id for this sample)
 		sample_annotation (dict): 	dict of additional sample attributes
-		schema (dict):				types for the additional sample attributes (required)
+		genome (str):				genome build to load (e.g. 'mm10')
 
 	Returns:
 		Nothing, but creates loom_file
 	"""
 ```
+	
 
 You can use the *sample_annotation* dictionary to add column (cell) annotations to all cells in the dataset. For example, this is useful to add a
  sample ID to each of several datasets before combining them into a single .loom file. If you do supply annotations, you must also give the corresponding
