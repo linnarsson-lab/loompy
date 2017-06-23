@@ -183,9 +183,8 @@ def create_from_cellranger(folder: str, loom_file: str, cell_id_prefix: str = ''
 	
 
 You can use the *sample_annotation* dictionary to add column (cell) annotations to all cells in the dataset. For example, this is useful to add a
- sample ID to each of several datasets before combining them into a single .loom file. If you do supply annotations, you must also give the corresponding
- data types (`"float64"`, `"int"` or `"string"`).
-
+ sample ID to each of several datasets before combining them into a single .loom file. 
+ 
 ### Connecting
 
 Establish a connection to an existing `.loom` file:
