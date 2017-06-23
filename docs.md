@@ -221,8 +221,6 @@ file by calling `close()` on the connection, before the second can start writing
 ds.close()
 ```
 
-Use `infer=True` to force the row and column attribute types to be inferred from the content of the HDF5 file. This can be useful when importing
-files created by other applications, but it *will destroy existing type information*. It will infer each type as `string` or `float64`, never `int`.
 
 ### Shape, indexing and slicing
 
@@ -331,33 +329,6 @@ There are some limitations:
 
 Note again, that you should not assign to these attributes, because your assignment will not be saved in the .loom file and will cause internal inconsistencies in the `LoomConnection` object. Use *set_attr()* (below) to add or modify attributes.
 
-### Schema
-
-The schema gives the semantic data type of each row and column attribute, and the main matrix. It returns a Python dictionary:
-
-
-```python
->>> ds.schema
-
-{
-  "matrix": "float32",
-  "row_attrs": {
-     "GeneName":    "string",
-     "Chromosome":  "string",
-     "Position":    "int",
-     "GC_Percent":  "float64"
-  },
-  "col_attrs": {
-     "CellID":      "string",
-     "Tissue":      "string",
-     "Total_RNA":   "int",
-     "Class":       "string"
-  },
-}
-```
-
-**Note:** The `schema` property is read-only. Setting it to a value will cause weird side-effects and break your code.
-
 
 ### Adding attributes and columns
 
@@ -387,30 +358,7 @@ To add an attribute, which also saves it to the loom file:
 **Note:** If you use an existing attribute name, the existing attribute will be overwritten. This is pefectly fine, 
 and is the only way to change an attribute or its type.
 
-You can also add an attribute by providing a lookup dictionary based on an existing attribute. 
-This can be very useful to fill in missing values, fix typos etc:
 
-
-```python
-	def set_attr_bydict(self, name, fromattr, dict, new_dtype = None, axis = 0, default = None):
-		"""
-		Create or modify an attribute by mapping source values to target values.
-
-		Args:
-			name (str): 			Name of the destination attribute			
-			fromattr (str):			Name of the source attribute			
-			dict (dict):			Key-value mapping from source to target values			
-			new_dtype (string):		Datatype for the new attribute			
-			axis (int):				Axis of the attribute (0 = rows, 1 = columns)	
-			default: (float or str):	Default target value to use if no mapping exists for a source value
-
-		Returns:
-			Nothing.
-
-		This will overwrite any existing attribute of the same name. It is perfectly possible to map an
-		attribute to itself (in-place).
-		"""
-```
 
 To add columns:
 
@@ -438,22 +386,25 @@ with values for all the new columns.
 You can also add the contents of another .loom file:
 
 ```python
-	def add_loom(self, other_file):
+	def add_loom(self, other_file: str, key: str = None, fill_values: Dict[str, np.ndarray] = None) -> None:
 		"""
 		Add the content of another loom file
 
 		Args:
 			other_file (str):	filename of the loom file to append
+			fill_values (dict): default values to use for missing attributes (or None to drop missing attrs, or 'auto' to fill with sensible defaults)
 
 		Returns:
 			Nothing, but adds the loom file. Note that the other loom file must have exactly the same
-			number of rows, in the same order, and must have exactly the same column attributes.
+			number of rows, and must have exactly the same column attributes.
+			The all the contents including layers but ignores layers in `other_file` that are not already persent in self
 		"""
 ```
 
-The content of the other file is added as columns on the right of the current dataset. The rows must match for this to work. That is, the two files must have exactly the same rows (genes) in exactly the same order. Furthermore, the two datasets must have the same column attributes (but of coure can have different *values* for those attributes at each column).
+The content of the other file is added as columns on the right of the current dataset. The rows must match for this to work. That is, the two files must have exactly the same rows (genes). If `key` is given, the rows may be out of order, and will be aligned based on the key attribute. Furthermore, the two datasets must have the same column attributes (but of coure can have different *values* for those attributes at each column). Missing attributes can be given default values using `fill_values`
+.
 
-### Mathematical operations
+### Operations
 
 #### Map
 
@@ -461,21 +412,25 @@ You can map a function across all rows (all columns), while avoiding loading the
 dataset into memory:
 
 ```python
-def map(self, f, axis = 0, chunksize = 100000000):
-	"""
-	Apply a function along an axis without loading the entire dataset in memory.
+	def map(self, f_list: List[Callable[[np.ndarray], int]], axis: int = 0, chunksize: int = 1000, selection: np.ndarray = None) -> List[np.ndarray]:
+		"""
+		Apply a function along an axis without loading the entire dataset in memory.
 
-	Args:
-		f (func or list of func):	Function(s) that takes a numpy ndarray as argument
-		axis (int):			Axis along which to apply the function (0 = rows, 1 = columns)
-		chunksize (int): 		Number of rows (columns) to load per chunk
+		Args:
+			f (list of func):		Function(s) that takes a numpy ndarray as argument
 
-	Returns:
-		numpy.ndarray result of function application
+			axis (int):		Axis along which to apply the function (0 = rows, 1 = columns)
 
-	If you supply a list of functions, the result will be a list of numpy arrays. This is more
-	efficient than repeatedly calling map() one function at a time.
-	"""
+			chunksize (int): Number of rows (columns) to load per chunk
+
+			selection (array of bool): Columns (rows) to include
+
+		Returns:
+			numpy.ndarray result of function application
+
+			If you supply a list of functions, the result will be a list of numpy arrays. This is more
+			efficient than repeatedly calling map() one function at a time.
+		"""
 ```
 
 The function will receive an array (of floats) as its only argument, and should return a single float value.
@@ -484,92 +439,11 @@ Example:
 
 ```python
 >>> import numpy as np
->>> ds.map(np.mean)
+>>> ds.map([np.mean])[0]
 # Returns an array of row means
 np.array([1.23, 0.32, ...])   
 ```
 
-### Pairwise function application (chunked)
-
-Like **map**() but applies a function of two vectors to all pairs of rows (or columns). This is useful e.g. to
-compute distance or similarity matrices on datasets that are too large to fit in memory. 
-
-```python
-def pairwise(self, f, asfile, axis=0, chunksize=10000, pass_attrs=False):
-	"""
-	Compute a matrix of pairwise values by applying f to each pair of rows (columns)
-
-	Args:
-		f (lambda):			The function f(a,b) which will be called with vectors a and b and should return a single float
-		asfile (str):		The name of a new loom file which will be created to hold the result
-		axis (int):			The axis over which to apply the function (0 = rows, 1 = columns)
-		chunksize (int):	Number of rows (columns) to load in each chunk during computation
-		pass_attrs (bool):	If true, dicts of attributes will be passed as extra arguments to f(a,b,attr1,attr2)
-	Returns:
-		Nothing, but a new .loom file will be created
-	
-	The function f() will be called with two vectors, a and b, corresponding to pairs of rows (if axis = 0) or
-	columns (if axis = 1). Optionally, the corresponding row (column) attributes will be passed as two extra
-	arguments to f, each as a dictionary of key/value pairs.
-
-	Note that the full result does not need to fit in main memory. A new loom file will be created with the same 
-	row attributes (if axis == 0) or column attributes (if axis == 1) as the current file, but they will be 
-	duplicated as both row and column attributes.
-	"""
-```
-
-To see how this works, first create a small test dataset:
-
-```python
->>> import numpy as np
->>> import loompy
->>> loompy.create("test.loom", np.random.rand(5,5), {"GeneID": np.array([1,2,3,4,5])},{"CellID": np.array([1,2,3,4,5])})
->>> ds = loompy.connect("test.loom")
->>> ds
-```
-
-<table><tbody><tr><td>&nbsp;</td><td><strong>CellID</strong></td><td>1.0</td><td>2.0</td><td>3.0</td><td>4.0</td><td>5.0</td></tr><tr><td><strong>GeneID</strong></td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr><tr><td>1.0</td><td>&nbsp;</td><td>0.457577</td><td>0.97785</td><td>0.29075</td><td>0.36729</td><td>0.214238</td></tr><tr><td>2.0</td><td>&nbsp;</td><td>0.48472</td><td>0.88837</td><td>0.875613</td><td>0.215415</td><td>0.220159</td></tr><tr><td>3.0</td><td>&nbsp;</td><td>0.295911</td><td>0.488949</td><td>0.723754</td><td>0.912776</td><td>0.00727398</td></tr><tr><td>4.0</td><td>&nbsp;</td><td>0.855562</td><td>0.678321</td><td>0.543205</td><td>0.585814</td><td>0.933781</td></tr><tr><td>5.0</td><td>&nbsp;</td><td>0.649782</td><td>0.538834</td><td>0.698622</td><td>0.48766</td><td>0.85858</td></tr></tbody></table>
-
-Then compute the pairwise cosine distances of the rows:
-
-```python
->>> import scipy.spatial.distance as dist
->>> ds.pairwise(dist.cosine, "cosine_dists.loom")
->>> ds2 = loompy.connect("cosine_dists.loom")
->>> ds2
-```
-
-<table><tbody><tr><td>&nbsp;</td><td><strong>GeneID</strong></td><td>1.0</td><td>2.0</td><td>3.0</td><td>4.0</td><td>5.0</td></tr><tr><td><strong>GeneID</strong></td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr><tr><td>1.0</td><td>&nbsp;</td><td>-4.95241e-08</td><td>0.104276</td><td>0.252157</td><td>0.172125</td><td>0.211965</td></tr><tr><td>2.0</td><td>&nbsp;</td><td>0.104276</td><td>4.11353e-08</td><td>0.208817</td><td>0.191669</td><td>0.160971</td></tr><tr><td>3.0</td><td>&nbsp;</td><td>0.252157</td><td>0.208817</td><td>-4.90684e-09</td><td>0.287634</td><td>0.261851</td></tr><tr><td>4.0</td><td>&nbsp;</td><td>0.172125</td><td>0.191669</td><td>0.287634</td><td>2.79894e-08</td><td>0.0149973</td></tr><tr><td>5.0</td><td>&nbsp;</td><td>0.211965</td><td>0.160971</td><td>0.261851</td><td>0.0149973</td><td>1.20838e-08</td></tr></tbody></table>
-
-Notice how the row attributes from the original file become both row and column attributes of the newly generated file. If you have several attributes, they all propagate to the generated file in the same manner. Conversely, if you apply pairwise() to columns, the column attributes become both row and column attributes of the new file.
-
-
-
-#### Correlation matrix
-
-Numpy can compute correlation matrices but will internally cast float32 to float64. This leads to
-unnecessarily large memory consumption. The following method computes the correlation matrix
-while avoiding float64s:
-
-```python
-def corr_matrix(self, axis = 0, log=False):
-    """
-    Compute correlation matrix without casting to float64.
-
-    Args:
-        axis (int):			The axis along which to compute the correlation matrix.
-        log (bool):			If true, compute correlation on log(x+1) values
-    
-    Returns:
-        numpy.ndarray of float32 correlation coefficents
-
-    This function avoids casting intermediate values to double (float64), to reduce memory footprint.
-    If row attribute _Excluded exists, those rows will be excluded.
-    """
-```
-
-The method will also respect the "_Excluded" row attribute, if it exists, and omit those rows from
-the calculation.
 
 #### Permutation
 
@@ -589,85 +463,78 @@ def permute(self, ordering, axis):
     """
 ```
 
-#### Feature selection
+#### Batch scan
 
-Select genes (rows) based on a CV vs mean fit:
+For very large loom files, it's very useful to scan across the file (along either rows or columns) in *batches*,
+to avoid loading the entire file in memory. This can be achieved using the `batch_scan` method:
 
-```python
-def feature_selection(self, n_genes, method="SVR"):
-    """
-    Fits a noise model (CV vs mean)
-    
-    Args:
-        n_genes (int):	number of genes to include
-	method (str): 	method ("SVR" or None for least squares)
-	
-    Returns:
-        Nothing.
-    
-	This method creates new row attributes _Noise (CV relative to predicted CV), _Excluded (1/0).
-    """
+```
+	def batch_scan(self, cells: np.ndarray = None, genes: np.ndarray = None, axis: int = 0, batch_size: int = 1000) -> Iterable[Tuple[int, np.ndarray, np.ndarray]]:
+		"""Performs a batch scan of the loom file
+
+		Args
+		----
+		cells: np.ndarray
+			the indexes [1,2,3,..,1000] of the cells to select
+		genes: np.ndarray
+			the indexes [1,2,3,..,1000] of the genes to select
+		axis: int
+			0:rows or 1:cols
+		batch_size: int
+			the chuncks returned at every element of the iterator
+
+		Returns
+		------
+		Iterable that yields triplets
+		(ix, indexes, vals)
+
+		ix: int
+			first position / how many rows/cols have been yielded alredy
+		indexes: np.ndarray[int]
+			the indexes with the same numbering of the input args cells / genes (i.e. np.arange(len(ds.shape[axis])))
+			this is ix + selection
+		vals: np.ndarray
+			the matrix corresponding to the chunk
+		"""
 ```
 
-#### Projection (t-SNE and PCA)
 
-To perform a projection of the columns onto the 2D plane:
+### Working with layers
 
-```python
-def project_to_2d(self, axis = 1, perplexity = 20):
-	"""
-	Project to 2D and create new column attributes _tSNE1, _tSNE2 and _PC1, _PC2.
+Loom supports multiple layers. There is always a single main matrix, but optionally one or more additional layers
+having the same number of rows and columns. Layers are accessed using the `layer` property on the `LoomConnection`. 
 
-	Args:
-		axis (int):		Axis to project (0 for rows, 1 for columns, 2 for both)
-		perplexity (int): 	Perplexity to use for tSNE
+#### Create a layer
 
-	Returns:
-		Nothing.
-
-	This method first computes a PCA using scikit-learn IncrementalPCA (which doesn't load the whole
-	dataset in RAM), then uses the top principal components to compute a tSNE projection. If row 
-	attribute '_Excluded' exists, the projection will be based only on non-excluded genes.
-	"""
+```
+def set_layer(self, name: str, matrix: np.ndarray, chunks: Tuple[int, int] = (64, 64), chunk_cache: int = 512, dtype: str = "float32", compression_opts: int = 2) -> None:
 ```
 
-The method will always perform both t-SNE and PCA and store the resulting coordinates as new column
-attributes _tSNE1, _tSNE2, _PCA1 and _PCA2.
+#### Access a layer
 
-PCA will be performed incrementally (i.e. without loading the entire matrix), and t-SNE will be 
-performed on the top principal components. Thus the full dataset is never loaded into memory.
+The `layer` property returns a Layer object, which can be sliced to get the data:
 
-#### BackSPIN clustering
-
-```python
-def backspin(self,
-	numLevels=2, 
-	first_run_iters=10, 
-	first_run_step=0.1,
-	runs_iters=8,
-	runs_step=0.3,
-	split_limit_g=2,
-	split_limit_c=2,
-	stop_const = 1.15,
-	low_thrs=0.2):
-	"""
-	Perform BackSPIN clustering
-
-	Args:
-		numLevels (int): 	Number of levels (default 2) 
-		first_run_iters (int):	Number of iterations at first cycle (default 10)
-		first_run_step (float): Step size for first cycle (default 0.1)
-		runs_iters (int):	Number of iterations per cycle (default 8)
-		runs_step (float): 	Step size (default 0.3)
-		split_limit_g (int): 	Minimum genes per cluster (default 2)
-		split_limit_c (int):	Minimum cells per cluster (default 2)
-		stop_const (float):	Stopping constant (default 1.15)
-		low_thrs (float):	Low threshold (default 0.2)
-
-	Returns:
-		Nothing, but creates attributes BackSPIN_level_{n}_group.
-	"""
+```
+ds.layer["layer"][10, :]
 ```
 
-Performs BackSPIN clustering and stores the results as row and column attributes `BackSPIN_level_{n}_group`, one per level.
+The default layer can be accessed directly:
 
+```
+ds[10, :]
+```
+
+It can also be accessed by name, or using the empty string:
+
+```
+ds.layer["@DEFAULT"]
+ds.layer[""]
+```
+
+Layers can be loaded in memory as sparse matrices, efficiently:
+
+```
+LoomLayer.as_coo() -> sparse.coo_matrix:
+LoomLayer.as_csr() -> sparse.csr_matrix:
+LoomLayer.as_csc() -> sparse.csc_matrix:
+```
