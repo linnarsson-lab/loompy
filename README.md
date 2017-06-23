@@ -66,7 +66,7 @@ Here's an example of the structure of a valid `.loom` file:
 
 |Group|Type|Description|
 |-----|----|-----------|
-|/matrix|float32[N,M]|Main matrix of N rows and M columns|
+|/matrix|float32[N,M] or uint16[N,M]|Main matrix of N rows and M columns|
 |/layers/| (subgroup) | Subgroup of additional matrix layers |
 |/row_attrs/| (subgroup) | Subgroup of all row attributes|
 |/row_attrs/Name|string[N]| Row attribute "Name" of type string|
