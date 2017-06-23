@@ -191,13 +191,14 @@ You can use the *sample_annotation* dictionary to add column (cell) annotations 
 Establish a connection to an existing `.loom` file:
 
 ```python
-def connect(filename, infer=False):
+def connect(filename: str, mode: str = 'r+') -> LoomConnection:
 	"""
 	Establish a connection to a .loom file.
 
 	Args:
-		filename (str):		Name of the .loom file to open
-		infer (bool):		Infer data types for attributes
+		filename (str):     Name of the .loom file to open
+		mode (str):         read/write mode, accepts 'r+' (read/write) or
+							'r' (read-only), defaults to 'r+'
 
 	Returns:
 		A LoomConnection instance.
