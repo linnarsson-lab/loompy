@@ -63,6 +63,10 @@ do not support journalling, so if something happens during a write, the
 your primary data storage. They are for working with data, not keeping 
 it safe.
 
+Loom files do support concurrent reads, but only from separate processes (not threads), 
+and (we think) only from a single compute node. On a compute cluster, you may encounter
+bugs if you try to read the same Loom file from different compute nodes concurrently.
+
 Loom files are great for distribution of large datasets, which are then
 used as read-only for analytical purposes.
 
