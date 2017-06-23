@@ -70,12 +70,16 @@ bugs if you try to read the same Loom file from different compute nodes concurre
 Loom files are great for distribution of large datasets, which are then
 used as read-only for analytical purposes.
 
-### Efficient indexing
+### Efficient indexing and compression
 
 The main matrix is stored in *chunked* format. That is, instead of being
 stored by rows or by columns, it is stored as a sequence of little rectangles. 
 As a consequence, both rows and columns (as well as submatrices) can be efficiently 
 accessed. 
+
+By default, chunks are compressed and decompressed for you automatically. This makes Loom
+a space-efficient format for storing large sparse datasets. We have found that Loom 
+often uses less space than standard sparse matrix formats.
 
 ### Matrix and attributes
 
@@ -91,9 +95,9 @@ a good idea to put genes in the rows (since you will likely always work with the
 
 ### Data types
 
-Loom supports a tiny subset of numpy data types:
+Loom supports a subset of numpy data types:
 
-* The main matrix is always a two-dimensional array of type `float32`
+* The main matrix, and any additional layers, are always a two-dimensional arrays of any valid numpy type
 * Attributes are one-dimensional arrays of either `float64` or `string`
 
 Note that there is no integer attribute type. However, float64s are large enough to 
@@ -106,7 +110,7 @@ represent all integers up to and including 9,007,199,254,740,992 without loss.
 Create from data:
 
 ```python
-def create(filename, matrix, row_attrs, col_attrs, row_attr_types, col_attr_types):
+def create(filename, matrix, row_attrs, col_attrs):
 	"""
 	Create a new .loom file from the given data.
 
@@ -115,69 +119,34 @@ def create(filename, matrix, row_attrs, col_attrs, row_attr_types, col_attr_type
 		matrix (numpy.ndarray):	Two-dimensional (N-by-M) numpy ndarray of float values
 		row_attrs (dict):		Row attributes, where keys are attribute names and values are numpy arrays (float or string) of length N		
 		col_attrs (dict):		Column attributes, where keys are attribute names and values are numpy arrays (float or string) of length M
-		row_attr_types (dict):	Row attribute types ('float64', 'int' or 'string' for each attribute)		
-		col_attr_types (dict):	Column attribute types ('float64', 'int' or 'string' for each attribute)		
+
 
 	Returns:
-		Nothing. To work with the file, use loom.connect(filename).
+		A LoomConnection to the newly created Loom file
 	"""
 ```
 
 Create by combining existing .loom files:
 
 ```python
-def combine(files, output_file):
+def combine(files, output_file, key):
 	"""
 	Combine two or more loom files and save as a new loom file
 
 	Args:
 		files (list of str):	the list of input files (full paths)
 		output_file (str):		full path of the output loom file
-	
+		key (str):		the row attribute to use as key
+		
 	Returns:
 		Nothing, but creates a new loom file combining the input files.
 
-	The input files must (1) have exactly the same number of rows and in the same order, (2) have
-	exactly the same sets of row and column attributes. 
+	The input files must (1) have exactly the same number of rows  (2) have
+	exactly the same sets of row and column attributes. If key is given, then
+	the rows are reordered to line up the values of that row attribute.
 	"""
 ```
 
-
-Create from an existing CEF file:
-
-```python
-def create_from_cef(cef_file, loom_file):
-   """
-   Create a .loom file from a legacy CEF file.
-
- Args:
-   cef_file (str):	filename of the input CEF file
-   loom_file (str):	filename of the output .loom file (will be created)
-
- Returns:
-   Nothing.
-   """
-```
-
-Create from a Pandas DataFrame:
-
-```python
-def create_from_pandas(df, loom_file):
-	"""
-	Create a .loom file from a Pandas DataFrame.
-
-	Args:
-		df (pd.DataFrame):	Pandas DataFrame
-		loom_file (str):	Name of the output .loom file (will be created)
-
-	Returns:
-		Nothing.
-
-	The DataFrame can contain multi-indexes on both axes, which will be turned into row and column attributes
-	of the .loom file. The main matrix of the DataFrame must contain only float values. The datatypes of the
-	attributes will be inferred as either float or string. 
-	"""
-```
 
 Create from a 10X Genomics [cellranger](http://support.10xgenomics.com/single-cell/software/pipelines/latest/what-is-cell-ranger) output folder:
 
@@ -237,37 +206,6 @@ ds.close()
 
 Use `infer=True` to force the row and column attribute types to be inferred from the content of the HDF5 file. This can be useful when importing
 files created by other applications, but it *will destroy existing type information*. It will infer each type as `string` or `float64`, never `int`.
-
-### Uploading
-
-To upload a dataset to a remote Loom server:
-
-```python
-def upload(path, server, project, filename, username, password):
-	"""
-	Upload a .loom file to a remote server
-
-	Args:
-
-		path (str):			Full path to the loom file to be uploaded
-		server (str):		Domain and port of the server (e.g. loom.linnarssonlab.org or localhost:8003)
-		project (str):		Name of the project
-		filename (str):		Filename (not path) to use on the remote server
-		username (str):		Username for authorization
-		password (str):		Password for authorization
-	
-	Returns:
-		status_code (int):
-							201		OK (the file was created on the remote server)
-							400		The filename was incorrect (needs a .loom extension)
-	
-	The function will throw requests.ConnectionError if the connection could not be established or was aborted. 
-	This will also happen if the credentials provided are insufficient. It may also throw a Timeout exception. All 
-	these exceptions inherit from requests.exceptions.RequestException.
-	"""
-```
-
-
 
 ### Shape, indexing and slicing
 
