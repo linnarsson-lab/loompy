@@ -1,4 +1,8 @@
 
+# `loompy` Python API
+
+See the [API documentation](https://github.com/linnarsson-lab/loompy/docs.md).
+
 # `.loom` file format
 
 The `.loom` file format is designed to efficiently hold large omics datasets. Typically, such data takes the form of a large
