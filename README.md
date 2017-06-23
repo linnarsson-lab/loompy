@@ -1,7 +1,7 @@
 
 # `loompy` Python API
 
-See the [API documentation](https://github.com/linnarsson-lab/loompy/docs.md).
+See the [API documentation](https://github.com/linnarsson-lab/loompy/blob/master/docs.md).
 
 # `.loom` file format
 
