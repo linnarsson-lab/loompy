@@ -1,4 +1,8 @@
 
+# `loompy` Python API
+
+See the [API documentation](https://github.com/linnarsson-lab/loompy/blob/master/docs.md).
+
 # `.loom` file format
 
 The `.loom` file format is designed to efficiently hold large omics datasets. Typically, such data takes the form of a large
@@ -62,7 +66,7 @@ Here's an example of the structure of a valid `.loom` file:
 
 |Group|Type|Description|
 |-----|----|-----------|
-|/matrix|float32[N,M]|Main matrix of N rows and M columns|
+|/matrix|float32[N,M] or uint16[N,M]|Main matrix of N rows and M columns|
 |/layers/| (subgroup) | Subgroup of additional matrix layers |
 |/row_attrs/| (subgroup) | Subgroup of all row attributes|
 |/row_attrs/Name|string[N]| Row attribute "Name" of type string|

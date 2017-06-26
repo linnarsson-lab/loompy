@@ -1051,7 +1051,7 @@ def create_from_cellranger(folder: str, loom_file: str, cell_id_prefix: str = ''
 	matrix = mmread(os.path.join(matrix_folder, "matrix.mtx")).astype("float32").todense()
 
 	barcodes = np.loadtxt(os.path.join(matrix_folder, "barcodes.tsv"), delimiter="\t", dtype="unicode")
-	col_attrs = {"CellID": np.array([(cell_id_prefix + strip(bc)[2:-1]) for bc in barcodes])}
+	col_attrs = {"CellID": np.array([(cell_id_prefix + strip(bc)) for bc in barcodes])}
 
 	temp = np.loadtxt(os.path.join(matrix_folder, "genes.tsv"), delimiter="\t", dtype="unicode")
 	row_attrs = {"Accession": temp[:, 0], "Gene": temp[:, 1]}
@@ -1074,8 +1074,12 @@ def create_from_cellranger(folder: str, loom_file: str, cell_id_prefix: str = ''
 		col_attrs["_PC1"] = pca[:, 0].astype('float64')
 		col_attrs["_PC2"] = pca[:, 1].astype('float64')
 
-	kmeans = np.loadtxt(os.path.join(folder, "analysis", "kmeans", "10_clusters", "clusters.csv"), usecols=(1, ), delimiter=',', skiprows=1)
-	col_attrs["_KMeans_10"] = kmeans.astype('float64')
+	kmeans_file = os.path.join(folder, "analysis", "kmeans", "10_clusters", "clusters.csv")
+	if not os.path.exists(kmeans_file):
+		kmeans_file = os.path.join(folder, "analysis", "clustering", "kmeans_10_clusters", "clusters.csv")
+	if os.path.exists(kmeans_file):
+		kmeans = np.loadtxt(kmeans_file, usecols=(1, ), delimiter=',', skiprows=1)
+		col_attrs["_KMeans_10"] = kmeans.astype('float64')
 
 	return create(loom_file, matrix, row_attrs, col_attrs)
 
