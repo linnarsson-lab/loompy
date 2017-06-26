@@ -186,8 +186,14 @@ class LoomConnection:
 		"""
 		a = ["/row_attrs/", "/col_attrs/"][axis]
 
+		def safe_decode(s: np.bytes_) -> str:
+			try:
+				return s.decode('utf8')
+			except UnicodeDecodeError:
+				return "[UTF-8 DECODING ERROR]"
+
 		if self._file[a][name].dtype.kind == 'S':
-			vals = np.array([x.decode('utf8') for x in self._file[a][name][:]])
+			vals = np.array([safe_decode(x) for x in self._file[a][name][:]])
 		else:
 			vals = self._file[a][name][:]
 
@@ -295,6 +301,7 @@ class LoomConnection:
 		self.shape = [0, 0]
 
 	def set_layer(self, name: str, matrix: np.ndarray, chunks: Tuple[int, int] = (64, 64), chunk_cache: int = 512, dtype: str = "float32", compression_opts: int = 2) -> None:
+
 		if self.mode != "r+":
 			raise IOError("Cannot save attributes when connected in read-only mode")
 		if not np.isfinite(matrix).all():
@@ -462,7 +469,6 @@ class LoomConnection:
 		if key is not None:
 			# This is magic sauce for making the order of one list be like another
 			ordering = np.where(other.row_attrs[key][None, :] == self.row_attrs[key][:, None])[1]
-			logging.info(ordering)
 			pk1 = sorted(other.row_attrs[key])
 			pk2 = sorted(self.row_attrs[key])
 			for ix, val in enumerate(pk1):
@@ -475,9 +481,6 @@ class LoomConnection:
 		for (ix, selection, vals) in other.batch_scan_layers(axis=1, layers=self.layer.keys()):
 			ca = {key: v[selection] for key, v in other.col_attrs.items()}
 			if ordering is not None:
-				logging.info(ordering.shape)
-				logging.info(self.shape)
-				logging.info(other.shape)
 				vals = {key: val[ordering, :] for key, val in vals.items()}
 			self.add_columns(vals, ca, fill_values)
 		other.close()
@@ -902,16 +905,39 @@ class LoomLayer():
 		self.shape = ds.shape
 
 	def __getitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]]) -> np.ndarray:
-		if self.name == "@DEFAULT":
+		if self.name == "@DEFAULT" or self.name == "":
 			return self.ds._file['/matrix'].__getitem__(slice)
 		return self.ds._file['/layers/' + self.name].__getitem__(slice)
 
 	def __setitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]], data: np.ndarray) -> None:
-		if self.name == "@DEFAULT":
+		if self.name == "@DEFAULT" or self.name == "":
 			self.ds._file['/matrix'].__setitem__(slice, data.astype(self.dtype))
 		else:
 			self.ds._file['/layers/' + self.name].__setitem__(slice, data.astype(self.dtype))
 
+	def as_coo(self) -> sparse.coo_matrix:
+		data = None  # type: np.ndarray
+		row = None  # type: np.ndarray
+		col = None  # type: np.ndarray
+		for (ix, selection, layers) in self.ds.batch_scan_layers():
+			vals = layers[self.name]
+			nonzeros = np.where(vals > 0)
+			if data is None:
+				data = vals[nonzeros]
+				row = nonzeros[0]
+				col = nonzeros[1]
+			else:
+				data = np.concatenate([data, vals[nonzeros]])
+				row = np.concatenate([row, nonzeros[0]])
+				col = np.concatenate([col, nonzeros[1]])
+		return sparse.coo_matrix((data, (row, col)))
+
+	def as_csr(self) -> sparse.csr_matrix:
+		return self.as_coo().tocsr()
+	
+	def as_csc(self) -> sparse.csc_matrix:
+		return self.as_coo().tocsc()
+		
 	def resize(self, size: Tuple[int, int], axis: int = None) -> None:
 		"""Resize the dataset, or the specified axis.
 
@@ -967,7 +993,7 @@ def create(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], 
 								contain all chunks of a row/column in memory, then
 								sequential row/column access will be a lot slower.
 								Defaults to 512.
-		matrix_dtype (str):     Dtype of the matrix. Default float32 (uint16, float16 could be used)
+		dtype (str):           Dtype of the matrix. Default float32 (uint16, float16 could be used)
 		compression_opts (int): Strenght of the gzip compression. Default None.
 	Returns:
 		LoomConnection to created loom file.
@@ -1067,7 +1093,7 @@ def combine(files: List[str], output_file: str, key: str = None, file_attrs: Dic
 	Returns:
 		Nothing, but creates a new loom file combining the input files.
 
-	The input files must (1) have exactly the same number of rows and in the same order, (2) have
+	The input files must (1) have exactly the same number of rows, (2) have
 	exactly the same sets of row and column attributes.
 	"""
 	if file_attrs is None:
