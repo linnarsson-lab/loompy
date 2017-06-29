@@ -447,13 +447,14 @@ class LoomConnection:
 
 		self.shape = [self.shape[0], n_cols]
 
-	def add_loom(self, other_file: str, key: str = None, fill_values: Dict[str, np.ndarray] = None) -> None:
+	def add_loom(self, other_file: str, key: str = None, fill_values: Dict[str, np.ndarray]=None, batch_size: int=1000) -> None:
 		"""
 		Add the content of another loom file
 
 		Args:
 			other_file (str):	filename of the loom file to append
 			fill_values (dict): default values to use for missing attributes (or None to drop missing attrs, or 'auto' to fill with sensible defaults)
+			batch_size (int): the batch size used by batchscan (limits the number of rows/columns read in memory)
 
 		Returns:
 			Nothing, but adds the loom file. Note that the other loom file must have exactly the same
@@ -478,7 +479,7 @@ class LoomConnection:
 		if len(diff_layers) > 0:
 			raise ValueError("%s is missing a layer, cannot merge with current file. layers missing:%s" % (other_file, diff_layers))
 
-		for (ix, selection, vals) in other.batch_scan_layers(axis=1, layers=self.layer.keys()):
+		for (ix, selection, vals) in other.batch_scan_layers(axis=1, layers=self.layer.keys(), batch_size = batch_size):
 			ca = {key: v[selection] for key, v in other.col_attrs.items()}
 			if ordering is not None:
 				vals = {key: val[ordering, :] for key, val in vals.items()}
@@ -919,7 +920,7 @@ class LoomLayer():
 		data = None  # type: np.ndarray
 		row = None  # type: np.ndarray
 		col = None  # type: np.ndarray
-		for (ix, selection, layers) in self.ds.batch_scan_layers():
+		for (ix, selection, layers) in self.ds.batch_scan_layers(batch_size = DEFAULT_BATCH):
 			vals = layers[self.name]
 			nonzeros = np.where(vals > 0)
 			if data is None:
@@ -1084,7 +1085,7 @@ def create_from_cellranger(folder: str, loom_file: str, cell_id_prefix: str = ''
 	return create(loom_file, matrix, row_attrs, col_attrs)
 
 
-def combine(files: List[str], output_file: str, key: str = None, file_attrs: Dict[str, str] = None) -> None:
+def combine(files: List[str], output_file: str, key: str = None, file_attrs: Dict[str, str]=None, batch_size: int=1000) -> None:
 	"""
 	Combine two or more loom files and save as a new loom file
 
@@ -1093,6 +1094,7 @@ def combine(files: List[str], output_file: str, key: str = None, file_attrs: Dic
 		output_file (str):		full path of the output loom file
 		key (string):			Row attribute to use to verify row ordering
 		file_attrs (dict):		file attributes (title, description, url, etc.)
+		batch_size (int):		limits the batch or cols/rows read in memory (default: 1000)
 
 	Returns:
 		Nothing, but creates a new loom file combining the input files.
@@ -1114,7 +1116,7 @@ def combine(files: List[str], output_file: str, key: str = None, file_attrs: Dic
 
 	if len(files) >= 2:
 		for f in files[1:]:
-			ds.add_loom(f, key)
+			ds.add_loom(f, key, batch_size=batch_size)
 	ds.close()
 
 
