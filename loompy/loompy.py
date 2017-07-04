@@ -1031,57 +1031,53 @@ def create(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], 
 	return ds
 
 
-def create_from_cellranger(folder: str, loom_file: str, cell_id_prefix: str = '', sample_annotation: Dict[str, np.ndarray] = None, genome: str = 'mm10') -> LoomConnection:
+def create_from_cellranger(indir: str, outdir: str = None, genome: str = None) -> LoomConnection:
 	"""
 	Create a .loom file from 10X Genomics cellranger output
 
 	Args:
-		folder (str):				path to the cellranger output folder (usually called `outs`)
-		loom_file (str):			full path of the resulting loom file
-		cell_id_prefix (str):		prefix to add to cell IDs (e.g. the sample id for this sample)
-		sample_annotation (dict): 	dict of additional sample attributes
-		genome (str):				genome build to load (e.g. 'mm10')
+		indir (str):	path to the cellranger output folder (the one that contains 'outs')
+		outdir (str):	output folder wher the new loom file should be saved (default to indir)
+		genome (str):	genome build to load (e.g. 'mm10'; default: determine species from outs folder)
 
 	Returns:
 		Nothing, but creates loom_file
 	"""
-	if sample_annotation is None:
-		sample_annotation = {}
-	matrix_folder = os.path.join(folder, 'filtered_gene_bc_matrices', genome)
+	if outdir is None:
+		outdir = indir
+	sampleid = os.path.split(os.path.abspath(indir))[-1]
+	matrix_folder = os.path.join(indir, 'outs', 'filtered_gene_bc_matrices')
+	if genome is None:
+		genome = [f for f in os.listdir(matrix_folder) if not f.startswith(".")][0]
+	matrix_folder = os.path.join(matrix_folder, genome)
 	matrix = mmread(os.path.join(matrix_folder, "matrix.mtx")).astype("float32").todense()
 
-	barcodes = np.loadtxt(os.path.join(matrix_folder, "barcodes.tsv"), delimiter="\t", dtype="unicode")
-	col_attrs = {"CellID": np.array([(cell_id_prefix + strip(bc)) for bc in barcodes])}
+	with open(os.path.join(matrix_folder, "genes.tsv"), "r") as f:
+		lines = f.readlines()
+	accession = np.array([x.split("\t")[0] for x in lines]).astype("str")
+	gene = np.array([x.split("\t")[1].strip() for x in lines]).astype("str")
+	with open(os.path.join(matrix_folder, "barcodes.tsv"), "r") as f:
+		lines = f.readlines()
+	cellids = np.array([sampleid + ":" + x.strip() for x in lines]).astype("str")
 
-	temp = np.loadtxt(os.path.join(matrix_folder, "genes.tsv"), delimiter="\t", dtype="unicode")
-	row_attrs = {"Accession": temp[:, 0], "Gene": temp[:, 1]}
+	col_attrs = {"CellID": cellids}
+	row_attrs = {"Accession": accession, "Gene": gene}
 
-	for key in sample_annotation.keys():
-		col_attrs[key] = np.array([sample_annotation[key]] * matrix.shape[1])
-
-	tsne_file = os.path.join(folder, "analysis", "tsne", "projection.csv")
+	tsne_file = os.path.join(indir, "outs", "analysis", "tsne", "projection.csv")
 	# In cellranger V2 the file moved one level deeper
 	if not os.path.exists(tsne_file):
-		tsne_file = os.path.join(folder, "analysis", "tsne", "2_components", "projection.csv")
+		tsne_file = os.path.join(indir, "outs", "analysis", "tsne", "2_components", "projection.csv")
 	if os.path.exists(tsne_file):
 		tsne = np.loadtxt(tsne_file, usecols=(1, 2), delimiter=',', skiprows=1)
-		col_attrs["_tSNE1"] = tsne[:, 0].astype('float64')
-		col_attrs["_tSNE2"] = tsne[:, 1].astype('float64')
+		col_attrs["_X"] = tsne[:, 0].astype('float32')
+		col_attrs["_Y"] = tsne[:, 1].astype('float32')
 
-	pca_file = os.path.join(folder, "analysis", "pca", "projection.csv")
-	if os.path.exists(pca_file):
-		pca = np.loadtxt(pca_file, usecols=(1, 2), delimiter=',', skiprows=1)
-		col_attrs["_PC1"] = pca[:, 0].astype('float64')
-		col_attrs["_PC2"] = pca[:, 1].astype('float64')
+	clusters_file = os.path.join(indir, "outs", "analysis", "clustering", "graphclust", "clusters.csv")
+	if os.path.exists(clusters_file):
+		labels = np.loadtxt(clusters_file, usecols=(1, ), delimiter=',', skiprows=1)
+		col_attrs["Clusters"] = labels.astype('int') - 1
 
-	kmeans_file = os.path.join(folder, "analysis", "kmeans", "10_clusters", "clusters.csv")
-	if not os.path.exists(kmeans_file):
-		kmeans_file = os.path.join(folder, "analysis", "clustering", "kmeans_10_clusters", "clusters.csv")
-	if os.path.exists(kmeans_file):
-		kmeans = np.loadtxt(kmeans_file, usecols=(1, ), delimiter=',', skiprows=1)
-		col_attrs["_KMeans_10"] = kmeans.astype('float64')
-
-	return create(loom_file, matrix, row_attrs, col_attrs)
+	return create(os.path.join(outdir, sampleid + ".loom"), matrix, row_attrs, col_attrs, {"Genome": genome})
 
 
 def combine(files: List[str], output_file: str, key: str = None, file_attrs: Dict[str, str] = None) -> None:
