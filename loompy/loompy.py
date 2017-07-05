@@ -146,7 +146,7 @@ class LoomConnection:
 		for key in self._file['col_attrs'].keys():
 			self._load_attr(key, axis=1)
 			v = self.col_attrs[key]
-			if type(v[0]) is np.str_ and len(v[0]) >= 3 and v[0][:2] == "b'" and v[0][-1] == "'":
+			if len(v[0]) >= 3 and type(v[0]) is np.str_ and v[0][:2] == "b'" and v[0][-1] == "'":
 				logging.warn("Unicode bug detected in column %s" % key)
 				if mode == 'r+':
 					logging.warn("Fixing unicode bug by re-setting column attribute '" + key + "'")
