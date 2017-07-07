@@ -867,7 +867,7 @@ class LoomConnection:
 
 	def export(self, out_file: str, layer: str = None, format: str = "tab") -> None:
 		if format != "tab":
-			raise NotImplementedError("Only tab is supported")
+			raise NotImplementedError("Only 'tab' is supported")
 
 		with open(out_file, "w") as f:
 			# Emit column attributes
@@ -893,7 +893,7 @@ class LoomConnection:
 					f.write(str(self.row_attrs[ra][row]) + "\t")
 				f.write("\t")
 
-				for v in self[row, :]:
+				for v in self.layer[layer][row, :]:
 					f.write(str(v) + "\t")
 				f.write("\n")
 
