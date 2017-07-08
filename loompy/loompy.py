@@ -869,9 +869,6 @@ class LoomConnection:
 		if format != "tab":
 			raise NotImplementedError("Only 'tab' is supported")
 
-		if layer is None:
-			layer = ""
-
 		with open(out_file, "w") as f:
 			# Emit column attributes
 			for ca in self.col_attrs.keys():
@@ -896,8 +893,12 @@ class LoomConnection:
 					f.write(str(self.row_attrs[ra][row]) + "\t")
 				f.write("\t")
 
-				for v in self.layer[layer][row, :]:
-					f.write(str(v) + "\t")
+				if layer is None:
+					for v in self[row, :]:
+						f.write(str(v) + "\t")
+				else:
+					for v in self.layer[layer][row, :]:
+						f.write(str(v) + "\t")
 				f.write("\n")
 
 
