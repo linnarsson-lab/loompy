@@ -869,6 +869,9 @@ class LoomConnection:
 		if format != "tab":
 			raise NotImplementedError("Only 'tab' is supported")
 
+		if layer is None:
+			layer = ""
+
 		with open(out_file, "w") as f:
 			# Emit column attributes
 			for ca in self.col_attrs.keys():
