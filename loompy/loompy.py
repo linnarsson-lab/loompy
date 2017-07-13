@@ -468,8 +468,16 @@ class LoomConnection:
 		# Verify that the row keys can be aligned
 		ordering = None
 		if key is not None:
-			# This is magic sauce for making the order of one list be like another
-			ordering = np.where(other.row_attrs[key][None, :] == self.row_attrs[key][:, None])[1]
+			# This was original Sten's version but it creates a 400M entries array in memory
+			# ordering = np.where(other.row_attrs[key][None, :] == self.row_attrs[key][:, None])[1]
+			
+			def ixs_thatsort_a2b(a: np.ndarray, b: np.ndarray, check_content: bool=True) -> np.ndarray:
+				"This is super duper magic sauce to make the order of one list to be like another"
+				if check_content:
+					assert len(np.intersect1d(a, b)) == len(a), f"The two arrays are not mathcing"
+				return np.argsort(a)[np.argsort(np.argsort(b))]
+
+			ordering = ixs_thatsort_a2b(a=other.row_attrs[key], b=self.row_attrs[key])
 			pk1 = sorted(other.row_attrs[key])
 			pk2 = sorted(self.row_attrs[key])
 			for ix, val in enumerate(pk1):
