@@ -290,9 +290,12 @@ class LoomConnection:
 		"""
 		self.layer["@DEFAULT"][slice] = data
 
-	def sparse(self) -> scipy.sparse.coo_matrix:
-		return self.layer["@DEFAULT"].as_coo()
-
+	def sparse(self, genes: np.ndarray = None, cells: np.ndarray = None, layer: str = None) -> scipy.sparse.coo_matrix:
+		if layer is None:
+			return self.layer["@DEFAULT"].sparse(genes=genes, cells=cells)
+		else:
+			return self.layer[layer].sparse(genes=genes, cells=cells)
+			
 	def close(self) -> None:
 		"""
 		Close the connection. After this, the connection object becomes invalid.
@@ -609,7 +612,7 @@ class LoomConnection:
 		else:
 			raise ValueError("Axis must be 0 or 1")
 
-	def batch_scan(self, cells: np.ndarray = None, genes: np.ndarray = None, axis: int = 0, batch_size: int = 1000) -> Iterable[Tuple[int, np.ndarray, np.ndarray]]:
+	def batch_scan(self, cells: np.ndarray = None, genes: np.ndarray = None, axis: int = 0, batch_size: int = 1000, layer: str = None) -> Iterable[Tuple[int, np.ndarray, np.ndarray]]:
 		"""Performs a batch scan of the loom file
 
 		Args
@@ -640,6 +643,8 @@ class LoomConnection:
 			cells = np.fromiter(range(self.shape[1]), dtype='int')
 		if genes is None:
 			genes = np.fromiter(range(self.shape[0]), dtype='int')
+		if layer is None:
+			layer = "@DEFAULT"
 		if axis == 1:
 			cols_per_chunk = batch_size
 			ix = 0
@@ -654,7 +659,7 @@ class LoomConnection:
 					continue
 
 				# Load the whole chunk from the file, then extract genes and cells using fancy indexing
-				vals = self[:, ix:ix + cols_per_chunk]
+				vals = self.layer[layer][:, ix:ix + cols_per_chunk]
 				vals = vals[genes, :]
 				vals = vals[:, selection]
 
@@ -675,7 +680,7 @@ class LoomConnection:
 					continue
 
 				# Load the whole chunk from the file, then extract genes and cells using fancy indexing
-				vals = self[ix:ix + rows_per_chunk, :]
+				vals = self.layer[layer][ix:ix + rows_per_chunk, :]
 				vals = vals[selection, :]
 				vals = vals[:, cells]
 				yield (ix, ix + selection, vals)
@@ -931,28 +936,23 @@ class LoomLayer():
 		else:
 			self.ds._file['/layers/' + self.name].__setitem__(slice, data.astype(self.dtype))
 
-	def as_coo(self) -> scipy.sparse.coo_matrix:
-		data = None  # type: np.ndarray
-		row = None  # type: np.ndarray
-		col = None  # type: np.ndarray
-		for (ix, selection, layers) in self.ds.batch_scan_layers():
-			vals = layers[self.name]
+	def sparse(self, genes: np.ndarray, cells: np.ndarray) -> scipy.sparse.coo_matrix:
+		n_genes = self.ds.shape[0] if genes is None else genes.shape[0]
+		n_cells = self.ds.shape[1] if cells is None else cells.shape[0]
+		data: np.ndarray = None
+		row: np.ndarray = None
+		col: np.ndarray = None
+		for (ix, selection, vals) in self.ds.batch_scan(genes=genes, cells=cells, axis=1, layer=self.name):
 			nonzeros = np.where(vals > 0)
 			if data is None:
 				data = vals[nonzeros]
 				row = nonzeros[0]
-				col = nonzeros[1]
+				col = selection[nonzeros[1]]
 			else:
 				data = np.concatenate([data, vals[nonzeros]])
 				row = np.concatenate([row, nonzeros[0]])
-				col = np.concatenate([col, nonzeros[1]])
-		return scipy.sparse.coo_matrix((data, (row, col)))
-
-	def as_csr(self) -> scipy.sparse.csr_matrix:
-		return self.as_coo().tocsr()
-	
-	def as_csc(self) -> scipy.sparse.csc_matrix:
-		return self.as_coo().tocsc()
+				col = np.concatenate([col, selection[nonzeros[1]]])
+		return scipy.sparse.coo_matrix((data, (row, col)), shape=(n_genes, n_cells))
 		
 	def resize(self, size: Tuple[int, int], axis: int = None) -> None:
 		"""Resize the dataset, or the specified axis.
