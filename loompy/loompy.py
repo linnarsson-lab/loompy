@@ -27,7 +27,7 @@ from typing import *
 import h5py
 import os.path
 from scipy.io import mmread
-import scipy.sparse as sparse
+import scipy.sparse
 from shutil import copyfile
 import logging
 import time
@@ -289,6 +289,9 @@ class LoomConnection:
 			Nothing.
 		"""
 		self.layer["@DEFAULT"][slice] = data
+
+	def sparse(self) -> scipy.sparse.coo_matrix:
+		return self.layer["@DEFAULT"].as_coo()
 
 	def close(self) -> None:
 		"""
@@ -920,11 +923,11 @@ class LoomLayer():
 		else:
 			self.ds._file['/layers/' + self.name].__setitem__(slice, data.astype(self.dtype))
 
-	def as_coo(self) -> sparse.coo_matrix:
+	def as_coo(self) -> scipy.sparse.coo_matrix:
 		data = None  # type: np.ndarray
 		row = None  # type: np.ndarray
 		col = None  # type: np.ndarray
-		for (ix, selection, layers) in self.ds.batch_scan_layers(batch_size = DEFAULT_BATCH):
+		for (ix, selection, layers) in self.ds.batch_scan_layers():
 			vals = layers[self.name]
 			nonzeros = np.where(vals > 0)
 			if data is None:
@@ -935,12 +938,12 @@ class LoomLayer():
 				data = np.concatenate([data, vals[nonzeros]])
 				row = np.concatenate([row, nonzeros[0]])
 				col = np.concatenate([col, nonzeros[1]])
-		return sparse.coo_matrix((data, (row, col)))
+		return scipy.sparse.coo_matrix((data, (row, col)))
 
-	def as_csr(self) -> sparse.csr_matrix:
+	def as_csr(self) -> scipy.sparse.csr_matrix:
 		return self.as_coo().tocsr()
 	
-	def as_csc(self) -> sparse.csc_matrix:
+	def as_csc(self) -> scipy.sparse.csc_matrix:
 		return self.as_coo().tocsc()
 		
 	def resize(self, size: Tuple[int, int], axis: int = None) -> None:
@@ -1006,7 +1009,7 @@ def create(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], 
 	if file_attrs is None:
 		file_attrs = {}
 
-	if sparse.issparse(matrix):
+	if scipy.sparse.issparse(matrix):
 		return _create_sparse(filename, matrix, row_attrs, col_attrs, file_attrs, chunks, chunk_cache, dtype, compression_opts)
 
 	# Create the file (empty).
