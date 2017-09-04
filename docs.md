@@ -526,7 +526,6 @@ ds[10, :]
 It can also be accessed by name, or using the empty string:
 
 ```
-ds.layer["@DEFAULT"]
 ds.layer[""]
 ```
 
