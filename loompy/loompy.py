@@ -122,7 +122,7 @@ class LoomConnection:
 
 		if self._file.__contains__("/matrix"):
 			self.layer = {
-				"@DEFAULT": LoomLayer(self, "@DEFAULT", self._file["/matrix"].dtype)
+				"": LoomLayer(self, "", self._file["/matrix"].dtype)
 			}
 			self.shape = self._file["/matrix"].shape
 			if self._file.__contains__("/layers"):
@@ -276,7 +276,7 @@ class LoomConnection:
 		Returns:
 			A numpy matrix
 		"""
-		return self.layer["@DEFAULT"][slice]
+		return self.layer[""][slice]
 
 	def __setitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]], data: np.ndarray) -> None:
 		"""
@@ -288,11 +288,11 @@ class LoomConnection:
 		Returns:
 			Nothing.
 		"""
-		self.layer["@DEFAULT"][slice] = data
+		self.layer[""][slice] = data
 
 	def sparse(self, genes: np.ndarray = None, cells: np.ndarray = None, layer: str = None) -> scipy.sparse.coo_matrix:
 		if layer is None:
-			return self.layer["@DEFAULT"].sparse(genes=genes, cells=cells)
+			return self.layer[""].sparse(genes=genes, cells=cells)
 		else:
 			return self.layer[layer].sparse(genes=genes, cells=cells)
 			
@@ -319,7 +319,7 @@ class LoomConnection:
 		# make sure chunk size is not bigger than actual matrix size
 		chunks = (min(chunks[0], matrix.shape[0]), min(chunks[1], matrix.shape[1]))
 		path = "/layers/" + name
-		if name == "@DEFAULT":
+		if name == "":
 			path = "/matrix"
 		if self._file.__contains__(path):
 			del self._file[path]
@@ -346,7 +346,7 @@ class LoomConnection:
 			)
 
 		self.layer[name] = LoomLayer(self, name, dtype)
-		if name == "@DEFAULT":
+		if name == "":
 			self.shape = matrix.shape
 		self._file.flush()
 
@@ -357,7 +357,7 @@ class LoomConnection:
 		Args:
 			submatrix (dict or numpy.ndarray):
 				Either:
-				1) A N-by-M matrix of float32s (N rows, M columns) in this case columns are added at the @DEFAULT layer
+				1) A N-by-M matrix of float32s (N rows, M columns) in this case columns are added at the default layer
 				2) A dict {layer_name : matrix} specified so that the matrix (N, M) will be added to layer `layer_name`
 
 			col_attrs (dict):
@@ -378,10 +378,10 @@ class LoomConnection:
 
 		if not type(submatrix) == dict:
 			submatrix_dict = dict()
-			submatrix_dict["@DEFAULT"] = submatrix
+			submatrix_dict[""] = submatrix
 		else:
 			submatrix_dict = cast(dict, submatrix)  # equivalent to submatrix_dict = submatrix # only avoids problems with type checker
-			submatrix = submatrix_dict["@DEFAULT"]
+			submatrix = submatrix_dict[""]
 
 		# for k, v in submatrix_dict.items():
 		# 	if not np.isfinite(v).all():
@@ -644,7 +644,7 @@ class LoomConnection:
 		if genes is None:
 			genes = np.fromiter(range(self.shape[0]), dtype='int')
 		if layer is None:
-			layer = "@DEFAULT"
+			layer = ""
 		if axis == 1:
 			cols_per_chunk = batch_size
 			ix = 0
@@ -701,7 +701,7 @@ class LoomConnection:
 			the chuncks returned at every element of the iterator
 		layers: iterable
 			if specified it will batch scan only accross some of the layers of the loom file
-			i.g. if layers = ["@DEFAULT"] batch_scan_layers is equivalent to batch_scan
+			i.g. if layers = [""] batch_scan_layers is equivalent to batch_scan
 
 		Returns
 		------
@@ -838,7 +838,7 @@ class LoomConnection:
 		ordering = list(np.array(ordering).flatten())  # Flatten the ordering, in case we got a column vector
 		if axis == 0:
 			for layer in self.layer:
-				if layer == "@DEFAULT":
+				if layer == "":
 					obj = self._file['/matrix']
 				else:
 					obj = self._file['/layers/' + layer]
@@ -860,7 +860,7 @@ class LoomConnection:
 		if axis == 1:
 			# Permute the columns of each layer
 			for layer in self.layer:
-				if layer == "@DEFAULT":
+				if layer == "":
 					obj = self._file['/matrix']
 				else:
 					obj = self._file['/layers/' + layer]
@@ -926,12 +926,12 @@ class LoomLayer():
 		self.shape = ds.shape
 
 	def __getitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]]) -> np.ndarray:
-		if self.name == "@DEFAULT" or self.name == "":
+		if self.name == "":
 			return self.ds._file['/matrix'].__getitem__(slice)
 		return self.ds._file['/layers/' + self.name].__getitem__(slice)
 
 	def __setitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]], data: np.ndarray) -> None:
-		if self.name == "@DEFAULT" or self.name == "":
+		if self.name == "":
 			self.ds._file['/matrix'].__setitem__(slice, data.astype(self.dtype))
 		else:
 			self.ds._file['/layers/' + self.name].__setitem__(slice, data.astype(self.dtype))
@@ -965,7 +965,7 @@ class LoomLayer():
 		The data is not "reshuffled" to fit in the new shape; each axis is grown or shrunk independently.
 		The coordinates of existing data are fixed.
 		"""
-		if self.name == "@DEFAULT":
+		if self.name == "":
 			self.ds._file['/matrix'].resize(size, axis)
 		else:
 			self.ds._file['/layers/' + self.name].resize(size, axis)
@@ -1029,7 +1029,7 @@ def create(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], 
 	f.close()
 
 	ds = connect(filename)
-	ds.set_layer("@DEFAULT", matrix, chunks, chunk_cache, dtype, compression_opts)
+	ds.set_layer("", matrix, chunks, chunk_cache, dtype, compression_opts)
 
 	for key, vals in row_attrs.items():
 		ds.set_attr(key, vals, axis=0)
