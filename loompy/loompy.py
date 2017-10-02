@@ -295,7 +295,7 @@ class LoomConnection:
 			return self.layer[""].sparse(genes=genes, cells=cells)
 		else:
 			return self.layer[layer].sparse(genes=genes, cells=cells)
-			
+
 	def close(self) -> None:
 		"""
 		Close the connection. After this, the connection object becomes invalid.
@@ -476,11 +476,11 @@ class LoomConnection:
 		if key is not None:
 			# This was original Sten's version but it creates a 400M entries array in memory
 			# ordering = np.where(other.row_attrs[key][None, :] == self.row_attrs[key][:, None])[1]
-			
+
 			def ixs_thatsort_a2b(a: np.ndarray, b: np.ndarray, check_content: bool=True) -> np.ndarray:
 				"This is super duper magic sauce to make the order of one list to be like another"
 				if check_content:
-					assert len(np.intersect1d(a, b)) == len(a), f"The two arrays are not mathcing"
+					assert len(np.intersect1d(a, b)) == len(a), "The two arrays are not matching"
 				return np.argsort(a)[np.argsort(np.argsort(b))]
 
 			ordering = ixs_thatsort_a2b(a=other.row_attrs[key], b=self.row_attrs[key])
@@ -953,7 +953,7 @@ class LoomLayer():
 				row = np.concatenate([row, nonzeros[0]])
 				col = np.concatenate([col, selection[nonzeros[1]]])
 		return scipy.sparse.coo_matrix((data, (row, col)), shape=(n_genes, n_cells))
-		
+
 	def resize(self, size: Tuple[int, int], axis: int = None) -> None:
 		"""Resize the dataset, or the specified axis.
 
