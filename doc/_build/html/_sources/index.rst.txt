@@ -24,7 +24,6 @@ multidimensional datasets. HDF5 is supported by many computer languages,
 including Java, MATLAB, Mathematica, Python, R, and Julia. ``.loom``
 files are accessible from any language that supports HDF5.
 
-
 Content
 -------
 
@@ -33,15 +32,18 @@ Content
 .. toctree::
    :hidden:
 
-   index
+   self
 
 .. toctree::
+
    installation/index
 
 .. toctree::
+
    semantics/index
 
 .. toctree::
+
    apiwalkthrough/index
    fullapi/index
 
