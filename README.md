@@ -1,7 +1,7 @@
 
 # loompy
 
-**Note:** This documentation may be out of date with the most recent version of loompy!
+**Note:** This documentation may be out of date with the most recent version of loompy! Refer to the source code to discover the correct arguments for each method.
 
 `.loom` is an efficient file format for very large omics datasets, 
 consisting of a main matrix, optional additional layers, and a variable number of row and column 
