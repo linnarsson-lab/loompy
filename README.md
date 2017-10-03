@@ -15,12 +15,16 @@ HDF5 is supported by many computer languages, including Java, MATLAB,
 Mathematica, Python, R, and Julia. `.loom` files are accessible from 
 any language that supports HDF5.
 
+Loom, loompy, and the loom-viewer, are being developed by members of the [Linnarsson Lab](http://linnarssonlab.org).
+
 ## Installation
 
-Alternatively, you can install the latest version from source (don't forget the dot on the second line!):
+Run this in your terminal (don't forget the dot on the second line!):
 
     git clone https://github.com/linnarsson-lab/loompy.git
     pip install -e .
+
+Alternatively, e.g. if you don't have git, download the repository manually and unpack it to a folder, then run the `pip install -e .` command.
 
 If you just want to work with loom files within Python code, you should be all set! We also made a web-app to make it easier to browse the data, which you can install for local viewing, or set up for sharing loom files from your own website. See the [`loom-viewer`](https://github.com/linnarsson-lab/loom-viewer/) repository for more information.
 
