@@ -9,4 +9,3 @@ This is a complete API reference generated using the docstrings of every loompy 
 
 .. toctree::
    loompy
-   modules
