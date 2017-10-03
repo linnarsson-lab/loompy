@@ -15,7 +15,7 @@ HDF5 is supported by many computer languages, including Java, MATLAB,
 Mathematica, Python, R, and Julia. `.loom` files are accessible from 
 any language that supports HDF5.
 
-Loom, loompy, and the loom-viewer, are being developed by members of the [Linnarsson Lab](http://linnarssonlab.org).
+Loom, loompy, and the loom-viewer are being developed by members of the [Linnarsson Lab](http://linnarssonlab.org).
 
 ## Installation
 
