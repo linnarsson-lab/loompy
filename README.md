@@ -82,7 +82,7 @@ and (we think) only from a single compute node. On a compute cluster, you may en
 bugs if you try to read the same Loom file from different compute nodes concurrently.
 
 Loom files are great for distribution of large datasets, which are then
-used as read-only for analytical purposes.
+used for analytical purposes.
 
 ### Efficient indexing and compression
 
