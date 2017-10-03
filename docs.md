@@ -532,7 +532,5 @@ ds.layer[""]
 Layers can be loaded in memory as sparse matrices, efficiently:
 
 ```
-LoomLayer.as_coo() -> sparse.coo_matrix:
-LoomLayer.as_csr() -> sparse.csr_matrix:
-LoomLayer.as_csc() -> sparse.csc_matrix:
+ds.layer[""].sparse() -> sparse.coo_matrix:
 ```
