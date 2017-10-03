@@ -1,6 +1,8 @@
 
 # loompy
 
+**Note:** This documentation may be out of date with the most recent version of loompy!
+
 `.loom` is an efficient file format for very large omics datasets, 
 consisting of a main matrix, optional additional layers, and a variable number of row and column 
 annotations. We use loom files to store single-cell gene expression 
