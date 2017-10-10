@@ -1,0 +1,343 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Welcome to loompy! &mdash; loompy 0.30.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="loompy 0.30.0 documentation" href="#"/>
+        <link rel="next" title="Installation" href="installation/index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="#" class="icon icon-home"> loompy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.30
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Welcome to loompy!</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation/index.html">Installation</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="semantics/index.html">Understanding the semantics of loom files</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="apiwalkthrough/index.html">API Walkthrough</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fullapi/index.html">Complete API Refrence</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="format/index.html"><code class="docutils literal"><span class="pre">.loom</span></code> file format</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">loompy</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="#">Docs</a> &raquo;</li>
+        
+      <li>Welcome to loompy!</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="welcome-to-loompy">
+<h1>Welcome to loompy!<a class="headerlink" href="#welcome-to-loompy" title="Permalink to this headline">¶</a></h1>
+<p><code class="docutils literal"><span class="pre">loompy</span></code> is a python library to agilely work with the <code class="docutils literal"><span class="pre">.loom</span></code> file format.</p>
+<p><code class="docutils literal"><span class="pre">.loom</span></code> is an efficient file format for very large omics datasets,
+consisting of a main matrix, optional additional layers, and a variable
+number of row and column annotations. We use loom files to store
+single-cell gene expression data: the main matrix contains the actual
+expression values (one column per cell, one row per gene); row and
+column annotations contain metadata for genes and cells, such as
+<code class="docutils literal"><span class="pre">Name</span></code>, <code class="docutils literal"><span class="pre">Chromosome</span></code>, <code class="docutils literal"><span class="pre">Position</span></code> (for genes), and <code class="docutils literal"><span class="pre">Strain</span></code>,
+<code class="docutils literal"><span class="pre">Sex</span></code>, <code class="docutils literal"><span class="pre">Age</span></code> (for cells).</p>
+<p>Loom files (<code class="docutils literal"><span class="pre">.loom</span></code>) are created in the
+<a class="reference external" href="https://en.wikipedia.org/wiki/Hierarchical_Data_Format">HDF5</a> file
+format, which supports an internal collection of numerical
+multidimensional datasets. HDF5 is supported by many computer languages,
+including Java, MATLAB, Mathematica, Python, R, and Julia. <code class="docutils literal"><span class="pre">.loom</span></code>
+files are accessible from any language that supports HDF5.</p>
+<div class="section" id="content">
+<h2>Content<a class="headerlink" href="#content" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></li>
+</ul>
+<div class="toctree-wrapper compound">
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation/index.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="installation/index.html#using-pip">Using pip</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation/index.html#from-source">From source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation/index.html#getting-started">Getting started</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="semantics/index.html">Understanding the semantics of loom files</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="semantics/index.html#connecting-not-loading-and-saving">Connecting, not loading and saving</a></li>
+<li class="toctree-l2"><a class="reference internal" href="semantics/index.html#reading-and-writing">Reading and writing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="semantics/index.html#efficient-indexing-and-compression">Efficient indexing and compression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="semantics/index.html#matrix-and-attributes">Matrix and attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="semantics/index.html#data-types">Data types</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="apiwalkthrough/index.html">API Walkthrough</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="apiwalkthrough/index.html#creating-and-connecting">Creating and connecting</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="apiwalkthrough/index.html#creating-loom-files">Creating <code class="docutils literal"><span class="pre">.loom</span></code> files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="apiwalkthrough/index.html#connecting-to-loom-files">Connecting to <code class="docutils literal"><span class="pre">.loom</span></code> files</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="apiwalkthrough/index.html#manipulate-data">Manipulate data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="apiwalkthrough/index.html#shape-indexing-and-slicing">Shape, indexing and slicing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="apiwalkthrough/index.html#global-attributes">Global attributes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="apiwalkthrough/index.html#row-and-column-attributes">Row and column attributes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="apiwalkthrough/index.html#adding-attributes-and-columns">Adding attributes and columns</a></li>
+<li class="toctree-l3"><a class="reference internal" href="apiwalkthrough/index.html#operations">Operations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="apiwalkthrough/index.html#map">Map</a></li>
+<li class="toctree-l4"><a class="reference internal" href="apiwalkthrough/index.html#permutation">Permutation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="apiwalkthrough/index.html#batch-scan">Batch scan</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="apiwalkthrough/index.html#layers">Layers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="apiwalkthrough/index.html#working-with-layers">Working with layers</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="apiwalkthrough/index.html#create-a-layer">Create a layer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="apiwalkthrough/index.html#access-a-layer">Access a layer</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="fullapi/index.html">Complete API Refrence</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="fullapi/loompy.html">loompy package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="fullapi/loompy.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fullapi/loompy.html#module-loompy.loompy">loompy.loompy module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fullapi/loompy.html#module-loompy">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="format/index.html"><code class="docutils literal"><span class="pre">.loom</span></code> file format</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="format/index.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="format/index.html#specification">Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="format/index.html#hdf5-concepts">HDF5 concepts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="format/index.html#example">Example</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="installation/index.html" class="btn btn-neutral float-right" title="Installation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, LinnarssonLab.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.30.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
