@@ -1,5 +1,5 @@
 
-**Note:** This documentation may be out of date with the most recent version of loompy! Refer to the source code to discover the correct arguments for each method.
+**Note:** For up to date docs, head over to [loompy.org](http://loompy.org)!
 
 # loompy
 
