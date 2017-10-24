@@ -18,5 +18,5 @@ any language that supports HDF5.
 
 To get started, head over to [the documentation at loompy.org](http://loompy.org/loompy-docs/)!
 
-Loom, loompy, and the loom-viewer are being developed by members of the [Linnarsson Lab](http://linnarssonlab.org).
+Loom, loompy, and the [loom-viewer](https://github.com/linnarsson-lab/loom-viewer) are being developed by members of the [Linnarsson Lab](http://linnarssonlab.org).
 
