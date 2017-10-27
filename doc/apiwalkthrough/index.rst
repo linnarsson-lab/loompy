@@ -340,7 +340,7 @@ current dataset. The rows must match for this to work. That is, the two
 files must have exactly the same rows (genes). If ``key`` is given, the
 rows may be out of order, and will be aligned based on the key
 attribute. Furthermore, the two datasets must have the same column
-attributes (but of coure can have different *values* for those
+attributes (but of course can have different *values* for those
 attributes at each column). Missing attributes can be given default
 values using ``fill_values`` .
 
