@@ -62,10 +62,10 @@ A valid ``.loom`` file conforms to the following:
 -  ``doi``, a DOI for the paper where the dataset was published
 -  There MUST be a group ``/row_attrs``
 -  There can OPTIONALLY be one or more datasets at ``/row_attrs/{name}``
-   of length N and type ``float64``, ``int`` or ``string``
+   of length N and type ``float64`` or ``string``
 -  There MUST be a group ``/col_attrs``
 -  There can OPTIONALLY be one or more datasets at ``/col_attrs/{name}``
-   of length M and type ``float64``, ``int`` or ``string``
+   of length M and type ``float64`` or ``string``
 
 The datasets under ``/row_attrs`` should be semantically interpreted as
 row attributes, with one value per row of the main matrix, and in the
@@ -79,8 +79,8 @@ the same order. Therefore, all datasets under this group must be
 one-dimensional arrays with exactly M elements, where M is the number of
 columns in the main matrix.
 
-As noted above, only three datatypes are allowedfor attributes;
-``float64``, ``int`` or ``string``.
+As noted above, only two datatypes are allowed for attributes;
+``float64`` or ``string``.
 
 .. _hd5concepts:
 
