@@ -282,7 +282,7 @@ To add an attribute, which also saves it to the loom file:
                 name (str):             Name of the attribute
                 values (numpy.ndarray): Array of values of length equal to the axis length      
                 axis (int):             Axis of the attribute (0 = rows, 1 = columns)
-                dtype (str):            Type ("float64", "int", or "string")
+                dtype (str):            Type ("float64" or "string")
 
             Returns:
                 Nothing.
