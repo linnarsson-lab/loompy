@@ -6,17 +6,16 @@ Installation
 Using conda
 -----------
 
-A conda recipe for ``loompy`` is hosted on both ``bioconda`` and ``conda-forge``, if you have one of the two channels in your channel list (check by ``cat ~/.condarc``) you can simply run:
+A conda recipe for ``loompy`` is hosted on ``bioconda``, if ``bioconda`` is present in your channel list (check by ``cat ~/.condarc``) you can simply run:
 
 ::
 
     conda install loompy
 
-If you don't have ``bioconda`` or ``conda-forge`` in your channel list you might want to add them with the following commands (in this way priority will be ``defaults>bioconda>conda-forge``)
+If you don't have ``bioconda`` in your channel list you might want to add it with the following command
 
 ::
     conda config --append channels bioconda
-    conda config --append channels conda-forge
 
 Otherwise if you are not fond of using community channels you can simply install the recipe we built (or using pip): 
 
