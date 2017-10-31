@@ -1000,6 +1000,8 @@ def create(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], 
 								are numpy arrays (float or string) of length N
 		col_attrs (dict):       Column attributes, where keys are attribute names and
 								values are numpy arrays (float or string) of length M
+		file_attrs (dict):      Global attributes, where keys are attribute names and
+								values are strings
 		chunks (tuple):         The chunking of the matrix. Small chunks are slow
 								when loading a large batch of rows/columns in sequence,
 								but fast for single column/row retrieval.
@@ -1010,7 +1012,7 @@ def create(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], 
 								sequential row/column access will be a lot slower.
 								Defaults to 512.
 		dtype (str):           Dtype of the matrix. Default float32 (uint16, float16 could be used)
-		compression_opts (int): Strenght of the gzip compression. Default None.
+		compression_opts (int): Strength of the gzip compression. Default None.
 	Returns:
 		LoomConnection to created loom file.
 	"""
