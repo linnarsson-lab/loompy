@@ -214,7 +214,7 @@ and ``col_attrs``, respectively. For example:
 
     ds.row_attrs.keys()       # Return list of row attribute names
     ds.col_attrs.keys()       # Return list of column attribute names
-    ds.row_attrs["GeneName"]  # Return a numpy array of gene names (assuming the attribute exists)
+    ds.row_attrs["Gene"]  # Return a numpy array of gene names (assuming the attribute exists)
 
 Note that these dictionaries are **read-only**. Any modifications will
 not be saved in the .loom file and will cause internal inconsistencies
@@ -226,7 +226,7 @@ For convenience, attributes are also available directly on the
 
 .. code:: python
 
-    ds.GeneName     # Equivalent to ds.row_attrs["GeneName"]
+    ds.Gene     # Equivalent to ds.row_attrs["Gene"]
 
 Using attributes in this way results in a very compact and readable
 syntax for selecting subarrays:
