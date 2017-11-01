@@ -1059,7 +1059,7 @@ def create_from_cellranger(indir: str, outdir: str = None, genome: str = None) -
 		genome (str):	genome build to load (e.g. 'mm10'; default: determine species from outs folder)
 
 	Returns:
-		Nothing, but creates loom_file
+		LoomConnection to created loom file.
 	"""
 	if outdir is None:
 		outdir = indir
