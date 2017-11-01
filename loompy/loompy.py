@@ -60,10 +60,10 @@ class LoomAttributeManager(object):
 		return self.f.attrs.__contains__(name)
 
 	def __setitem__(self, name: str, value: str) -> None:
-		if type(value) == bytes:
-			self.f.attrs[name] = value
-		else:
+		if type(value) == str:
 			self.f.attrs[name] = value.encode('utf-8')
+		else:
+			self.f.attrs[name] = value
 		self.f.flush()
 
 	def __getitem__(self, name: str) -> str:
