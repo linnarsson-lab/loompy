@@ -53,7 +53,7 @@ A valid ``.loom`` file conforms to the following:
 -  Each layer can have a different data type, compression, chunking etc.
 -  There can OPTIONALLY be at least one `HDF5
    attribute <https://www.hdfgroup.org/HDF5/Tutor/crtatt.html>`__ on the
-   root ``/`` group, which MUST be of type ``string`` and should be
+   root ``/`` group, which MUST be of type ``float64`` or ``string`` and should be
    interpreted as attributes of the whole ``.loom`` file. The following
    HDF5 attributes are standard:
 -  ``title``, a short title for the dataset
