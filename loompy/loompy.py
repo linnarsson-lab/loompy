@@ -161,6 +161,13 @@ class LoomConnection:
 			self.close()
 			raise e
 
+	def __enter__(self):
+		return self
+
+	def __exit__(self, type, value, traceback) -> None:
+		if not self.closed:
+			self.close(True)
+
 	def _save_attr(self, name: str, values: np.ndarray, axis: int) -> None:
 		"""
 		Save an attribute to the file, nothing else
@@ -216,61 +223,64 @@ class LoomConnection:
 		"""
 		Return an HTML representation of the loom file, showing the upper-left 10x10 corner.
 		"""
-		rm = min(10, self.shape[0])
-		cm = min(10, self.shape[1])
-		html = "<p>"
-		if self.attrs.__contains__("title"):
-			html += "<strong>" + self.attrs["title"] + "</strong> "
-		html += "(" + str(self.shape[0]) + " genes, " + str(self.shape[1]) + " cells, " + str(len(self.layer)) + " layers)<br/>"
-		html += self._file.filename + "<br/>"
-		if self.attrs.__contains__("description"):
-			html += "<em>" + self.attrs["description"] + "</em><br/>"
-		html += "<table>"
-		# Emit column attributes
-		for ca in self.col_attrs.keys():
+		if not self.closed:
+			rm = min(10, self.shape[0])
+			cm = min(10, self.shape[1])
+			html = "<p>"
+			if self.attrs.__contains__("title"):
+				html += "<strong>" + self.attrs["title"] + "</strong> "
+			html += "(" + str(self.shape[0]) + " genes, " + str(self.shape[1]) + " cells, " + str(len(self.layer)) + " layers)<br/>"
+			html += self._file.filename + "<br/>"
+			if self.attrs.__contains__("description"):
+				html += "<em>" + self.attrs["description"] + "</em><br/>"
+			html += "<table>"
+			# Emit column attributes
+			for ca in self.col_attrs.keys():
+				html += "<tr>"
+				for ra in self.row_attrs.keys():
+					html += "<td>&nbsp;</td>"  # Space for row attrs
+				html += "<td><strong>" + ca + "</strong></td>"  # Col attr name
+				for v in self.col_attrs[ca][:cm]:
+					html += "<td>" + str(v) + "</td>"
+				if self.shape[1] > cm:
+					html += "<td>...</td>"
+				html += "</tr>"
+
+			# Emit row attribute names
 			html += "<tr>"
 			for ra in self.row_attrs.keys():
-				html += "<td>&nbsp;</td>"  # Space for row attrs
-			html += "<td><strong>" + ca + "</strong></td>"  # Col attr name
-			for v in self.col_attrs[ca][:cm]:
-				html += "<td>" + str(v) + "</td>"
-			if self.shape[1] > cm:
-				html += "<td>...</td>"
-			html += "</tr>"
-
-		# Emit row attribute names
-		html += "<tr>"
-		for ra in self.row_attrs.keys():
-			html += "<td><strong>" + ra + "</strong></td>"  # Row attr name
-		html += "<td>&nbsp;</td>"  # Space for col attrs
-		for v in range(cm):
-			html += "<td>&nbsp;</td>"
-		if self.shape[1] > cm:
-			html += "<td>...</td>"
-		html += "</tr>"
-
-		# Emit row attr values and matrix values
-		for row in range(rm):
-			html += "<tr>"
-			for ra in self.row_attrs.keys():
-				html += "<td>" + str(self.row_attrs[ra][row]) + "</td>"
+				html += "<td><strong>" + ra + "</strong></td>"  # Row attr name
 			html += "<td>&nbsp;</td>"  # Space for col attrs
+			for v in range(cm):
+				html += "<td>&nbsp;</td>"
+			if self.shape[1] > cm:
+				html += "<td>...</td>"
+			html += "</tr>"
 
-			for v in self[row, :cm]:
-				html += "<td>" + str(v) + "</td>"
-			if self.shape[1] > cm:
-				html += "<td>...</td>"
-			html += "</tr>"
-		# Emit ellipses
-		if self.shape[0] > rm:
-			html += "<tr>"
-			for v in range(rm + 1 + len(self.row_attrs.keys())):
-				html += "<td>...</td>"
-			if self.shape[1] > cm:
-				html += "<td>...</td>"
-			html += "</tr>"
-		html += "</table>"
-		return html
+			# Emit row attr values and matrix values
+			for row in range(rm):
+				html += "<tr>"
+				for ra in self.row_attrs.keys():
+					html += "<td>" + str(self.row_attrs[ra][row]) + "</td>"
+				html += "<td>&nbsp;</td>"  # Space for col attrs
+
+				for v in self[row, :cm]:
+					html += "<td>" + str(v) + "</td>"
+				if self.shape[1] > cm:
+					html += "<td>...</td>"
+				html += "</tr>"
+			# Emit ellipses
+			if self.shape[0] > rm:
+				html += "<tr>"
+				for v in range(rm + 1 + len(self.row_attrs.keys())):
+					html += "<td>...</td>"
+				if self.shape[1] > cm:
+					html += "<td>...</td>"
+				html += "</tr>"
+			html += "</table>"
+			return html
+		else:
+			return "This LoomConnection has been closed"
 
 	def __getitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]]) -> np.ndarray:
 		"""
@@ -302,13 +312,18 @@ class LoomConnection:
 		else:
 			return self.layer[layer].sparse(genes=genes, cells=cells)
 
-	def close(self) -> None:
+	def close(self, suppress_warning=False) -> None:
 		"""
-		Close the connection. After this, the connection object becomes invalid.
+		Close the connection. After this, the connection object becomes invalid. Warns user if called after closing.
+
+		Args:
+			suppress_warning:		Suppresses warning message if True (defaults to false)
 		"""
 		if self._file is None:
-			# Warn user that they're being paranoid and should clean up their code
-			logging.warn("Connection to %s is already closed", self.filename)
+			if not suppress_warning:
+				# Warn user that they're being paranoid
+				# and should clean up their code
+				logging.warn("Connection to %s is already closed", self.filename)
 		else:
 			self._file.close()
 			self._file = None
