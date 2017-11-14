@@ -1104,7 +1104,6 @@ def create(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], 
 		# store creation date
 		currentTime = time.localtime(time.time())
 		ds.attrs['creation_date'] = time.strftime('%Y/%m/%d %H:%M:%S', currentTime)
-		ds.attrs['chunks'] = str(chunks)
 		return ds
 	except e:
 		console.warn("File creation of %s failed, closing any open connections", filename)
