@@ -978,6 +978,7 @@ def _create_sparse(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.nd
 	ix = 0
 	ds = None  # type: LoomConnection
 	while ix < matrix.shape[1]:
+		window = min(window, matrix.shape[1] - ix)
 		ca = {key: val[ix:ix + window] for (key, val) in col_attrs.items()}
 		if ds is None:
 			logging.info("Creating")
