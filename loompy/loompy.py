@@ -1105,17 +1105,17 @@ def create(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], 
 		currentTime = time.localtime(time.time())
 		ds.attrs['creation_date'] = time.strftime('%Y/%m/%d %H:%M:%S', currentTime)
 		return ds
-	except e:
-		console.warn("File creation of %s failed, closing any open connections", filename)
+	except Exception as e:
+		logging.warn("File creation of %s failed, closing any open connections", filename)
 		try:
 			f.close()
-		except:
+		except Exception:
 			# presumed to fail because f was either never created,
 			# or because f.close() was already called.
 			pass
 		try:
 			ds.close()
-		except:
+		except Exception as e:
 			# presumed to fail because ds was already closed
 			pass
 		raise e
