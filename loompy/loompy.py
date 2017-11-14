@@ -162,7 +162,7 @@ class LoomConnection:
 			self.close()
 			raise e
 
-	def __enter__(self) -> LoomConnection:
+	def __enter__(self) -> Any:
 		return self
 
 	def __exit__(self, type: Any, value: Any, traceback: Any) -> None:
@@ -1077,6 +1077,8 @@ def create(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], 
 	Returns:
 		LoomConnection to created loom file.
 	"""
+	if filename.startswith("~/"):
+		filename = os.path.expanduser(filename)
 	if file_attrs is None:
 		file_attrs = {}
 
@@ -1088,50 +1090,36 @@ def create(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], 
 			raise NotImplementedError("Creating from sparse matrix supports only single layer")
 		return _create_sparse(filename, matrix, row_attrs, col_attrs, file_attrs=file_attrs, layers=layers, chunks=chunks, chunk_cache=chunk_cache, dtype=dtype, compression_opts=compression_opts)
 
-	try:
-		# Create the file (empty).
-		f = h5py.File(name=filename, mode='w')
-		f.create_group('/layers')
-		f.create_group('/row_attrs')
-		f.create_group('/col_attrs')
-		f.flush()
-		f.close()
+	# Create the file (empty).
+	# Yes, this might cause an exception, which we prefer to send to the caller
+	f = h5py.File(name=filename, mode='w')
+	f.create_group('/layers')
+	f.create_group('/row_attrs')
+	f.create_group('/col_attrs')
+	f.flush()
+	f.close()
 
-		ds = connect(filename)
-		ds.set_layer("", matrix, chunks, chunk_cache, dtype, compression_opts)
+	ds = connect(filename)
+	ds.set_layer("", matrix, chunks, chunk_cache, dtype, compression_opts)
 
-		if layers is not None:
-			for key, vals in layers.items():
-				if key != "":
-					ds.set_layer(key, vals)
+	if layers is not None:
+		for key, vals in layers.items():
+			if key != "":
+				ds.set_layer(key, vals)
 
-		for key, vals in row_attrs.items():
-			ds.set_attr(key, vals, axis=0)
+	for key, vals in row_attrs.items():
+		ds.set_attr(key, vals, axis=0)
 
-		for key, vals in col_attrs.items():
-			ds.set_attr(key, vals, axis=1)
+	for key, vals in col_attrs.items():
+		ds.set_attr(key, vals, axis=1)
 
-		for vals in file_attrs:
-			ds.attrs[vals] = file_attrs[vals]
+	for vals in file_attrs:
+		ds.attrs[vals] = file_attrs[vals]
 
-		# store creation date
-		currentTime = time.localtime(time.time())
-		ds.attrs['creation_date'] = time.strftime('%Y/%m/%d %H:%M:%S', currentTime)
-		return ds
-	except Exception as e:
-		logging.warn("File creation of %s failed, closing any open connections", filename)
-		try:
-			f.close()
-		except Exception:
-			# presumed to fail because f was either never created,
-			# or because f.close() was already called.
-			pass
-		try:
-			ds.close()
-		except Exception as e:
-			# presumed to fail because ds was already closed
-			pass
-		raise e
+	# store creation date
+	currentTime = time.localtime(time.time())
+	ds.attrs['creation_date'] = time.strftime('%Y/%m/%d %H:%M:%S', currentTime)
+	return ds
 
 
 def create_from_cellranger(indir: str, outdir: str = None, genome: str = None) -> LoomConnection:
