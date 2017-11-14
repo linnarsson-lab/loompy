@@ -13,7 +13,7 @@ def normalize_attr_strings(a: np.ndarray) -> np.ndarray:
 		else:
 			raise ValueError("Arbitrary numpy object arrays not supported (all elements must be string objects).")
 	elif np.issubdtype(a.dtype, np.string_):
-		return a        
+		return a
 	elif np.issubdtype(a.dtype, np.str_):
 		return np.array([x.encode('ascii', 'xmlcharrefreplace') for x in a])
 	elif np.issubdtype(a.dtype, np.unicode_):
