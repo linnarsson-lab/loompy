@@ -31,6 +31,7 @@ import scipy.sparse
 from shutil import copyfile
 import logging
 import time
+import loompy
 
 
 def strip(s: str) -> str:
@@ -178,8 +179,8 @@ class LoomConnection:
 		"""
 		if self.mode != "r+":
 			raise IOError("Cannot save attributes when connected in read-only mode")
-		if values.dtype.type is np.str_:
-			values = np.array([x.encode('ascii', 'ignore') for x in values])
+		
+		values = loompy.normalize_attr_values(values)
 
 		a = ["/row_attrs/", "/col_attrs/"][axis]
 		if self.shape[axis] != 0 and len(values) != self.shape[axis]:
@@ -210,13 +211,39 @@ class LoomConnection:
 		else:
 			vals = self._file[a][name][:]
 
+		reserved = [
+			"__init__", 
+			"__enter__", 
+			"__exit__", 
+			"_save_attr", 
+			"__load_attr", 
+			"_repr_html_", 
+			"__getitem", 
+			"__setitem", 
+			"sparse", 
+			"close", 
+			"closed", 
+			"set_layer", 
+			"add_columns",
+			"add_loom",
+			"set_attr",
+			"delete_attr",
+			"list_edges",
+			"get_edges",
+			"set_edges",
+			"export",
+			"batch_scan",
+			"batch_scan_layers",
+			"map",
+			"permute"
+		]
 		if axis == 0:
 			self.row_attrs[name] = vals
-			if not hasattr(LoomConnection, name):
+			if name not in reserved:
 				setattr(self, name, self.row_attrs[name])
 		else:
 			self.col_attrs[name] = vals
-			if not hasattr(LoomConnection, name):
+			if name not in reserved:
 				setattr(self, name, self.col_attrs[name])
 
 	def _repr_html_(self) -> str:
