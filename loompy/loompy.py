@@ -199,17 +199,7 @@ class LoomConnection:
 			Updates the attribute cache as well as the class attributes
 		"""
 		a = ["/row_attrs/", "/col_attrs/"][axis]
-
-		def safe_decode(s: np.bytes_) -> str:
-			try:
-				return s.decode('utf8')
-			except UnicodeDecodeError:
-				return "[UTF-8 DECODING ERROR]"
-
-		if self._file[a][name].dtype.kind == 'S':
-			vals = np.array([safe_decode(x) for x in self._file[a][name][:]])
-		else:
-			vals = self._file[a][name][:]
+		vals = loompy.materialize_attr_values(self._file[a][name][:])
 
 		reserved = [
 			"__init__",

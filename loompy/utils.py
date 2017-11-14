@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.sparse as sparse
 from typing import *
+import html
 
 
 def normalize_attr_strings(a: np.ndarray) -> np.ndarray:
@@ -66,3 +67,12 @@ def normalize_attr_values(a: Any) -> np.ndarray:
 	elif np.issubdtype(arr.dtype, np.bool_):
 		arr = arr.astype('float64')
 	return arr
+
+
+def materialize_attr_values(a: np.ndarray) -> np.ndarray:
+	if np.issubdtype(a.dtype, np.string_):
+		return np.array([html.unescape(x) for x in a.astype(str)], dtype='object')
+	elif np.issubdtype(a.dtype, np.str_) or np.issubdtype(a.dtype, np.unicode_):
+		return np.array(a.astype(str), dtype='object')
+	else:
+		return a
