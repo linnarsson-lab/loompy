@@ -3,6 +3,34 @@
 Installation
 ============
 
+Using conda
+-----------
+
+A conda recipe for ``loompy`` is hosted on ``bioconda``, if ``bioconda`` is present in your channel list (check by ``cat ~/.condarc``) you can simply run:
+
+::
+
+    conda install loompy
+
+If you don't have ``bioconda`` in your channel list you might want to add it with the following command
+
+::
+    conda config --append channels bioconda
+
+Otherwise if you are not fond of using community channels you can simply install the recipe we built (or using pip): 
+
+::
+
+    conda install -c gioelelm loompy 
+
+
+.. tip::
+    The package is updated often (don't worry, the format is stable;
+    even in the rare occasion that you need to update your code, your old
+    loom files won't break). To ensure that you have the latest version, do
+    ``conda update loompy``
+
+
 Using pip
 ---------
 
@@ -12,14 +40,13 @@ You can install the loompy package from PyPi with:
 
     pip install loompy
 
-Tip: the package is updated often (don't worry, the format is stable;
-even in the rare occasion that you need to update your code, your old
-loom files won't break). To ensure that you have the latest version, do
-this:
 
-::
+.. tip::
+    The package is updated often (don't worry, the format is stable;
+    even in the rare occasion that you need to update your code, your old
+    loom files won't break). To ensure that you have the latest version, do
+    ``pip install -U loompy``
 
-    pip install -U loompy
 
 From source
 -----------
@@ -39,8 +66,8 @@ files from your own website. See the loom-viewer`<https://github.com/linnarsson-
 
 .. _gettingstarted:
 
-Getting started
----------------
+Getting Started
+===============
 
 Run the following in a Jupyter notebook:
 
@@ -76,5 +103,5 @@ out the single row corresponding to *Actb*, and ``:`` is used to select
 all columns. Hence, the expression returns the expression values for
 *Actb* in every cell in the dataset.
 
-Refer to the API Documentation below to learn more about creating and
+Refer to the `API Walktrough <apiwalkthrough>`_ and the `API Documentation <fullapi>`_  to learn more about creating and
 manipulating loom files.

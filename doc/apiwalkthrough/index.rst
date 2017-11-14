@@ -214,7 +214,7 @@ and ``col_attrs``, respectively. For example:
 
     ds.row_attrs.keys()       # Return list of row attribute names
     ds.col_attrs.keys()       # Return list of column attribute names
-    ds.row_attrs["GeneName"]  # Return a numpy array of gene names (assuming the attribute exists)
+    ds.row_attrs["Gene"]  # Return a numpy array of gene names (assuming the attribute exists)
 
 Note that these dictionaries are **read-only**. Any modifications will
 not be saved in the .loom file and will cause internal inconsistencies
@@ -226,7 +226,7 @@ For convenience, attributes are also available directly on the
 
 .. code:: python
 
-    ds.GeneName     # Equivalent to ds.row_attrs["GeneName"]
+    ds.Gene     # Equivalent to ds.row_attrs["Gene"]
 
 Using attributes in this way results in a very compact and readable
 syntax for selecting subarrays:
@@ -282,7 +282,7 @@ To add an attribute, which also saves it to the loom file:
                 name (str):             Name of the attribute
                 values (numpy.ndarray): Array of values of length equal to the axis length      
                 axis (int):             Axis of the attribute (0 = rows, 1 = columns)
-                dtype (str):            Type ("float64", "int", or "string")
+                dtype (str):            Type ("float64" or "string")
 
             Returns:
                 Nothing.
@@ -340,7 +340,7 @@ current dataset. The rows must match for this to work. That is, the two
 files must have exactly the same rows (genes). If ``key`` is given, the
 rows may be out of order, and will be aligned based on the key
 attribute. Furthermore, the two datasets must have the same column
-attributes (but of coure can have different *values* for those
+attributes (but of course can have different *values* for those
 attributes at each column). Missing attributes can be given default
 values using ``fill_values`` .
 

@@ -60,10 +60,10 @@ class LoomAttributeManager(object):
 		return self.f.attrs.__contains__(name)
 
 	def __setitem__(self, name: str, value: str) -> None:
-		if type(value) == bytes:
-			self.f.attrs[name] = value
-		else:
+		if type(value) == str:
 			self.f.attrs[name] = value.encode('utf-8')
+		else:
+			self.f.attrs[name] = value
 		self.f.flush()
 
 	def __getitem__(self, name: str) -> str:
@@ -110,50 +110,63 @@ class LoomConnection:
 		Row and column attributes are loaded into memory for fast access.
 		"""
 
-		# make sure a valid mode was passed, if not default to read-only
-		# because you probably are doing something that you don't want to
-		if mode != 'r+' and mode != 'r':
-			logging.warn("Wrong mode passed to LoomConnection, using read-only to not destroy data")
-			mode = 'r'
-		self.mode = mode
-		self.filename = filename
-		self._file = h5py.File(filename, mode)
-		self.shape = [0, 0]  # The correct shape gets assigned when the layers are loaded
+		try:
+			# make sure a valid mode was passed, if not default to read-only
+			# because you probably are doing something that you don't want to
+			if mode != 'r+' and mode != 'r':
+				logging.warn("Wrong mode passed to LoomConnection, using read-only to not destroy data")
+				mode = 'r'
+			self.mode = mode
+			self.filename = filename
+			self._file = h5py.File(filename, mode)
+			self._closed = False
+			self.shape = [0, 0] # The correct shape gets assigned when the layers are loaded
 
-		if self._file.__contains__("/matrix"):
-			self.layer = {
-				"": LoomLayer(self, "", self._file["/matrix"].dtype)
-			}
-			self.shape = self._file["/matrix"].shape
-			if self._file.__contains__("/layers"):
-				for key in self._file["/layers"].keys():
-					self.layer[key] = LoomLayer(self, key, self._file["/layers/" + key].dtype)
-		else:
-			self.layer = {}
+			if self._file.__contains__("/matrix"):
+				self.layer = {
+					"": LoomLayer(self, "", self._file["/matrix"].dtype)
+				}
+				self.shape = self._file["/matrix"].shape
+				if self._file.__contains__("/layers"):
+					for key in self._file["/layers"].keys():
+						self.layer[key] = LoomLayer(self, key, self._file["/layers/" + key].dtype)
+			else:
+				self.layer = {}
 
-		self.row_attrs = {}  # type: Dict[str, np.ndarray]
-		for key in self._file['row_attrs'].keys():
-			self._load_attr(key, axis=0)
-			v = self.row_attrs[key]
-			if type(v[0]) is np.str_ and len(v[0]) >= 3 and v[0][:2] == "b'" and v[0][-1] == "'":
-				logging.warn("Unicode bug detected in row %s" % key)
-				if mode == 'r+':
-					logging.warn("Fixing unicode bug by re-setting row attribute '" + key + "'")
-					self._save_attr(key, np.array([x[2:-1] for x in v]), axis=0)
-					self._load_attr(key, axis=0)
+			self.row_attrs = {}  # type: Dict[str, np.ndarray]
+			for key in self._file['row_attrs'].keys():
+				self._load_attr(key, axis=0)
+				v = self.row_attrs[key]
+				if type(v[0]) is np.str_ and len(v[0]) >= 3 and v[0][:2] == "b'" and v[0][-1] == "'":
+					logging.warn("Unicode bug detected in row %s" % key)
+					if mode == 'r+':
+						logging.warn("Fixing unicode bug by re-setting row attribute '" + key + "'")
+						self._save_attr(key, np.array([x[2:-1] for x in v]), axis=0)
+						self._load_attr(key, axis=0)
 
-		self.col_attrs = {}  # type: Dict[str, np.ndarray]
-		for key in self._file['col_attrs'].keys():
-			self._load_attr(key, axis=1)
-			v = self.col_attrs[key]
-			if len(v) > 0 and type(v[0]) is np.str_ and len(v[0]) >= 3 and v[0][:2] == "b'" and v[0][-1] == "'":
-				logging.warn("Unicode bug detected in column %s" % key)
-				if mode == 'r+':
-					logging.warn("Fixing unicode bug by re-setting column attribute '" + key + "'")
-					self._save_attr(key, np.array([x[2:-1] for x in v]), axis=1)
-					self._load_attr(key, axis=1)
+			self.col_attrs = {}  # type: Dict[str, np.ndarray]
+			for key in self._file['col_attrs'].keys():
+				self._load_attr(key, axis=1)
+				v = self.col_attrs[key]
+				if len(v) > 0 and type(v[0]) is np.str_ and len(v[0]) >= 3 and v[0][:2] == "b'" and v[0][-1] == "'":
+					logging.warn("Unicode bug detected in column %s" % key)
+					if mode == 'r+':
+						logging.warn("Fixing unicode bug by re-setting column attribute '" + key + "'")
+						self._save_attr(key, np.array([x[2:-1] for x in v]), axis=1)
+						self._load_attr(key, axis=1)
 
-		self.attrs = LoomAttributeManager(self._file)
+			self.attrs = LoomAttributeManager(self._file)
+		except Exception as e:
+			logging.warn("initialising LoomConnection to %s failed, closing file connection", filename)
+			self.close()
+			raise e
+
+	def __enter__(self):
+		return self
+
+	def __exit__(self, type, value, traceback) -> None:
+		if not self.closed:
+			self.close(True)
 
 	def _save_attr(self, name: str, values: np.ndarray, axis: int) -> None:
 		"""
@@ -210,61 +223,64 @@ class LoomConnection:
 		"""
 		Return an HTML representation of the loom file, showing the upper-left 10x10 corner.
 		"""
-		rm = min(10, self.shape[0])
-		cm = min(10, self.shape[1])
-		html = "<p>"
-		if self.attrs.__contains__("title"):
-			html += "<strong>" + self.attrs["title"] + "</strong> "
-		html += "(" + str(self.shape[0]) + " genes, " + str(self.shape[1]) + " cells, " + str(len(self.layer)) + " layers)<br/>"
-		html += self._file.filename + "<br/>"
-		if self.attrs.__contains__("description"):
-			html += "<em>" + self.attrs["description"] + "</em><br/>"
-		html += "<table>"
-		# Emit column attributes
-		for ca in self.col_attrs.keys():
+		if not self.closed:
+			rm = min(10, self.shape[0])
+			cm = min(10, self.shape[1])
+			html = "<p>"
+			if self.attrs.__contains__("title"):
+				html += "<strong>" + self.attrs["title"] + "</strong> "
+			html += "(" + str(self.shape[0]) + " genes, " + str(self.shape[1]) + " cells, " + str(len(self.layer)) + " layers)<br/>"
+			html += self._file.filename + "<br/>"
+			if self.attrs.__contains__("description"):
+				html += "<em>" + self.attrs["description"] + "</em><br/>"
+			html += "<table>"
+			# Emit column attributes
+			for ca in self.col_attrs.keys():
+				html += "<tr>"
+				for ra in self.row_attrs.keys():
+					html += "<td>&nbsp;</td>"  # Space for row attrs
+				html += "<td><strong>" + ca + "</strong></td>"  # Col attr name
+				for v in self.col_attrs[ca][:cm]:
+					html += "<td>" + str(v) + "</td>"
+				if self.shape[1] > cm:
+					html += "<td>...</td>"
+				html += "</tr>"
+
+			# Emit row attribute names
 			html += "<tr>"
 			for ra in self.row_attrs.keys():
-				html += "<td>&nbsp;</td>"  # Space for row attrs
-			html += "<td><strong>" + ca + "</strong></td>"  # Col attr name
-			for v in self.col_attrs[ca][:cm]:
-				html += "<td>" + str(v) + "</td>"
-			if self.shape[1] > cm:
-				html += "<td>...</td>"
-			html += "</tr>"
-
-		# Emit row attribute names
-		html += "<tr>"
-		for ra in self.row_attrs.keys():
-			html += "<td><strong>" + ra + "</strong></td>"  # Row attr name
-		html += "<td>&nbsp;</td>"  # Space for col attrs
-		for v in range(cm):
-			html += "<td>&nbsp;</td>"
-		if self.shape[1] > cm:
-			html += "<td>...</td>"
-		html += "</tr>"
-
-		# Emit row attr values and matrix values
-		for row in range(rm):
-			html += "<tr>"
-			for ra in self.row_attrs.keys():
-				html += "<td>" + str(self.row_attrs[ra][row]) + "</td>"
+				html += "<td><strong>" + ra + "</strong></td>"  # Row attr name
 			html += "<td>&nbsp;</td>"  # Space for col attrs
+			for v in range(cm):
+				html += "<td>&nbsp;</td>"
+			if self.shape[1] > cm:
+				html += "<td>...</td>"
+			html += "</tr>"
 
-			for v in self[row, :cm]:
-				html += "<td>" + str(v) + "</td>"
-			if self.shape[1] > cm:
-				html += "<td>...</td>"
-			html += "</tr>"
-		# Emit ellipses
-		if self.shape[0] > rm:
-			html += "<tr>"
-			for v in range(rm + 1 + len(self.row_attrs.keys())):
-				html += "<td>...</td>"
-			if self.shape[1] > cm:
-				html += "<td>...</td>"
-			html += "</tr>"
-		html += "</table>"
-		return html
+			# Emit row attr values and matrix values
+			for row in range(rm):
+				html += "<tr>"
+				for ra in self.row_attrs.keys():
+					html += "<td>" + str(self.row_attrs[ra][row]) + "</td>"
+				html += "<td>&nbsp;</td>"  # Space for col attrs
+
+				for v in self[row, :cm]:
+					html += "<td>" + str(v) + "</td>"
+				if self.shape[1] > cm:
+					html += "<td>...</td>"
+				html += "</tr>"
+			# Emit ellipses
+			if self.shape[0] > rm:
+				html += "<tr>"
+				for v in range(rm + 1 + len(self.row_attrs.keys())):
+					html += "<td>...</td>"
+				if self.shape[1] > cm:
+					html += "<td>...</td>"
+				html += "</tr>"
+			html += "</table>"
+			return html
+		else:
+			return "This LoomConnection has been closed"
 
 	def __getitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]]) -> np.ndarray:
 		"""
@@ -296,15 +312,29 @@ class LoomConnection:
 		else:
 			return self.layer[layer].sparse(genes=genes, cells=cells)
 
-	def close(self) -> None:
+	def close(self, suppress_warning=False) -> None:
 		"""
-		Close the connection. After this, the connection object becomes invalid.
+		Close the connection. After this, the connection object becomes invalid. Warns user if called after closing.
+
+		Args:
+			suppress_warning:		Suppresses warning message if True (defaults to false)
 		"""
-		self._file.close()
-		self._file = None
+		if self._file is None:
+			if not suppress_warning:
+				# Warn user that they're being paranoid
+				# and should clean up their code
+				logging.warn("Connection to %s is already closed", self.filename)
+		else:
+			self._file.close()
+			self._file = None
 		self.row_attrs = {}
 		self.col_attrs = {}
 		self.shape = [0, 0]
+		self._closed = True
+
+	@property
+	def closed(self) -> bool:
+		return self._closed
 
 	def set_layer(self, name: str, matrix: np.ndarray, chunks: Tuple[int, int] = (64, 64), chunk_cache: int = 512, dtype: str = "float32", compression_opts: int = 2) -> None:
 
@@ -1001,6 +1031,8 @@ def create(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], 
 								are numpy arrays (float or string) of length N
 		col_attrs (dict):       Column attributes, where keys are attribute names and
 								values are numpy arrays (float or string) of length M
+		file_attrs (dict):      Global attributes, where keys are attribute names and
+								values are strings
 		chunks (tuple):         The chunking of the matrix. Small chunks are slow
 								when loading a large batch of rows/columns in sequence,
 								but fast for single column/row retrieval.
@@ -1011,7 +1043,7 @@ def create(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], 
 								sequential row/column access will be a lot slower.
 								Defaults to 512.
 		dtype (str):           Dtype of the matrix. Default float32 (uint16, float16 could be used)
-		compression_opts (int): Strenght of the gzip compression. Default None.
+		compression_opts (int): Strength of the gzip compression. Default None.
 	Returns:
 		LoomConnection to created loom file.
 	"""
@@ -1021,31 +1053,47 @@ def create(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], 
 	if scipy.sparse.issparse(matrix):
 		return _create_sparse(filename, matrix, row_attrs, col_attrs, file_attrs, chunks, chunk_cache, dtype, compression_opts)
 
-	# Create the file (empty).
-	f = h5py.File(name=filename, mode='w')
-	f.create_group('/layers')
-	f.create_group('/row_attrs')
-	f.create_group('/col_attrs')
-	f.flush()
-	f.close()
+	try:
+		# Create the file (empty).
+		f = h5py.File(name=filename, mode='w')
+		f.create_group('/layers')
+		f.create_group('/row_attrs')
+		f.create_group('/col_attrs')
+		f.flush()
+		f.close()
 
-	ds = connect(filename)
-	ds.set_layer("", matrix, chunks, chunk_cache, dtype, compression_opts)
+		ds = connect(filename)
+		ds.set_layer("", matrix, chunks, chunk_cache, dtype, compression_opts)
 
-	for key, vals in row_attrs.items():
-		ds.set_attr(key, vals, axis=0)
+		for key, vals in row_attrs.items():
+			ds.set_attr(key, vals, axis=0)
 
-	for key, vals in col_attrs.items():
-		ds.set_attr(key, vals, axis=1)
+		for key, vals in col_attrs.items():
+			ds.set_attr(key, vals, axis=1)
 
-	for vals in file_attrs:
-		ds.attrs[vals] = file_attrs[vals]
+		for vals in file_attrs:
+			ds.attrs[vals] = file_attrs[vals]
 
-	# store creation date
-	currentTime = time.localtime(time.time())
-	ds.attrs['creation_date'] = time.strftime('%Y/%m/%d %H:%M:%S', currentTime)
-	ds.attrs['chunks'] = str(chunks)
-	return ds
+		# store creation date
+		currentTime = time.localtime(time.time())
+		ds.attrs['creation_date'] = time.strftime('%Y/%m/%d %H:%M:%S', currentTime)
+		ds.attrs['chunks'] = str(chunks)
+		return ds
+	except e:
+		console.warn("File creation of %s failed, closing any open connections", filename)
+		try:
+			f.close()
+		except:
+			# presumed to fail because f was either never created,
+			# or because f.close() was already called.
+			pass
+		try:
+			ds.close()
+		except:
+			# presumed to fail because ds was already closed
+			pass
+		raise e
+
 
 
 def create_from_cellranger(indir: str, outdir: str = None, genome: str = None) -> LoomConnection:
@@ -1058,7 +1106,7 @@ def create_from_cellranger(indir: str, outdir: str = None, genome: str = None) -
 		genome (str):	genome build to load (e.g. 'mm10'; default: determine species from outs folder)
 
 	Returns:
-		Nothing, but creates loom_file
+		LoomConnection to created loom file.
 	"""
 	if outdir is None:
 		outdir = indir
