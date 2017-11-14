@@ -1099,22 +1099,28 @@ def create(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], 
 	f.flush()
 	f.close()
 
-	ds = connect(filename)
-	ds.set_layer("", matrix, chunks, chunk_cache, dtype, compression_opts)
+	try:
+		ds = connect(filename)
+		ds.set_layer("", matrix, chunks, chunk_cache, dtype, compression_opts)
 
-	if layers is not None:
-		for key, vals in layers.items():
-			if key != "":
-				ds.set_layer(key, vals)
+		if layers is not None:
+			for key, vals in layers.items():
+				if key != "":
+					ds.set_layer(key, vals)
 
-	for key, vals in row_attrs.items():
-		ds.set_attr(key, vals, axis=0)
+		for key, vals in row_attrs.items():
+			ds.set_attr(key, vals, axis=0)
 
-	for key, vals in col_attrs.items():
-		ds.set_attr(key, vals, axis=1)
+		for key, vals in col_attrs.items():
+			ds.set_attr(key, vals, axis=1)
 
-	for vals in file_attrs:
-		ds.attrs[vals] = file_attrs[vals]
+		for vals in file_attrs:
+			ds.attrs[vals] = file_attrs[vals]
+
+	except ValueError as ve:
+		ds.close(suppress_warning=True)
+		os.remove(filename)
+		raise ve
 
 	# store creation date
 	currentTime = time.localtime(time.time())
