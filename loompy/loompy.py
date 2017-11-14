@@ -121,7 +121,7 @@ class LoomConnection:
 			self.filename = filename
 			self._file = h5py.File(filename, mode)
 			self._closed = False
-			self.shape = [0, 0] # The correct shape gets assigned when the layers are loaded
+			self.shape = [0, 0]  # The correct shape gets assigned when the layers are loaded
 
 			if self._file.__contains__("/matrix"):
 				self.layer = {
@@ -162,10 +162,10 @@ class LoomConnection:
 			self.close()
 			raise e
 
-	def __enter__(self):
+	def __enter__(self) -> LoomConnection:
 		return self
 
-	def __exit__(self, type, value, traceback) -> None:
+	def __exit__(self, type: Any, value: Any, traceback: Any) -> None:
 		if not self.closed:
 			self.close(True)
 
@@ -179,7 +179,7 @@ class LoomConnection:
 		"""
 		if self.mode != "r+":
 			raise IOError("Cannot save attributes when connected in read-only mode")
-		
+
 		values = loompy.normalize_attr_values(values)
 
 		a = ["/row_attrs/", "/col_attrs/"][axis]
@@ -212,18 +212,18 @@ class LoomConnection:
 			vals = self._file[a][name][:]
 
 		reserved = [
-			"__init__", 
-			"__enter__", 
-			"__exit__", 
-			"_save_attr", 
-			"__load_attr", 
-			"_repr_html_", 
-			"__getitem", 
-			"__setitem", 
-			"sparse", 
-			"close", 
-			"closed", 
-			"set_layer", 
+			"__init__",
+			"__enter__",
+			"__exit__",
+			"_save_attr",
+			"__load_attr",
+			"_repr_html_",
+			"__getitem",
+			"__setitem",
+			"sparse",
+			"close",
+			"closed",
+			"set_layer",
 			"add_columns",
 			"add_loom",
 			"set_attr",
@@ -339,7 +339,7 @@ class LoomConnection:
 		else:
 			return self.layer[layer].sparse(genes=genes, cells=cells)
 
-	def close(self, suppress_warning=False) -> None:
+	def close(self, suppress_warning: bool = False) -> None:
 		"""
 		Close the connection. After this, the connection object becomes invalid. Warns user if called after closing.
 
@@ -550,7 +550,7 @@ class LoomConnection:
 		if len(diff_layers) > 0:
 			raise ValueError("%s is missing a layer, cannot merge with current file. layers missing:%s" % (other_file, diff_layers))
 
-		for (ix, selection, vals) in other.batch_scan_layers(axis=1, layers=self.layer.keys(), batch_size = batch_size):
+		for (ix, selection, vals) in other.batch_scan_layers(axis=1, layers=self.layer.keys(), batch_size=batch_size):
 			ca = {key: v[selection] for key, v in other.col_attrs.items()}
 			if ordering is not None:
 				vals = {key: val[ordering, :] for key, val in vals.items()}
@@ -1028,7 +1028,7 @@ class LoomLayer():
 			self.ds._file['/layers/' + self.name].resize(size, axis)
 
 
-def _create_sparse(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], col_attrs: Dict[str, np.ndarray], file_attrs: Dict[str, str] = None, chunks: Tuple[int, int] = (64, 64), chunk_cache: int = 512, dtype: str = "float32", compression_opts: int = 2) -> LoomConnection:
+def _create_sparse(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], col_attrs: Dict[str, np.ndarray], *, layers: Dict[str, np.ndarray] = None, file_attrs: Dict[str, str] = None, chunks: Tuple[int, int] = (64, 64), chunk_cache: int = 512, dtype: str = "float32", compression_opts: int = 2) -> LoomConnection:
 	logging.info("Converting to csc format")
 	matrix = matrix.tocsc()
 	window = 2000
@@ -1039,7 +1039,7 @@ def _create_sparse(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.nd
 		ca = {key: val[ix:ix + window] for (key, val) in col_attrs.items()}
 		if ds is None:
 			logging.info("Creating")
-			ds = create(filename, matrix[:, ix:ix + window].toarray(), row_attrs, ca, file_attrs, chunks, chunk_cache, dtype, compression_opts)
+			ds = create(filename, matrix[:, ix:ix + window].toarray(), row_attrs, ca, file_attrs=file_attrs, chunks=chunks, chunk_cache=chunk_cache, dtype=dtype, compression_opts=compression_opts)
 		else:
 			logging.info("Adding columns")
 			ds.add_columns(matrix[:, ix:ix + window].toarray(), ca)
@@ -1047,7 +1047,7 @@ def _create_sparse(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.nd
 	return ds
 
 
-def create(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], col_attrs: Dict[str, np.ndarray], file_attrs: Dict[str, str] = None, chunks: Tuple[int, int] = (64, 64), chunk_cache: int = 512, dtype: str = "float32", compression_opts: int = 2) -> LoomConnection:
+def create(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], col_attrs: Dict[str, np.ndarray], *, layers: Dict[str, np.ndarray] = None, file_attrs: Dict[str, str] = None, chunks: Tuple[int, int] = (64, 64), chunk_cache: int = 512, dtype: str = "float32", compression_opts: int = 2) -> LoomConnection:
 	"""
 	Create a new .loom file from the given data.
 
@@ -1058,6 +1058,9 @@ def create(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], 
 								are numpy arrays (float or string) of length N
 		col_attrs (dict):       Column attributes, where keys are attribute names and
 								values are numpy arrays (float or string) of length M
+		layers (dict):			Additional layers to add to the loom file. If the dictionary
+								contains a key "", this will be used as the main matrix
+								if matrix is None, otherwise it will be ignored
 		file_attrs (dict):      Global attributes, where keys are attribute names and
 								values are strings
 		chunks (tuple):         The chunking of the matrix. Small chunks are slow
@@ -1077,8 +1080,13 @@ def create(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], 
 	if file_attrs is None:
 		file_attrs = {}
 
+	if matrix is None:
+		matrix = layers[""]
+
 	if scipy.sparse.issparse(matrix):
-		return _create_sparse(filename, matrix, row_attrs, col_attrs, file_attrs, chunks, chunk_cache, dtype, compression_opts)
+		if layers is not None:
+			raise NotImplementedError("Creating from sparse matrix supports only single layer")
+		return _create_sparse(filename, matrix, row_attrs, col_attrs, file_attrs=file_attrs, layers=layers, chunks=chunks, chunk_cache=chunk_cache, dtype=dtype, compression_opts=compression_opts)
 
 	try:
 		# Create the file (empty).
@@ -1091,6 +1099,11 @@ def create(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], 
 
 		ds = connect(filename)
 		ds.set_layer("", matrix, chunks, chunk_cache, dtype, compression_opts)
+
+		if layers is not None:
+			for key, vals in layers.items():
+				if key != "":
+					ds.set_layer(key, vals)
 
 		for key, vals in row_attrs.items():
 			ds.set_attr(key, vals, axis=0)
@@ -1119,7 +1132,6 @@ def create(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], 
 			# presumed to fail because ds was already closed
 			pass
 		raise e
-
 
 
 def create_from_cellranger(indir: str, outdir: str = None, genome: str = None) -> LoomConnection:
@@ -1168,7 +1180,7 @@ def create_from_cellranger(indir: str, outdir: str = None, genome: str = None) -
 		labels = np.loadtxt(clusters_file, usecols=(1, ), delimiter=',', skiprows=1)
 		col_attrs["Clusters"] = labels.astype('int') - 1
 
-	return create(os.path.join(outdir, sampleid + ".loom"), matrix, row_attrs, col_attrs, {"Genome": genome})
+	return create(os.path.join(outdir, sampleid + ".loom"), matrix, row_attrs, col_attrs, file_attrs={"Genome": genome})
 
 
 def combine(files: List[str], output_file: str, key: str = None, file_attrs: Dict[str, str]=None, batch_size: int=1000) -> None:
