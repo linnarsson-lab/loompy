@@ -9,15 +9,16 @@ def normalize_attr_strings(a: np.ndarray) -> np.ndarray:
 	Take an np.ndarray of all kinds of string-like elements, and return an array of ascii (np.string_) objects
 	"""
 	if np.issubdtype(a.dtype, np.object_):
-		if np.all([type(x) is str for x in a]):
+		if np.all([type(x) is str for x in a]) or np.all([type(x) is np.str_ for x in a]) or np.all([type(x) is np.unicode_ for x in a]):
 			return np.array([x.encode('ascii', 'xmlcharrefreplace') for x in a])
+		elif np.all([type(x) is np.string_ for x in a]) or np.all([type(x) is np.bytes_ for x in a]):
+			return a.astype("string_")
 		else:
+			print(type(a[0]))
 			raise ValueError("Arbitrary numpy object arrays not supported (all elements must be string objects).")
-	elif np.issubdtype(a.dtype, np.string_):
+	elif np.issubdtype(a.dtype, np.string_) or np.issubdtype(a.dtype, np.object_):
 		return a
-	elif np.issubdtype(a.dtype, np.str_):
-		return np.array([x.encode('ascii', 'xmlcharrefreplace') for x in a])
-	elif np.issubdtype(a.dtype, np.unicode_):
+	elif np.issubdtype(a.dtype, np.str_) or np.issubdtype(a.dtype, np.unicode_):
 		return np.array([x.encode('ascii', 'xmlcharrefreplace') for x in a])
 	else:
 		raise ValueError("String values must be object, ascii or unicode.")
@@ -60,12 +61,12 @@ def normalize_attr_values(a: Any) -> np.ndarray:
 		return the values to the caller; for that, use materialize_attr_values()
 	"""
 	arr = normalize_attr_array(a)
-	if np.issubdtype(arr.dtype, np.number):
-		arr = arr.astype('float64')
+	if np.issubdtype(arr.dtype, np.integer) or np.issubdtype(arr.dtype, np.floating):
+		pass  # We allow all these types
 	elif np.issubdtype(arr.dtype, np.character) or np.issubdtype(arr.dtype, np.object_):
 		arr = normalize_attr_strings(arr)
 	elif np.issubdtype(arr.dtype, np.bool_):
-		arr = arr.astype('float64')
+		arr = arr.astype('ubyte')
 	return arr
 
 

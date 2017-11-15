@@ -34,13 +34,7 @@ import time
 import loompy
 
 
-def strip(s: str) -> str:
-	if s[0:2] == "b'" and s[-1] == "'":
-		return s[2:-1]
-	return s
-
-
-def renumber(a: np.ndarray, keys: np.ndarray, values: np.ndarray) -> np.ndarray:
+def _renumber(a: np.ndarray, keys: np.ndarray, values: np.ndarray) -> np.ndarray:
 	"""
 	Renumber 'a' by replacing any occurrence of 'keys' by the corresponding 'values'
 	"""
@@ -50,6 +44,98 @@ def renumber(a: np.ndarray, keys: np.ndarray, values: np.ndarray) -> np.ndarray:
 	index = np.digitize(a.ravel(), keys, right=True)
 	return(values[index].reshape(a.shape))
 
+
+
+
+class MemoryLoomLayer():
+	def __init__(self, name: str, matrix: np.ndarray) -> None:
+		self.name = name
+		self.shape = matrix.shape
+		self.values = matrix
+
+	def __getitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]]) -> np.ndarray:
+		return self.values[slice]
+
+	def __setitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]], data: np.ndarray) -> None:
+		self.values[slice] = data
+
+	def sparse(self, genes: np.ndarray, cells: np.ndarray) -> scipy.sparse.coo_matrix:
+		return scipy.sparse.coo_matrix(self.values[genes, :][:, cells])
+
+
+class LoomLayer():
+	def __init__(self, ds: Any, name: str, dtype: str) -> None:
+		self.ds = ds
+		self.name = name
+		self.dtype = dtype
+		self.shape = ds.shape
+
+	def __getitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]]) -> np.ndarray:
+		if self.name == "":
+			return self.ds._file['/matrix'].__getitem__(slice)
+		return self.ds._file['/layers/' + self.name].__getitem__(slice)
+
+	def __setitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]], data: np.ndarray) -> None:
+		if self.name == "":
+			self.ds._file['/matrix'].__setitem__(slice, data.astype(self.dtype))
+		else:
+			self.ds._file['/layers/' + self.name].__setitem__(slice, data.astype(self.dtype))
+
+	def sparse(self, genes: np.ndarray, cells: np.ndarray) -> scipy.sparse.coo_matrix:
+		n_genes = self.ds.shape[0] if genes is None else genes.shape[0]
+		n_cells = self.ds.shape[1] if cells is None else cells.shape[0]
+		data: np.ndarray = None
+		row: np.ndarray = None
+		col: np.ndarray = None
+		for (ix, selection, vals) in self.ds.batch_scan(genes=genes, cells=cells, axis=1, layer=self.name):
+			nonzeros = np.where(vals > 0)
+			if data is None:
+				data = vals[nonzeros]
+				row = nonzeros[0]
+				col = selection[nonzeros[1]]
+			else:
+				data = np.concatenate([data, vals[nonzeros]])
+				row = np.concatenate([row, nonzeros[0]])
+				col = np.concatenate([col, selection[nonzeros[1]]])
+		return scipy.sparse.coo_matrix((data, (row, col)), shape=(n_genes, n_cells))
+
+	def resize(self, size: Tuple[int, int], axis: int = None) -> None:
+		"""Resize the dataset, or the specified axis.
+
+		The dataset must be stored in chunked format; it can be resized up to the "maximum shape" (keyword maxshape) specified at creation time.
+		The rank of the dataset cannot be changed.
+		"Size" should be a shape tuple, or if an axis is specified, an integer.
+
+		BEWARE: This functions differently than the NumPy resize() method!
+		The data is not "reshuffled" to fit in the new shape; each axis is grown or shrunk independently.
+		The coordinates of existing data are fixed.
+		"""
+		if self.name == "":
+			self.ds._file['/matrix'].resize(size, axis)
+		else:
+			self.ds._file['/layers/' + self.name].resize(size, axis)
+
+
+class LoomView:
+	"""
+	An in-memory loom dataset
+	"""
+	def __init__(self, layers: Dict[str, MemoryLoomLayer], row_attrs: Dict[str, np.ndarray], col_attrs: Dict[str, np.ndarray]) -> None:
+		self.layers = layers
+		self.shape = next(iter(self.layers.values())).shape
+		self.row_attrs = row_attrs
+		self.col_attrs = col_attrs
+
+	def __getitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]]) -> np.ndarray:
+		"""
+		Get a slice of the main matrix.
+		Args:
+			slice:		A slice object (see http://docs.h5py.org/en/latest/high/dataset.html)
+		Returns:
+			A numpy matrix
+		"""
+		return self.layers[""][slice]
+	
 
 class LoomAttributeManager(object):
 	__slots__ = ('f',)
@@ -477,15 +563,17 @@ class LoomConnection:
 
 		n_cols = submatrix.shape[1] + self.shape[1]
 		for key, vals in col_attrs.items():
-			vals = np.array(vals)
-			if vals.dtype.type is np.str_:
-				vals = np.array([x.encode('ascii', 'ignore') for x in vals])
+			vals = loompy.normalize_attr_values(vals)
+			# vals = np.array(vals)
+			# if vals.dtype.type is np.str_:
+			# 	vals = np.array([x.encode('ascii', 'ignore') for x in vals])
 			temp = self._file['/col_attrs/' + key][:]
-			casting_rule_dtype = np.result_type(temp, vals)
-			if vals.dtype != casting_rule_dtype:
-				vals = vals.astype(casting_rule_dtype)
-			if temp.dtype != casting_rule_dtype:
-				temp = temp.astype(casting_rule_dtype)
+			temp = loompy.normalize_attr_values(temp)
+			# casting_rule_dtype = np.result_type(temp, vals)
+			# if vals.dtype != casting_rule_dtype:
+			# 	vals = vals.astype(casting_rule_dtype)
+			# if temp.dtype != casting_rule_dtype:
+			# 	temp = temp.astype(casting_rule_dtype)
 			temp.resize((n_cols,))
 			temp[self.shape[1]:] = vals
 			del self._file['/col_attrs/' + key]
@@ -658,6 +746,111 @@ class LoomConnection:
 			self._file["/row_edges/" + name + "/w"] = w
 		else:
 			raise ValueError("Axis must be 0 or 1")
+
+	def scan(self, *, cells: np.ndarray = None, genes: np.ndarray = None, axis: int = None, layers: Iterable = None, key: str = None, batch_size: int = 1000) -> Iterable[Tuple[int, np.ndarray, LoomView]]:
+		"""Performs a batch scan of the loom file dealing with multiple layer files
+
+		Args
+		----
+		cells: np.ndarray
+			the indexes [1,2,3,..,1000] of the cells to select
+		genes: np.ndarray
+			the indexes [1,2,3,..,1000] of the genes to select
+		axis: int
+			0:rows or 1:cols
+		batch_size: int
+			the chuncks returned at every element of the iterator
+		layers: iterable
+			if specified it will batch scan only across some of the layers of the loom file
+			if layers == None, all layers will be scanned
+			if layers == [""] or "", only the default layer will be scanned
+		key:
+			Name of primary key attribute. If specified, return the values sorted by the key
+
+		Returns
+		------
+		Iterable that yields triplets
+		(ix, indexes, view)
+
+		ix: int
+			first position / how many rows/cols have been yielded alredy
+		indexes: np.ndarray[int]
+			the indexes with the same numbering of the input args cells / genes (i.e. np.arange(len(ds.shape[axis])))
+			this is ix + selection
+		view: LoomView
+			a view corresponding to the current chunk
+			view.values is the underlying numpy.ndarray
+		"""
+		if axis is None:
+			raise ValueError("Axis must be given (0 = rows, 1 = cols)")
+		if (axis == 0) and (key is not None) and (cells is not None):
+			raise NotImplementedError("Cannot use key and cells at the same time")
+		if (axis == 1) and (key is not None) and (genes is not None):
+			raise NotImplementedError("Cannot use key and genes at the same time")
+		if cells is None:
+			cells = np.fromiter(range(self.shape[1]), dtype='int')
+		if genes is None:
+			genes = np.fromiter(range(self.shape[0]), dtype='int')
+		if layers is None:
+			layers = self.layer.keys()
+		if layers == "":
+			layers = [""]
+
+		if axis == 1:
+			ordering = np.arange(self.shape[0])
+			if key is not None:
+				ordering = np.argsort(self.row_attrs[key])
+			cols_per_chunk = batch_size
+			ix = 0
+			while ix < self.shape[1]:
+				cols_per_chunk = min(self.shape[1] - ix, cols_per_chunk)
+
+				selection = cells - ix
+				# Pick out the cells that are in this batch
+				selection = selection[np.where(np.logical_and(selection >= 0, selection < cols_per_chunk))[0]]
+				if selection.shape[0] == 0:
+					ix += cols_per_chunk
+					continue
+
+				# Load the whole chunk from the file, then extract genes and cells using fancy indexing
+				vals: Dict[str, loompy.MemoryLoomLayer] = {}
+				for layer in layers:
+					temp = self.layer[layer][:, ix:ix + cols_per_chunk]
+					temp = temp[ordering, :]
+					temp = temp[genes, :]
+					temp = temp[:, selection]
+					vals[layer] = loompy.MemoryLoomLayer(layer, temp)
+
+				yield (ix, ix + selection, loompy.LoomView(vals, {key: val[ordering][genes] for key, val in self.row_attrs.items()}, {key: val[selection] for key, val in self.col_attrs.items()}))
+				ix += cols_per_chunk
+		elif axis == 0:
+			# This is magic sauce for making the order of one list be like another
+			ordering = np.arange(self.shape[1])
+			if key is not None:
+				ordering = np.argsort(self.col_attrs[key])
+			rows_per_chunk = batch_size
+			ix = 0
+			while ix < self.shape[0]:
+				rows_per_chunk = min(self.shape[0] - ix, rows_per_chunk)
+
+				selection = genes - ix
+				# Pick out the genes that are in this batch
+				selection = selection[np.where(np.logical_and(selection >= 0, selection < rows_per_chunk))[0]]
+				if selection.shape[0] == 0:
+					ix += rows_per_chunk
+					continue
+
+				# Load the whole chunk from the file, then extract genes and cells using fancy indexing
+				vals = {}
+				for layer in layers:
+					temp = self.layer[layer][ix:ix + rows_per_chunk, :]
+					temp = temp[selection, :]
+					temp = temp[:, ordering]
+					temp = temp[:, cells]
+					vals[layer] = loompy.MemoryLoomLayer(layer, temp)
+
+				yield (ix, ix + selection, loompy.LoomView(vals, {key: val[selection] for key, val in self.row_attrs.items()}, {key: val[ordering][cells] for key, val in self.col_attrs.items()}))
+				ix += rows_per_chunk
 
 	def batch_scan(self, cells: np.ndarray = None, genes: np.ndarray = None, axis: int = 0, batch_size: int = 1000, layer: str = None) -> Iterable[Tuple[int, np.ndarray, np.ndarray]]:
 		"""Performs a batch scan of the loom file
@@ -900,8 +1093,8 @@ class LoomConnection:
 			# Permute the edges
 			for name in self.list_edges(axis=0):
 				(a, b, w) = self.get_edges(name, axis=0)
-				a = renumber(a, np.array(ordering), np.arange(self.shape[0]))
-				b = renumber(b, np.array(ordering), np.arange(self.shape[0]))
+				a = _renumber(a, np.array(ordering), np.arange(self.shape[0]))
+				b = _renumber(b, np.array(ordering), np.arange(self.shape[0]))
 				self.set_edges(name, a, b, w, 0)
 			self._file.flush()
 		if axis == 1:
@@ -923,8 +1116,8 @@ class LoomConnection:
 			# Permute the edges
 			for name in self.list_edges(axis=1):
 				(a, b, w) = self.get_edges(name, axis=1)
-				a = renumber(a, np.array(ordering), np.arange(self.shape[1]))
-				b = renumber(b, np.array(ordering), np.arange(self.shape[1]))
+				a = _renumber(a, np.array(ordering), np.arange(self.shape[1]))
+				b = _renumber(b, np.array(ordering), np.arange(self.shape[1]))
 				self.set_edges(name, a, b, w, 1)
 			self._file.flush()
 
@@ -963,59 +1156,6 @@ class LoomConnection:
 					for v in self.layer[layer][row, :]:
 						f.write(str(v) + "\t")
 				f.write("\n")
-
-
-class LoomLayer():
-	def __init__(self, ds: LoomConnection, name: str, dtype: str) -> None:
-		self.ds = ds
-		self.name = name
-		self.dtype = dtype
-		self.shape = ds.shape
-
-	def __getitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]]) -> np.ndarray:
-		if self.name == "":
-			return self.ds._file['/matrix'].__getitem__(slice)
-		return self.ds._file['/layers/' + self.name].__getitem__(slice)
-
-	def __setitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]], data: np.ndarray) -> None:
-		if self.name == "":
-			self.ds._file['/matrix'].__setitem__(slice, data.astype(self.dtype))
-		else:
-			self.ds._file['/layers/' + self.name].__setitem__(slice, data.astype(self.dtype))
-
-	def sparse(self, genes: np.ndarray, cells: np.ndarray) -> scipy.sparse.coo_matrix:
-		n_genes = self.ds.shape[0] if genes is None else genes.shape[0]
-		n_cells = self.ds.shape[1] if cells is None else cells.shape[0]
-		data: np.ndarray = None
-		row: np.ndarray = None
-		col: np.ndarray = None
-		for (ix, selection, vals) in self.ds.batch_scan(genes=genes, cells=cells, axis=1, layer=self.name):
-			nonzeros = np.where(vals > 0)
-			if data is None:
-				data = vals[nonzeros]
-				row = nonzeros[0]
-				col = selection[nonzeros[1]]
-			else:
-				data = np.concatenate([data, vals[nonzeros]])
-				row = np.concatenate([row, nonzeros[0]])
-				col = np.concatenate([col, selection[nonzeros[1]]])
-		return scipy.sparse.coo_matrix((data, (row, col)), shape=(n_genes, n_cells))
-
-	def resize(self, size: Tuple[int, int], axis: int = None) -> None:
-		"""Resize the dataset, or the specified axis.
-
-		The dataset must be stored in chunked format; it can be resized up to the "maximum shape" (keyword maxshape) specified at creation time.
-		The rank of the dataset cannot be changed.
-		"Size" should be a shape tuple, or if an axis is specified, an integer.
-
-		BEWARE: This functions differently than the NumPy resize() method!
-		The data is not "reshuffled" to fit in the new shape; each axis is grown or shrunk independently.
-		The coordinates of existing data are fixed.
-		"""
-		if self.name == "":
-			self.ds._file['/matrix'].resize(size, axis)
-		else:
-			self.ds._file['/layers/' + self.name].resize(size, axis)
 
 
 def _create_sparse(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], col_attrs: Dict[str, np.ndarray], *, layers: Dict[str, np.ndarray] = None, file_attrs: Dict[str, str] = None, chunks: Tuple[int, int] = (64, 64), chunk_cache: int = 512, dtype: str = "float32", compression_opts: int = 2) -> LoomConnection:
