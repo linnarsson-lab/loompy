@@ -72,8 +72,8 @@ def normalize_attr_values(a: Any) -> np.ndarray:
 
 def materialize_attr_values(a: np.ndarray) -> np.ndarray:
 	if np.issubdtype(a.dtype, np.string_):
-		return np.array([html.unescape(x) for x in a.astype(str)], dtype='object')
+		return np.array([html.unescape(x) for x in a.astype(str)], dtype=np.str_)
 	elif np.issubdtype(a.dtype, np.str_) or np.issubdtype(a.dtype, np.unicode_):
-		return np.array(a.astype(str), dtype='object')
+		return np.array(a.astype(str), dtype=np.str_)
 	else:
 		return a
