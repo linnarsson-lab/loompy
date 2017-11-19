@@ -39,7 +39,7 @@ deploy:
   - provider: pages
     skip_cleanup: true
     local_dir: built/html
-    github_token: $GITHUB_TOKEN
+    github_token: $GH_TOKEN
     on:
       branch: master
   - provider: pypi
