@@ -36,7 +36,8 @@ extensions = ['sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
     'sphinx.ext.napoleon',
-    'sphinx_click.ext']
+    'sphinx_click.ext',
+    'edit_on_github']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -195,4 +196,9 @@ epub_copyright = copyright
 # A list of files that should not be packed into the epub file.
 epub_exclude_files = ['search.html']
 
+# --- Options for "Edit on GitHub" ---
+edit_on_github_project = 'linnarsson-lab/loompy'
+edit_on_github_branch = 'master/doc'
 
+# --- Sort the autodocs by source (currently not workin not sure why)
+autodoc_member_order = 'bysource'

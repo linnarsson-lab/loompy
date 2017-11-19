@@ -14,6 +14,7 @@ before_install:
 
 install:
   - conda install --yes python="3.6" numpy scipy cython h5py typing
+  - pip install sphinx_click
   # Install the dev version (1.7) of sphinx that has solved a problem with f-strings
   - git clone https://github.com/sphinx-doc/sphinx.git
   - cd sphinx; pip install .;cd ..
