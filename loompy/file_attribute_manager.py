@@ -13,7 +13,7 @@ class FileAttributeManager(object):
 		for key, val in f.attrs.items():
 			materialized = loompy.materialize_attr_values(np.array([val]))[0]
 			self.__dict__["storage"][key] = materialized
-	
+
 	def keys(self) -> List[str]:
 		return list(self.__dict__["storage"].keys())
 
@@ -53,5 +53,5 @@ class FileAttributeManager(object):
 				self.f.flush()
 				val = self.f.attrs[name]
 				# Read it back in to ensure it's synced and normalized
-				normalized = loompy.materialize_attr_values(np.array([val]))[0]			
+				normalized = loompy.materialize_attr_values(np.array([val]))[0]
 				self.__dict__["storage"][name] = normalized

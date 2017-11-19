@@ -136,7 +136,7 @@ class LoomConnection:
 		"""
 		Return the main matrix as a scipy.sparse.coo_matrix, without loading dense matrix in RAM
 		"""
-		if layers is None:
+		if layer is None:
 			return self.layers[""].sparse(genes=genes, cells=cells)
 		else:
 			return self.layers[layer].sparse(genes=genes, cells=cells)
@@ -426,7 +426,8 @@ class LoomConnection:
 					lm[key] = loompy.MemoryLoomLayer(key, layer)
 				view = loompy.LoomView(lm, self.ra[:], self.ca[selection], self.row_graphs[:], self.col_graphs[selection], filename=self.filename, file_attrs=self.attrs)
 				if ordering is not None:
-					yield view.permute(ordering, axis=0)
+					view.permute(ordering, axis=0)
+					yield (ix, selection, view)
 				ix += cols_per_chunk
 		elif axis == 1:
 			if key is not None:
@@ -455,7 +456,8 @@ class LoomConnection:
 					lm[key] = loompy.MemoryLoomLayer(key, layer)
 				view = loompy.LoomView(lm, self.ra[selection], self.ca[:], self.row_graphs[selection], self.col_graphs[:], filename=self.filename, file_attrs=self.attrs)
 				if ordering is not None:
-					yield view.permute(ordering, axis=1)
+					view.permute(ordering, axis=1)
+					yield (ix, selection, view)
 				ix += rows_per_chunk
 		else:
 			raise ValueError("axis must be 0 or 1")
@@ -899,14 +901,14 @@ def connect(filename: str, mode: str = 'r+') -> LoomConnection:
 							'r' (read-only), defaults to 'r+'
 
 	Returns:
-		A LoomConnection instance. 
+		A LoomConnection instance.
 
 	Remarks:
 		This function should typically be called as a context manager:
 
 			with loompy.connect(filename) as ds:
 				...do something...
-		
+
 		This ensures that the file will be closed automatically when the context block ends
 	"""
 	return LoomConnection(filename, mode)

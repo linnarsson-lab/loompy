@@ -17,7 +17,7 @@ class AttributeManager:
 			a = ["/row_attrs/", "/col_attrs/"][self.axis]
 			for key in self.ds._file[a].keys():
 				self.__dict__["storage"][key] = None
-	
+
 	def keys(self) -> List[str]:
 		"Return the attribute names"
 		return list(self.__dict__["storage"].keys())
@@ -45,7 +45,7 @@ class AttributeManager:
 
 		Args:
 			thing:		if string, return the named attribute
-						if slice, np.ndarray or int, return a slice through all the attributes		
+						if slice, np.ndarray or int, return a slice through all the attributes
 		"""
 		if type(thing) is slice or type(thing) is np.ndarray or type(thing) is int:
 			am = AttributeManager(None, axis=self.axis)

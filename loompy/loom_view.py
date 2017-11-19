@@ -38,3 +38,18 @@ class LoomView:
 		Return an HTML representation of the loom view, showing the upper-left 10x10 corner.
 		"""
 		return loompy.to_html(self)
+
+	def permute(self, ordering: np.ndarray, *, axis: int) -> None:
+		"""
+		Permute the view, by permuting its layers, attributes and graphs
+
+		Args:
+			ordering (np.ndarray):	The desired ordering along the axis
+			axis (int):				0, permute rows; 1, permute columns
+		"""
+		for layer in self.layers:
+			layer.permute(ordering, axis=axis)
+		for g in (self.row_graphs, self.col_graphs)[axis]:
+			g.permute(ordering)
+		for a in (self.row_attrs, self.col_attrs)[axis]:
+			a.permute(ordering)

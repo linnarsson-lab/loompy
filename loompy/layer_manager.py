@@ -18,8 +18,8 @@ class LayerManager:
 				for key in self.ds._file["layers"].keys():
 					self.__dict__["storage"][key] = None
 			else:
-				ds._file.create_group('/layers')				
-	
+				ds._file.create_group('/layers')
+
 	def keys(self) -> List[str]:
 		return list(self.__dict__["storage"].keys())
 
@@ -107,7 +107,7 @@ class LayerManager:
 				self.__dict__["storage"][name] = None
 			else:
 				self.__dict__["storage"][name] = val
-	
+
 	def __delitem__(self, name: str) -> None:
 		return self.__delattr__(name)
 
