@@ -13,8 +13,9 @@ before_install:
   - sudo ln -s /run/shm /dev/shm
 
 install:
-  - conda install --yes python="3.6" numpy scipy cython h5py typing
+  - conda install --yes python="3.6" numpy scipy cython h5py typing click
   - pip install sphinx_click
+  - pip install sphinx_rtd_theme
   # Install the dev version (1.7) of sphinx that has solved a problem with f-strings
   - git clone https://github.com/sphinx-doc/sphinx.git
   - cd sphinx; pip install .;cd ..
