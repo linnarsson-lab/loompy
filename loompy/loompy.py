@@ -424,10 +424,8 @@ class LoomConnection:
 				lm = loompy.LayerManager(None)
 				for key, layer in vals:
 					lm[key] = loompy.MemoryLoomLayer(key, layer)
-				view = loompy.LoomView(lm, self.ra[:], self.ca[selection], self.row_graphs[:], self.col_graphs[selection], filename=self.filename, file_attrs=self.attrs)
-				if ordering is not None:
-					view.permute(ordering, axis=0)
-					yield (ix, selection, view)
+				view = loompy.LoomView(lm, self.ra[ordering], self.ca[selection], self.row_graphs[ordering], self.col_graphs[selection], filename=self.filename, file_attrs=self.attrs)
+				yield (ix, selection, view)
 				ix += cols_per_chunk
 		elif axis == 1:
 			if key is not None:
@@ -454,10 +452,8 @@ class LoomConnection:
 				lm = loompy.LayerManager(None)
 				for key, layer in vals:
 					lm[key] = loompy.MemoryLoomLayer(key, layer)
-				view = loompy.LoomView(lm, self.ra[selection], self.ca[:], self.row_graphs[selection], self.col_graphs[:], filename=self.filename, file_attrs=self.attrs)
-				if ordering is not None:
-					view.permute(ordering, axis=1)
-					yield (ix, selection, view)
+				view = loompy.LoomView(lm, self.ra[selection], self.ca[ordering], self.row_graphs[selection], self.col_graphs[ordering], filename=self.filename, file_attrs=self.attrs)
+				yield (ix, selection, view)
 				ix += rows_per_chunk
 		else:
 			raise ValueError("axis must be 0 or 1")

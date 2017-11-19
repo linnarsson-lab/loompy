@@ -11,6 +11,15 @@ class ViewManager:
 		self.ds = ds
 
 	def __getitem__(self, slice_: Tuple[Union[slice, np.ndarray, int], Union[slice, np.ndarray, int]]) -> loompy.LoomView:
+		"""
+		Create a new view by slicing through the loom file or view
+
+		Args:
+			slice_ (2-tuple of slice, int or np.ndarray): 	How to slice the file or view
+
+		Returns:
+			A LoomView object, an in-memory representation of the sliced file
+		"""
 		if type(slice_) is not tuple or len(slice_) is not 2:
 			raise ValueError("Views require slices along two dimensions")
 
