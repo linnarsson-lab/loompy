@@ -104,7 +104,7 @@ class AttributeManager:
 					raise ValueError(f"Attribute must have exactly {self.ds.shape[self.axis]} values but {len(values)} were given")
 				if self.ds._file[a].__contains__(name):
 					del self.ds._file[a + name]
-				self.ds._file[a + name] = values
+				self.ds._file[a + name] = values  # TODO: for 2D arrays, use block compression along columns/rows
 				self.ds._file.flush()
 				self.__dict__["storage"][name] = loompy.materialize_attr_values(self.ds._file[a][name][:])
 			else:
