@@ -3,7 +3,7 @@
 Complete API Refrence
 =====================
 
-This is a complete API reference generated using the docstrings of every loompy class/function.
+This is a complete API reference to loompy |version| generated using the docstrings of every loompy class/function.
 
 .. _autoapi:
 

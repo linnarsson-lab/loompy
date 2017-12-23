@@ -6,7 +6,7 @@ SPHINXOPTS    =
 SPHINXBUILD   = python -msphinx
 SPHINXPROJ    = loompy
 SOURCEDIR     = .
-BUILDDIR      = _build
+BUILDDIR      = ../built
 
 # Put it first so that "make" without argument is like "make help".
 help:
