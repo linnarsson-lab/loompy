@@ -10,16 +10,34 @@ Loom files are stored on disk and are never loaded entirely. They are
 more like databases: you connect, retrieve some subset of the data,
 maybe update some attributes.
 
-When you connect, all attributes are read into memory for quick access,
-but the main matrix remains on disk.
+When you connect, only some metadata is loaded,
+but the main matrix, additional layers, graphs and
+attribute values remain on disk. They are loaded only as 
+needed when you access them through the connection object.
+
+The canonical way to connect to a Loom file is:
+
+.. code:: python
+    with loompy.connect("filename.loom") as ds:
+        # do something with the connection object ds
+
+This ensures that the file is automatically closed when no longer needed.
+
+For interactive usage, it may be more convenient to connect directly:
+
+.. code:: python
+    ds = loompy.connect("filename.loom")
+    # do something with the connection object ds
+    ds.close()
 
 Reading and writing
 ~~~~~~~~~~~~~~~~~~~
 
 Loom files are based on
 `HDF5 <https://en.wikipedia.org/wiki/Hierarchical_Data_Format>`__, a
-file format suitable for large multidimensional datasets. They are
-designed to be mostly created once, then used as read-only. They **do
+file format suitable for large multidimensional datasets. Loom files 
+are great for distribution of large datasets, and for use
+in computational pipelines. They **do
 not** support writing and reading concurrently. They also do not support
 journalling, so if something happens during a write, the **entire file
 can be lost**. Therefore, do not use loom files as your primary data
@@ -29,9 +47,6 @@ Loom files do support concurrent reads, but only from separate processes
 (not threads), and (we think) only from a single compute node. On a
 compute cluster, you may encounter bugs if you try to read the same Loom
 file from different compute nodes concurrently.
-
-Loom files are great for distribution of large datasets, which are then
-used as read-only for analytical purposes.
 
 Efficient indexing and compression
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -43,8 +58,8 @@ submatrices) can be efficiently accessed.
 
 By default, chunks are compressed and decompressed for you
 automatically. This makes Loom a space-efficient format for storing
-large sparse datasets. We have found that Loom often uses less space
-than standard sparse matrix formats.
+large sparse datasets. We have found that Loom often uses the same
+amount of space as standard sparse matrix formats.
 
 Matrix and attributes
 ~~~~~~~~~~~~~~~~~~~~~
@@ -64,13 +79,15 @@ you will likely always work with the same gene set).
 Data types
 ~~~~~~~~~~
 
-Loom supports a subset of numpy data types:
+Loom supports the following data types:
 
--  The main matrix, and any additional layers, are always a
-   two-dimensional arrays of any valid numpy type
--  Attributes are one-dimensional arrays of either ``float64`` or
-   ``string``
+-  The main matrix, and any additional layers, are
+   two-dimensional arrays of numbers, which can be any 8, 16, 32 or
+   64-bit integer (signed or unsigned), or 16, 32 or 64-bit float.
+-  Attributes are N-dimensional arrays, and the elements can be any 8, 16, 32 or
+   64-bit integer (signed or unsigned), or 16, 32 or 64-bit float,
+   or string. The size of the first dimension must match the
+   corresponding matrix dimension. 
 
-Note that there is no integer attribute type. However, float64s are
-large enough to represent all integers up to and including
-9,007,199,254,740,992 without loss.
+See the file format specification for detailed information on data types,
+including a discussion on string handling, ASCII and Unicode support.

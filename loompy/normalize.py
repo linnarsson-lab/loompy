@@ -1,13 +1,8 @@
-import logging
+import numpy as np
+import scipy.sparse as sparse
 from typing import *
-from inspect import currentframe, getouterframes
+import html
 
-
-
-def deprecated(message: str) -> None:
-	frameinfo = getouterframes(currentframe())
-	logging.warn(f"╭── " + message)
-	logging.warn(f"╰──> at {frameinfo[2].filename}, line {frameinfo[2].lineno}")
 
 def normalize_attr_strings(a: np.ndarray) -> np.ndarray:
 	"""
@@ -77,9 +72,11 @@ def normalize_attr_values(a: Any) -> np.ndarray:
 
 def materialize_attr_values(a: np.ndarray) -> np.ndarray:
 	if np.issubdtype(a.dtype, np.string_):
-		return np.array([html.unescape(x) for x in a.astype(str)], dtype=np.str_)
+		# First ensure that what we load is valid ascii (i.e. ignore anything outside 7-bit range)
+		temp = np.array([x.decode('ascii', 'ignore') for x in a])
+		# Then unescape XML entities and convert to unicode
+		return np.array([html.unescape(x) for x in temp.astype(str)], dtype=np.str_)
 	elif np.issubdtype(a.dtype, np.str_) or np.issubdtype(a.dtype, np.unicode_):
 		return np.array(a.astype(str), dtype=np.str_)
 	else:
 		return a
-

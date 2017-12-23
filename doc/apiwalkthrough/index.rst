@@ -16,30 +16,30 @@ Create from data:
 .. code:: python
 
 
-    def create(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], col_attrs: Dict[str, np.ndarray], file_attrs: Dict[str, str] = None, chunks: Tuple[int, int] = (64, 64), chunk_cache: int = 512, dtype: str = "float32", compression_opts: int = 2) -> LoomConnection:
+    def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loompy.LayerManager], row_attrs: Dict[str, np.ndarray], col_attrs: Dict[str, np.ndarray], *, file_attrs: Dict[str, str] = None) -> None:
         """
         Create a new .loom file from the given data.
 
         Args:
             filename (str):         The filename (typically using a `.loom` file extension)
-            matrix (numpy.ndarray): Two-dimensional (N-by-M) numpy ndarray of float values
+            layers (np.ndarray or Dict[str, np.ndarray] or LayerManager): 
+                                    Two-dimensional (N-by-M) numpy ndarray of float values
+                                    or dictionary of named layers, each an N-by-M ndarray
+                                    or LayerManager, each layer an N-by-M ndarray
             row_attrs (dict):       Row attributes, where keys are attribute names and values
                                     are numpy arrays (float or string) of length N
             col_attrs (dict):       Column attributes, where keys are attribute names and
                                     values are numpy arrays (float or string) of length M
-            chunks (tuple):         The chunking of the matrix. Small chunks are slow
-                                    when loading a large batch of rows/columns in sequence,
-                                    but fast for single column/row retrieval.
-                                    Defaults to (64,64).
-            chunk_cache (int):      Sets the chunk cache used by the HDF5 format inside
-                                    the loom file, in MB. If the cache is too small to
-                                    contain all chunks of a row/column in memory, then
-                                    sequential row/column access will be a lot slower.
-                                    Defaults to 512.
-            dtype (str):           Dtype of the matrix. Default float32 (uint16, float16 could be used)
-            compression_opts (int): Strenght of the gzip compression. Default None.
+            layers (dict):			Additional layers to add to the loom file. If the dictionary
+                                    contains a key "", this will be used as the main matrix
+                                    if matrix is None, otherwise it will be ignored
+            file_attrs (dict):      Global attributes, where keys are attribute names and
+                                    values are strings
         Returns:
-            LoomConnection to created loom file.
+            Nothing
+        
+        Remarks:
+            If the file exists, it will be overwritten. See create_append for a function that will append to existing files.
         """
 
 Create by combining existing .loom files:

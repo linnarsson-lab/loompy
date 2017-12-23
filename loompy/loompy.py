@@ -32,152 +32,7 @@ from shutil import copyfile
 import logging
 import time
 import loompy
-
-
-def _renumber(a: np.ndarray, keys: np.ndarray, values: np.ndarray) -> np.ndarray:
-	"""
-	Renumber 'a' by replacing any occurrence of 'keys' by the corresponding 'values'
-	"""
-	ordering = np.argsort(keys)
-	keys = keys[ordering]
-	values = keys[ordering]
-	index = np.digitize(a.ravel(), keys, right=True)
-	return(values[index].reshape(a.shape))
-
-
-
-
-class MemoryLoomLayer():
-	def __init__(self, name: str, matrix: np.ndarray) -> None:
-		self.name = name
-		self.shape = matrix.shape
-		self.values = matrix
-
-	def __getitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]]) -> np.ndarray:
-		return self.values[slice]
-
-	def __setitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]], data: np.ndarray) -> None:
-		self.values[slice] = data
-
-	def sparse(self, genes: np.ndarray, cells: np.ndarray) -> scipy.sparse.coo_matrix:
-		return scipy.sparse.coo_matrix(self.values[genes, :][:, cells])
-
-
-class LoomLayer():
-	def __init__(self, ds: Any, name: str, dtype: str) -> None:
-		self.ds = ds
-		self.name = name
-		self.dtype = dtype
-		self.shape = ds.shape
-
-	def __getitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]]) -> np.ndarray:
-		if self.name == "":
-			return self.ds._file['/matrix'].__getitem__(slice)
-		return self.ds._file['/layers/' + self.name].__getitem__(slice)
-
-	def __setitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]], data: np.ndarray) -> None:
-		if self.name == "":
-			self.ds._file['/matrix'].__setitem__(slice, data.astype(self.dtype))
-		else:
-			self.ds._file['/layers/' + self.name].__setitem__(slice, data.astype(self.dtype))
-
-	def sparse(self, genes: np.ndarray, cells: np.ndarray) -> scipy.sparse.coo_matrix:
-		n_genes = self.ds.shape[0] if genes is None else genes.shape[0]
-		n_cells = self.ds.shape[1] if cells is None else cells.shape[0]
-		data: np.ndarray = None
-		row: np.ndarray = None
-		col: np.ndarray = None
-		for (ix, selection, vals) in self.ds.batch_scan(genes=genes, cells=cells, axis=1, layer=self.name):
-			nonzeros = np.where(vals > 0)
-			if data is None:
-				data = vals[nonzeros]
-				row = nonzeros[0]
-				col = selection[nonzeros[1]]
-			else:
-				data = np.concatenate([data, vals[nonzeros]])
-				row = np.concatenate([row, nonzeros[0]])
-				col = np.concatenate([col, selection[nonzeros[1]]])
-		return scipy.sparse.coo_matrix((data, (row, col)), shape=(n_genes, n_cells))
-
-	def resize(self, size: Tuple[int, int], axis: int = None) -> None:
-		"""Resize the dataset, or the specified axis.
-
-		The dataset must be stored in chunked format; it can be resized up to the "maximum shape" (keyword maxshape) specified at creation time.
-		The rank of the dataset cannot be changed.
-		"Size" should be a shape tuple, or if an axis is specified, an integer.
-
-		BEWARE: This functions differently than the NumPy resize() method!
-		The data is not "reshuffled" to fit in the new shape; each axis is grown or shrunk independently.
-		The coordinates of existing data are fixed.
-		"""
-		if self.name == "":
-			self.ds._file['/matrix'].resize(size, axis)
-		else:
-			self.ds._file['/layers/' + self.name].resize(size, axis)
-
-
-class LoomView:
-	"""
-	An in-memory loom dataset
-	"""
-	def __init__(self, layers: Dict[str, MemoryLoomLayer], row_attrs: Dict[str, np.ndarray], col_attrs: Dict[str, np.ndarray]) -> None:
-		self.layers = layers
-		self.shape = next(iter(self.layers.values())).shape
-		self.row_attrs = row_attrs
-		self.col_attrs = col_attrs
-
-	def __getitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]]) -> np.ndarray:
-		"""
-		Get a slice of the main matrix.
-		Args:
-			slice:		A slice object (see http://docs.h5py.org/en/latest/high/dataset.html)
-		Returns:
-			A numpy matrix
-		"""
-		return self.layers[""][slice]
-	
-
-class LoomAttributeManager(object):
-	__slots__ = ('f',)
-
-	def __init__(self, f: h5py.File) -> None:
-		self.f = f
-
-	def __contains__(self, name: str) -> bool:
-		return self.f.attrs.__contains__(name)
-
-	def __setitem__(self, name: str, value: str) -> None:
-		if type(value) == str:
-			self.f.attrs[name] = value.encode('utf-8')
-		else:
-			self.f.attrs[name] = value
-		self.f.flush()
-
-	def __getitem__(self, name: str) -> str:
-		val = self.f.attrs[name]
-		if type(val) == bytes:
-			val = val.decode('utf-8')
-		else:
-			val = str(val)
-
-		# Fix cosmetic bugs accidentally introduced by Python 2/3 bug
-		if val[0:2] == "b'" and val[-1] == "'":
-			val = val[2:-1]
-
-		return val
-
-	def __iter__(self) -> Iterator[str]:
-		for val in self.f.attrs:
-			yield val
-
-	def __len__(self) -> int:
-		return len(self.f.attrs)
-
-	def get(self, name: str, default: str = None) -> str:
-		if self.__contains__(name):
-			return self[name]
-		else:
-			return default
+from loompy import deprecated
 
 
 class LoomConnection:
@@ -197,223 +52,96 @@ class LoomConnection:
 		Row and column attributes are loaded into memory for fast access.
 		"""
 
+		# make sure a valid mode was passed, if not default to read-only
+		# because you probably are doing something that you don't want to
+		if mode != 'r+' and mode != 'r':
+			logging.warn("Wrong mode passed to LoomConnection, using read-only")
+			mode = 'r'
+		self.mode = mode
+		self.filename = filename
+		self._file = h5py.File(filename, mode)
+		self._closed = False
 		try:
-			# make sure a valid mode was passed, if not default to read-only
-			# because you probably are doing something that you don't want to
-			if mode != 'r+' and mode != 'r':
-				logging.warn("Wrong mode passed to LoomConnection, using read-only to not destroy data")
-				mode = 'r'
-			self.mode = mode
-			self.filename = filename
-			self._file = h5py.File(filename, mode)
-			self._closed = False
-			self.shape = [0, 0]  # The correct shape gets assigned when the layers are loaded
-
-			if self._file.__contains__("/matrix"):
-				self.layer = {
-					"": LoomLayer(self, "", self._file["/matrix"].dtype)
-				}
+			if "matrix" in self._file:
 				self.shape = self._file["/matrix"].shape
-				if self._file.__contains__("/layers"):
-					for key in self._file["/layers"].keys():
-						self.layer[key] = LoomLayer(self, key, self._file["/layers/" + key].dtype)
 			else:
-				self.layer = {}
+				self.shape = (0, 0)
+			self.layers = loompy.LayerManager(self)
+			self.view = loompy.ViewManager(self)
+			self.ra = loompy.AttributeManager(self, axis=0)
+			self.ca = loompy.AttributeManager(self, axis=1)
+			self.attrs = loompy.FileAttributeManager(self._file)
+			self.row_graphs = loompy.GraphManager(self, axis=0)
+			self.col_graphs = loompy.GraphManager(self, axis=1)
 
-			self.row_attrs = {}  # type: Dict[str, np.ndarray]
-			for key in self._file['row_attrs'].keys():
-				self._load_attr(key, axis=0)
-				v = self.row_attrs[key]
-				if type(v[0]) is np.str_ and len(v[0]) >= 3 and v[0][:2] == "b'" and v[0][-1] == "'":
-					logging.warn("Unicode bug detected in row %s" % key)
-					if mode == 'r+':
-						logging.warn("Fixing unicode bug by re-setting row attribute '" + key + "'")
-						self._save_attr(key, np.array([x[2:-1] for x in v]), axis=0)
-						self._load_attr(key, axis=0)
+			# Compatibility
+			self.layer = self.layers
+			self.row_attrs = self.ra
+			self.col_attrs = self.ca
 
-			self.col_attrs = {}  # type: Dict[str, np.ndarray]
-			for key in self._file['col_attrs'].keys():
-				self._load_attr(key, axis=1)
-				v = self.col_attrs[key]
-				if len(v) > 0 and type(v[0]) is np.str_ and len(v[0]) >= 3 and v[0][:2] == "b'" and v[0][-1] == "'":
-					logging.warn("Unicode bug detected in column %s" % key)
-					if mode == 'r+':
-						logging.warn("Fixing unicode bug by re-setting column attribute '" + key + "'")
-						self._save_attr(key, np.array([x[2:-1] for x in v]), axis=1)
-						self._load_attr(key, axis=1)
-
-			self.attrs = LoomAttributeManager(self._file)
 		except Exception as e:
 			logging.warn("initialising LoomConnection to %s failed, closing file connection", filename)
 			self.close()
 			raise e
 
 	def __enter__(self) -> Any:
+		"""
+		Context manager, to support "with loompy.connect(..)" construct
+		"""
 		return self
 
 	def __exit__(self, type: Any, value: Any, traceback: Any) -> None:
+		"""
+		Context manager, to support "with loompy.connect(..)" construct
+		"""
 		if not self.closed:
 			self.close(True)
-
-	def _save_attr(self, name: str, values: np.ndarray, axis: int) -> None:
-		"""
-		Save an attribute to the file, nothing else
-
-		Remarks:
-			Handles unicode to ascii conversion (lossy, but HDF5 supports only ascii)
-			Does not update the attribute cache (use _load_attr for this)
-		"""
-		if self.mode != "r+":
-			raise IOError("Cannot save attributes when connected in read-only mode")
-
-		values = loompy.normalize_attr_values(values)
-
-		a = ["/row_attrs/", "/col_attrs/"][axis]
-		if self.shape[axis] != 0 and len(values) != self.shape[axis]:
-			raise ValueError("Attribute must have exactly %d values" % self.shape[axis])
-		if self._file[a].__contains__(name):
-			del self._file[a + name]
-		self._file[a + name] = values
-		self._file.flush()
-
-	def _load_attr(self, name: str, axis: int) -> None:
-		"""
-		Load an attribute from the file, nothing else
-
-		Remarks:
-			Handles ascii to unicode conversion
-			Updates the attribute cache as well as the class attributes
-		"""
-		a = ["/row_attrs/", "/col_attrs/"][axis]
-		vals = loompy.materialize_attr_values(self._file[a][name][:])
-
-		reserved = [
-			"__init__",
-			"__enter__",
-			"__exit__",
-			"_save_attr",
-			"__load_attr",
-			"_repr_html_",
-			"__getitem",
-			"__setitem",
-			"sparse",
-			"close",
-			"closed",
-			"set_layer",
-			"add_columns",
-			"add_loom",
-			"set_attr",
-			"delete_attr",
-			"list_edges",
-			"get_edges",
-			"set_edges",
-			"export",
-			"batch_scan",
-			"batch_scan_layers",
-			"map",
-			"permute"
-		]
-		if axis == 0:
-			self.row_attrs[name] = vals
-			if name not in reserved:
-				setattr(self, name, self.row_attrs[name])
-		else:
-			self.col_attrs[name] = vals
-			if name not in reserved:
-				setattr(self, name, self.col_attrs[name])
 
 	def _repr_html_(self) -> str:
 		"""
 		Return an HTML representation of the loom file, showing the upper-left 10x10 corner.
 		"""
 		if not self.closed:
-			rm = min(10, self.shape[0])
-			cm = min(10, self.shape[1])
-			html = "<p>"
-			if self.attrs.__contains__("title"):
-				html += "<strong>" + self.attrs["title"] + "</strong> "
-			html += "(" + str(self.shape[0]) + " genes, " + str(self.shape[1]) + " cells, " + str(len(self.layer)) + " layers)<br/>"
-			html += self._file.filename + "<br/>"
-			if self.attrs.__contains__("description"):
-				html += "<em>" + self.attrs["description"] + "</em><br/>"
-			html += "<table>"
-			# Emit column attributes
-			for ca in self.col_attrs.keys():
-				html += "<tr>"
-				for ra in self.row_attrs.keys():
-					html += "<td>&nbsp;</td>"  # Space for row attrs
-				html += "<td><strong>" + ca + "</strong></td>"  # Col attr name
-				for v in self.col_attrs[ca][:cm]:
-					html += "<td>" + str(v) + "</td>"
-				if self.shape[1] > cm:
-					html += "<td>...</td>"
-				html += "</tr>"
-
-			# Emit row attribute names
-			html += "<tr>"
-			for ra in self.row_attrs.keys():
-				html += "<td><strong>" + ra + "</strong></td>"  # Row attr name
-			html += "<td>&nbsp;</td>"  # Space for col attrs
-			for v in range(cm):
-				html += "<td>&nbsp;</td>"
-			if self.shape[1] > cm:
-				html += "<td>...</td>"
-			html += "</tr>"
-
-			# Emit row attr values and matrix values
-			for row in range(rm):
-				html += "<tr>"
-				for ra in self.row_attrs.keys():
-					html += "<td>" + str(self.row_attrs[ra][row]) + "</td>"
-				html += "<td>&nbsp;</td>"  # Space for col attrs
-
-				for v in self[row, :cm]:
-					html += "<td>" + str(v) + "</td>"
-				if self.shape[1] > cm:
-					html += "<td>...</td>"
-				html += "</tr>"
-			# Emit ellipses
-			if self.shape[0] > rm:
-				html += "<tr>"
-				for v in range(rm + 1 + len(self.row_attrs.keys())):
-					html += "<td>...</td>"
-				if self.shape[1] > cm:
-					html += "<td>...</td>"
-				html += "</tr>"
-			html += "</table>"
-			return html
+			return loompy.to_html(self)
 		else:
 			return "This LoomConnection has been closed"
 
-	def __getitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]]) -> np.ndarray:
+	def __getitem__(self, slice_: Tuple[Union[int, np.ndarray, slice], Union[int, np.ndarray, slice]]) -> np.ndarray:
 		"""
 		Get a slice of the main matrix.
 
 		Args:
-			slice:		A slice object (see http://docs.h5py.org/en/latest/high/dataset.html)
+			slice:		A slice object (see http://docs.h5py.org/en/latest/high/dataset.html), or np.ndarray, or int
 
 		Returns:
 			A numpy matrix
 		"""
-		return self.layer[""][slice]
+		if type(slice_) is str:
+			return self.layers[slice_]
+		if type(slice_) is not tuple:
+			raise ValueError("Slice must be a 2-tuple")
+		return self.layers[""][slice_]
 
 	def __setitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]], data: np.ndarray) -> None:
 		"""
 		Assign a slice of the main matrix.
 
 		Args:
-			slice:		A slice object (see http://docs.h5py.org/en/latest/high/dataset.html)
+			slice:		A slice object (see http://docs.h5py.org/en/latest/high/dataset.html), or np.ndarray, or int
 
 		Returns:
 			Nothing.
 		"""
-		self.layer[""][slice] = data
+		self.layers[""][slice] = data
 
 	def sparse(self, genes: np.ndarray = None, cells: np.ndarray = None, layer: str = None) -> scipy.sparse.coo_matrix:
+		"""
+		Return the main matrix as a scipy.sparse.coo_matrix, without loading dense matrix in RAM
+		"""
 		if layer is None:
-			return self.layer[""].sparse(genes=genes, cells=cells)
+			return self.layers[""].sparse(genes=genes, cells=cells)
 		else:
-			return self.layer[layer].sparse(genes=genes, cells=cells)
+			return self.layers[layer].sparse(genes=genes, cells=cells)
 
 	def close(self, suppress_warning: bool = False) -> None:
 		"""
@@ -430,9 +158,14 @@ class LoomConnection:
 		else:
 			self._file.close()
 			self._file = None
-		self.row_attrs = {}
-		self.col_attrs = {}
-		self.shape = [0, 0]
+		self.layers = None
+		self.ra = None
+		self.row_attrs = None
+		self.ca = None
+		self.col_attrs = None
+		self.row_graphs = None
+		self.col_graphs = None
+		self.shape = (0, 0)
 		self._closed = True
 
 	@property
@@ -440,59 +173,19 @@ class LoomConnection:
 		return self._closed
 
 	def set_layer(self, name: str, matrix: np.ndarray, chunks: Tuple[int, int] = (64, 64), chunk_cache: int = 512, dtype: str = "float32", compression_opts: int = 2) -> None:
+		deprecated("'set_layer' is deprecated. Use 'ds.layer.Name = matrix' or 'ds.layer['Name'] = matrix' instead")
+		self.layers[name] = matrix
 
-		if self.mode != "r+":
-			raise IOError("Cannot save attributes when connected in read-only mode")
-		if not np.isfinite(matrix).all():
-			raise ValueError("INF and NaN not allowed in loom matrix")
-
-		if not self._file.__contains__("/layers"):
-			self._file.create_group("/layers")
-
-		# make sure chunk size is not bigger than actual matrix size
-		chunks = (min(chunks[0], matrix.shape[0]), min(chunks[1], matrix.shape[1]))
-		path = "/layers/" + name
-		if name == "":
-			path = "/matrix"
-		if self._file.__contains__(path):
-			del self._file[path]
-
-		# Save the main matrix
-		if compression_opts is None:
-			self._file.create_dataset(
-				path,
-				data=matrix.astype(dtype),
-				maxshape=(matrix.shape[0], None),
-				chunks=chunks,
-				fletcher32=False
-			)
-		else:
-			self._file.create_dataset(
-				path,
-				data=matrix.astype(dtype),
-				maxshape=(matrix.shape[0], None),
-				chunks=chunks,
-				fletcher32=False,
-				compression="gzip",
-				shuffle=False,
-				compression_opts=compression_opts
-			)
-
-		self.layer[name] = LoomLayer(self, name, dtype)
-		if name == "":
-			self.shape = matrix.shape
-		self._file.flush()
-
-	def add_columns(self, submatrix: np.ndarray, col_attrs: Dict[str, np.ndarray], fill_values: Dict[str, np.ndarray] = None) -> None:
+	def add_columns(self, layers: Union[np.ndarray, Dict[str, np.ndarray], loompy.LayerManager], col_attrs: Dict[str, np.ndarray], *, fill_values: Dict[str, np.ndarray] = None) -> None:
 		"""
 		Add columns of data and attribute values to the dataset.
 
 		Args:
-			submatrix (dict or numpy.ndarray):
+			layers (dict or numpy.ndarray or LayerManager):
 				Either:
 				1) A N-by-M matrix of float32s (N rows, M columns) in this case columns are added at the default layer
 				2) A dict {layer_name : matrix} specified so that the matrix (N, M) will be added to layer `layer_name`
-
+				3) A LayerManager object (such as what is returned by view.layers)
 			col_attrs (dict):
 				Column attributes, where keys are attribute names and values are numpy arrays (float or string) of length M
 
@@ -509,19 +202,28 @@ class LoomConnection:
 		if self.mode != "r+":
 			raise IOError("Cannot add columns when connected in read-only mode")
 
-		if not type(submatrix) == dict:
-			submatrix_dict = dict()
-			submatrix_dict[""] = submatrix
+		layers_dict: Dict[str, np.ndarray] = None
+		if isinstance(layers, np.ndarray):
+			layers_dict = {"": layers}
+		elif isinstance(layers, loompy.LayerManager):
+			layers_dict = {k: v[:, :] for k, v in layers.items()}
+		elif isinstance(layers, dict):
+			layers_dict = layers
 		else:
-			submatrix_dict = cast(dict, submatrix)  # equivalent to submatrix_dict = submatrix # only avoids problems with type checker
-			submatrix = submatrix_dict[""]
-
-		# for k, v in submatrix_dict.items():
-		# 	if not np.isfinite(v).all():
-		# 		raise ValueError("INF and NaN not allowed in loom matrix")
-
-		if submatrix.shape[0] != self.shape[0]:
-			raise ValueError("New submatrix must have same number of rows as existing matrix")
+			raise ValueError("Invalid type for layers argument")
+		n_cols = 0
+		for layer, matrix in layers_dict.items():
+			if layer not in self.layers.keys():
+				raise ValueError(f"Layer {layer} does not exist in the target loom file")
+			if matrix.shape[0] != self.shape[0]:
+				raise ValueError(f"Layer {layer} has {matrix.shape[0]} rows but file has {self.shape[0]}")
+			if n_cols == 0:
+				n_cols = matrix.shape[1]
+			elif matrix.shape[1] != n_cols:
+				raise ValueError(f"Layer {layer} has {matrix.shape[1]} columns but the first layer had {n_cols}")				
+		for layer in self.layers.keys():
+			if layer not in layers_dict.keys():
+				raise ValueError(f"Layer {layer} does not exist in the target loom file")
 
 		did_remove = False
 		todel = []  # type: List[str]
@@ -536,8 +238,8 @@ class LoomConnection:
 				else:
 					did_remove = True
 					todel.append(key)
-			if len(vals) != submatrix.shape[1]:
-				raise ValueError("Each column attribute must have exactly %s values" % submatrix.shape[1])
+			if len(vals) != n_cols:
+				raise ValueError(f"Each column attribute must have exactly {n_cols} values, but {key} had {len(vals)}")
 		for key in todel:
 			del col_attrs[key]
 		if did_remove:
@@ -552,7 +254,7 @@ class LoomConnection:
 						fill_with = np.zeros(1, dtype=self.col_attrs[key].dtype)[0]
 					else:
 						fill_with = fill_values[key]
-					col_attrs[key] = np.array([fill_with] * submatrix.shape[1])
+					col_attrs[key] = np.array([fill_with] * n_cols)
 				else:
 					did_remove = True
 					todel.append(key)
@@ -561,32 +263,18 @@ class LoomConnection:
 		if did_remove:
 			logging.warn("Some column attributes were removed: " + ",".join(todel))
 
-		n_cols = submatrix.shape[1] + self.shape[1]
+		n_cols = n_cols + self.shape[1]
+		old_n_cols = self.shape[1]
+		# Must set new shape here, otherwise the attribute manager will complain
+		self.shape = (self.shape[0], n_cols)
 		for key, vals in col_attrs.items():
-			vals = loompy.normalize_attr_values(vals)
-			# vals = np.array(vals)
-			# if vals.dtype.type is np.str_:
-			# 	vals = np.array([x.encode('ascii', 'ignore') for x in vals])
-			temp = self._file['/col_attrs/' + key][:]
-			temp = loompy.normalize_attr_values(temp)
-			# casting_rule_dtype = np.result_type(temp, vals)
-			# if vals.dtype != casting_rule_dtype:
-			# 	vals = vals.astype(casting_rule_dtype)
-			# if temp.dtype != casting_rule_dtype:
-			# 	temp = temp.astype(casting_rule_dtype)
-			temp.resize((n_cols,))
-			temp[self.shape[1]:] = vals
-			del self._file['/col_attrs/' + key]
-			self._file['/col_attrs/' + key] = temp
-			self.col_attrs[key] = self._file['/col_attrs/' + key]
+			self.ca[key] = np.concatenate([self.ca[key], vals])
 
 		# Add the columns layerwise
-		for key in self.layer.keys():
-			self.layer[key].resize(n_cols, axis=1)
-			self.layer[key][:, self.shape[1]:n_cols] = submatrix_dict[key].astype(self.layer[key].dtype)
-			self._file.flush()
-
-		self.shape = [self.shape[0], n_cols]
+		for key in self.layers.keys():
+			self.layers[key].resize(n_cols, axis=1)
+			self.layers[key][:, old_n_cols:n_cols] = layers_dict[key]
+		self._file.flush()
 
 	def add_loom(self, other_file: str, key: str = None, fill_values: Dict[str, np.ndarray]=None, batch_size: int=1000) -> None:
 		"""
@@ -624,138 +312,71 @@ class LoomConnection:
 			for ix, val in enumerate(pk1):
 				if pk2[ix] != val:
 					raise ValueError("Primary keys are not 1-to-1 alignable!")
-		diff_layers = set(self.layer.keys()) - set(other.layer.keys())
+		diff_layers = set(self.layers.keys()) - set(other.layers.keys())
 		if len(diff_layers) > 0:
 			raise ValueError("%s is missing a layer, cannot merge with current file. layers missing:%s" % (other_file, diff_layers))
 
-		for (ix, selection, vals) in other.batch_scan_layers(axis=1, layers=self.layer.keys(), batch_size=batch_size):
+		for (ix, selection, vals) in other.batch_scan_layers(axis=1, layers=self.layers.keys(), batch_size=batch_size):
 			ca = {key: v[selection] for key, v in other.col_attrs.items()}
 			if ordering is not None:
 				vals = {key: val[ordering, :] for key, val in vals.items()}
-			self.add_columns(vals, ca, fill_values)
+			self.add_columns(vals, ca, fill_values=fill_values)
 		other.close()
 
-	def delete_attr(self, name: str, axis: int = 0, raise_on_missing: bool = True) -> None:
-		"""
-		Permanently delete an existing attribute and all its values
-
-		Args:
-
-			name (str): 	Name of the attribute to remove
-			axis (int):		Axis of the attribute (0 = rows, 1 = columns)
-
-		Returns:
-			Nothing.
-		"""
-		if self.mode != "r+":
-			raise IOError("Cannot delete attributes when connected in read-only mode")
+	def delete_attr(self, name: str, axis: int = 0) -> None:
+		deprecated("'delete_attr' is deprecated. Use 'del ds.ra.key' or 'del ds.ca.key' instead")
 		if axis == 0:
-			if name not in self.row_attrs:
-				if raise_on_missing:
-					raise KeyError("Row attribute " + name + " does not exist")
-				else:
-					return
-			del self.row_attrs[name]
-			del self._file['/row_attrs/' + name]
-			if hasattr(self, name):
-				delattr(self, name)
-
-		elif axis == 1:
-			if name not in self.col_attrs:
-				if raise_on_missing:
-					raise KeyError("Column attribute " + name + " does not exist")
-				else:
-					return
-			del self.col_attrs[name]
-			del self._file['/col_attrs/' + name]
-			if hasattr(self, name):
-				delattr(self, name)
+			del self.ra[name]
 		else:
-			raise ValueError("Axis must be 0 or 1")
-
-		self._file.flush()
+			del self.ca[name]
 
 	def set_attr(self, name: str, values: np.ndarray, axis: int = 0, dtype: str = None) -> None:
-		"""
-		Create or modify an attribute.
+		deprecated("'set_attr' is deprecated. Use 'ds.ra.key = values' or 'ds.ca.key = values' instead")
+		if axis == 0:
+			self.ra[name] = values
+		else:
+			self.ca[name] = values
 
-		Args:
-			name (str): 			Name of the attribute
-			values (numpy.ndarray):	Array of values of length equal to the axis length
-			axis (int):				Axis of the attribute (0 = rows, 1 = columns)
-
-		Returns:
-			Nothing.
-
-		This will overwrite any existing attribute of the same name.
-		"""
-		if self.mode != "r+":
-			raise IOError("Cannot save attributes when connected in read-only mode")
-		if dtype is not None:
-			raise DeprecationWarning("Data type should no longer be provided")
-
-		self.delete_attr(name, axis, raise_on_missing=False)
-		self._save_attr(name, values, axis)
-		self._load_attr(name, axis)
-
-	def list_edges(self, axis: int) -> List[str]:
-		if axis == 0 and "row_edges" in self._file:
-			return [k for k in self._file["row_edges"]]
-		elif axis == 1 and "col_edges" in self._file:
-			return [k for k in self._file["col_edges"]]
+	def list_edges(self, *, axis: int) -> List[str]:
+		deprecated("'list_edges' is deprecated. Use 'ds.row_graphs.keys()' or 'ds.col_graphs.keys()' instead")
+		if axis == 0:
+			return self.row_graphs.keys()
+		elif axis == 1:
+			return self.col_graphs.keys()
 		else:
 			return []
 
-	def get_edges(self, name: str, axis: int) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+	def get_edges(self, name: str, *, axis: int) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+		deprecated("'get_edges' is deprecated. Use 'ds.row_graphs[name]' or 'ds.col_graphs[name]' instead")
 		if axis == 0:
-			return (self._file["/row_edges/" + name + "/a"][:], self._file["/row_edges/" + name + "/b"][:], self._file["/row_edges/" + name + "/w"][:])
+			g = self.row_graphs[name]
+			return (g.row, g.col, g.data)
 		if axis == 1:
-			return (self._file["/col_edges/" + name + "/a"][:], self._file["/col_edges/" + name + "/b"][:], self._file["/col_edges/" + name + "/w"][:])
+			g = self.col_graphs[name]
+			return (g.row, g.col, g.data)
 		raise ValueError("Axis must be 0 or 1")
 
-	def set_edges(self, name: str, a: np.ndarray, b: np.ndarray, w: np.ndarray, axis: int) -> None:
-		if self.mode != "r+":
-			raise IOError("Cannot save edges when connected in read-only mode")
-		if not a.dtype.kind == 'i':
-			raise ValueError("Nodes must be integers")
-		if not b.dtype.kind == 'i':
-			raise ValueError("Nodes must be integers")
-		if axis == 1:
-			if a.max() > self.shape[1] or a.min() < 0:
-				raise ValueError("Nodes out of range")
-			if b.max() > self.shape[1] or b.min() < 0:
-				raise ValueError("Nodes out of range")
-			if self._file.__contains__("/col_edges/" + name):
-				del self._file["/col_edges/" + name + "/a"]
-				del self._file["/col_edges/" + name + "/b"]
-				del self._file["/col_edges/" + name + "/w"]
-			self._file["/col_edges/" + name + "/a"] = a
-			self._file["/col_edges/" + name + "/b"] = b
-			self._file["/col_edges/" + name + "/w"] = w
-		elif axis == 0:
-			if a.max() > self.shape[0] or a.min() < 0:
-				raise ValueError("Nodes out of range")
-			if b.max() > self.shape[0] or b.min() < 0:
-				raise ValueError("Nodes out of range")
-			if self._file.__contains__("/row_edges/" + name):
-				del self._file["/row_edges/" + name + "/a"]
-				del self._file["/row_edges/" + name + "/b"]
-				del self._file["/row_edges/" + name + "/w"]
-			self._file["/row_edges/" + name + "/a"] = a
-			self._file["/row_edges/" + name + "/b"] = b
-			self._file["/row_edges/" + name + "/w"] = w
+	def set_edges(self, name: str, a: np.ndarray, b: np.ndarray, w: np.ndarray, *, axis: int) -> None:
+		deprecated("'set_edges' is deprecated. Use 'ds.row_graphs[name] = g' or 'ds.col_graphs[name] = g' instead")
+		try:
+			g = scipy.sparse.coo_matrix((w, (a, b)), (self.shape[axis], self.shape[axis]))
+		except Exception:
+			raise ValueError("Input arrays could not be converted to a sparse matrix")
+		if axis == 0:
+			self.row_graphs[name] = g
+		elif axis == 1:
+			self.col_graphs[name] = g
 		else:
-			raise ValueError("Axis must be 0 or 1")
+			raise ValueError("axis must be 0 (rows) or 1 (columns)")
 
-	def scan(self, *, cells: np.ndarray = None, genes: np.ndarray = None, axis: int = None, layers: Iterable = None, key: str = None, batch_size: int = 1000) -> Iterable[Tuple[int, np.ndarray, LoomView]]:
-		"""Performs a batch scan of the loom file dealing with multiple layer files
+	def scan(self, *, items: np.ndarray = None, axis: int = None, layers: Iterable = None, key: str = None, batch_size: int = 1000) -> Iterable[Tuple[int, np.ndarray, loompy.LoomView]]:
+		"""
+		Scan across one axis and return batches of rows (columns) as LoomView objects
 
 		Args
 		----
-		cells: np.ndarray
-			the indexes [1,2,3,..,1000] of the cells to select
-		genes: np.ndarray
-			the indexes [1,2,3,..,1000] of the genes to select
+		items: np.ndarray
+			the indexes [0, 2, 13, ... ,973] of the rows/cols to include along the axis
 		axis: int
 			0:rows or 1:cols
 		batch_size: int
@@ -779,33 +400,28 @@ class LoomConnection:
 			this is ix + selection
 		view: LoomView
 			a view corresponding to the current chunk
-			view.values is the underlying numpy.ndarray
 		"""
 		if axis is None:
 			raise ValueError("Axis must be given (0 = rows, 1 = cols)")
-		if (axis == 0) and (key is not None) and (cells is not None):
-			raise NotImplementedError("Cannot use key and cells at the same time")
-		if (axis == 1) and (key is not None) and (genes is not None):
-			raise NotImplementedError("Cannot use key and genes at the same time")
-		if cells is None:
-			cells = np.fromiter(range(self.shape[1]), dtype='int')
-		if genes is None:
-			genes = np.fromiter(range(self.shape[0]), dtype='int')
 		if layers is None:
-			layers = self.layer.keys()
+			layers = self.layers.keys()
 		if layers == "":
 			layers = [""]
 
+		ordering: np.ndarray = None
+		vals: Dict[str, loompy.MemoryLoomLayer] = {}
 		if axis == 1:
-			ordering = np.arange(self.shape[0])
 			if key is not None:
-				ordering = np.argsort(self.row_attrs[key])
+				ordering = np.argsort(self.ra[key])
+			else:
+				ordering = np.arange(self.shape[0])
+			if items is None:
+				items = np.fromiter(range(self.shape[1]), dtype='int')
 			cols_per_chunk = batch_size
 			ix = 0
 			while ix < self.shape[1]:
 				cols_per_chunk = min(self.shape[1] - ix, cols_per_chunk)
-
-				selection = cells - ix
+				selection = items - ix
 				# Pick out the cells that are in this batch
 				selection = selection[np.where(np.logical_and(selection >= 0, selection < cols_per_chunk))[0]]
 				if selection.shape[0] == 0:
@@ -813,44 +429,49 @@ class LoomConnection:
 					continue
 
 				# Load the whole chunk from the file, then extract genes and cells using fancy indexing
-				vals: Dict[str, loompy.MemoryLoomLayer] = {}
 				for layer in layers:
-					temp = self.layer[layer][:, ix:ix + cols_per_chunk]
+					temp = self.layers[layer][:, ix:ix + cols_per_chunk]
 					temp = temp[ordering, :]
-					temp = temp[genes, :]
 					temp = temp[:, selection]
 					vals[layer] = loompy.MemoryLoomLayer(layer, temp)
-
-				yield (ix, ix + selection, loompy.LoomView(vals, {key: val[ordering][genes] for key, val in self.row_attrs.items()}, {key: val[selection] for key, val in self.col_attrs.items()}))
+				lm = loompy.LayerManager(None)
+				for key, layer in vals.items():
+					lm[key] = loompy.MemoryLoomLayer(key, layer)
+				view = loompy.LoomView(lm, self.ra[ordering], self.ca[ix + selection], self.row_graphs[ordering], self.col_graphs[ix + selection], filename=self.filename, file_attrs=self.attrs)
+				yield (ix, ix + selection, view)
 				ix += cols_per_chunk
 		elif axis == 0:
-			# This is magic sauce for making the order of one list be like another
-			ordering = np.arange(self.shape[1])
 			if key is not None:
-				ordering = np.argsort(self.col_attrs[key])
+				ordering = np.argsort(self.ca[key])
+			else:
+				ordering = np.arange(self.shape[1])
+			if items is None:
+				items = np.fromiter(range(self.shape[0]), dtype='int')
 			rows_per_chunk = batch_size
 			ix = 0
 			while ix < self.shape[0]:
 				rows_per_chunk = min(self.shape[0] - ix, rows_per_chunk)
-
-				selection = genes - ix
-				# Pick out the genes that are in this batch
+				selection = items - ix
+				# Pick out the cells that are in this batch
 				selection = selection[np.where(np.logical_and(selection >= 0, selection < rows_per_chunk))[0]]
 				if selection.shape[0] == 0:
 					ix += rows_per_chunk
 					continue
 
 				# Load the whole chunk from the file, then extract genes and cells using fancy indexing
-				vals = {}
 				for layer in layers:
-					temp = self.layer[layer][ix:ix + rows_per_chunk, :]
-					temp = temp[selection, :]
+					temp = self.layers[layer][ix:ix + rows_per_chunk, :]
 					temp = temp[:, ordering]
-					temp = temp[:, cells]
+					temp = temp[selection, :]
 					vals[layer] = loompy.MemoryLoomLayer(layer, temp)
-
-				yield (ix, ix + selection, loompy.LoomView(vals, {key: val[selection] for key, val in self.row_attrs.items()}, {key: val[ordering][cells] for key, val in self.col_attrs.items()}))
+				lm = loompy.LayerManager(None)
+				for key, layer in vals.items():
+					lm[key] = loompy.MemoryLoomLayer(key, layer)
+				view = loompy.LoomView(lm, self.ra[ix + selection], self.ca[ordering], self.row_graphs[ix + selection], self.col_graphs[ordering], filename=self.filename, file_attrs=self.attrs)
+				yield (ix, ix + selection, view)
 				ix += rows_per_chunk
+		else:
+			raise ValueError("axis must be 0 or 1")
 
 	def batch_scan(self, cells: np.ndarray = None, genes: np.ndarray = None, axis: int = 0, batch_size: int = 1000, layer: str = None) -> Iterable[Tuple[int, np.ndarray, np.ndarray]]:
 		"""Performs a batch scan of the loom file
@@ -879,6 +500,7 @@ class LoomConnection:
 		vals: np.ndarray
 			the matrix corresponding to the chunk
 		"""
+		deprecated("'batch_scan' is deprecated. Use 'scan' instead")
 		if cells is None:
 			cells = np.fromiter(range(self.shape[1]), dtype='int')
 		if genes is None:
@@ -899,7 +521,7 @@ class LoomConnection:
 					continue
 
 				# Load the whole chunk from the file, then extract genes and cells using fancy indexing
-				vals = self.layer[layer][:, ix:ix + cols_per_chunk]
+				vals = self.layers[layer][:, ix:ix + cols_per_chunk]
 				vals = vals[genes, :]
 				vals = vals[:, selection]
 
@@ -920,7 +542,7 @@ class LoomConnection:
 					continue
 
 				# Load the whole chunk from the file, then extract genes and cells using fancy indexing
-				vals = self.layer[layer][ix:ix + rows_per_chunk, :]
+				vals = self.layers[layer][ix:ix + rows_per_chunk, :]
 				vals = vals[selection, :]
 				vals = vals[:, cells]
 				yield (ix, ix + selection, vals)
@@ -956,12 +578,13 @@ class LoomConnection:
 		vals: Dict[layername, np.ndarray]
 			a dictionary of the matrixes corresponding to the chunks of different layers
 		"""
+		deprecated("'batch_scan_layers' is deprecated. Use 'scan' instead")
 		if cells is None:
 			cells = np.fromiter(range(self.shape[1]), dtype='int')
 		if genes is None:
 			genes = np.fromiter(range(self.shape[0]), dtype='int')
 		if layers is None:
-			layers = self.layer.keys()
+			layers = self.layers.keys()
 		if axis == 1:
 			cols_per_chunk = batch_size
 			ix = 0
@@ -978,7 +601,7 @@ class LoomConnection:
 				# Load the whole chunk from the file, then extract genes and cells using fancy indexing
 				vals = dict()
 				for key in layers:
-					vals[key] = self.layer[key][:, ix:ix + cols_per_chunk]
+					vals[key] = self.layers[key][:, ix:ix + cols_per_chunk]
 					vals[key] = vals[key][genes, :]
 					vals[key] = vals[key][:, selection]
 
@@ -1001,13 +624,13 @@ class LoomConnection:
 				# Load the whole chunk from the file, then extract genes and cells using fancy indexing
 				vals = dict()
 				for key in layers:
-					vals[key] = self.layer[key][ix:ix + rows_per_chunk, :]
+					vals[key] = self.layers[key][ix:ix + rows_per_chunk, :]
 					vals[key] = vals[key][selection, :]
 					vals[key] = vals[key][:, cells]
 				yield (ix, ix + selection, vals)
 				ix += rows_per_chunk
 
-	def map(self, f_list: List[Callable[[np.ndarray], int]], axis: int = 0, chunksize: int = 1000, selection: np.ndarray = None) -> List[np.ndarray]:
+	def map(self, f_list: List[Callable[[np.ndarray], int]], *, axis: int = 0, chunksize: int = 1000, selection: np.ndarray = None) -> List[np.ndarray]:
 		"""
 		Apply a function along an axis without loading the entire dataset in memory.
 
@@ -1026,39 +649,7 @@ class LoomConnection:
 			If you supply a list of functions, the result will be a list of numpy arrays. This is more
 			efficient than repeatedly calling map() one function at a time.
 		"""
-		if hasattr(f_list, '__call__'):
-			raise ValueError("f_list must be a list of functions, not a function itself")
-
-		result = []
-		if axis == 0:
-			rows_per_chunk = chunksize
-			for i in range(len(f_list)):
-				result.append(np.zeros(self.shape[0]))
-			ix = 0
-			while ix < self.shape[0]:
-				rows_per_chunk = min(self.shape[0] - ix, rows_per_chunk)
-				if selection is not None:
-					chunk = self[ix:ix + rows_per_chunk, :][:, selection]
-				else:
-					chunk = self[ix:ix + rows_per_chunk, :]
-				for i in range(len(f_list)):
-					result[i][ix:ix + rows_per_chunk] = np.apply_along_axis(f_list[i], 1, chunk)
-				ix = ix + rows_per_chunk
-		elif axis == 1:
-			cols_per_chunk = chunksize
-			for i in range(len(f_list)):
-				result.append(np.zeros(self.shape[1]))
-			ix = 0
-			while ix < self.shape[1]:
-				cols_per_chunk = min(self.shape[1] - ix, cols_per_chunk)
-				if selection is not None:
-					chunk = self[:, ix:ix + cols_per_chunk][selection, :]
-				else:
-					chunk = self[:, ix:ix + cols_per_chunk]
-				for i in range(len(f_list)):
-					result[i][ix:ix + cols_per_chunk] = np.apply_along_axis(f_list[i], 0, chunk)
-				ix = ix + cols_per_chunk
-		return result
+		return self.layers[""].map(f_list, axis, chunksize, selection)
 
 	def permute(self, ordering: np.ndarray, axis: int) -> None:
 		"""
@@ -1076,52 +667,18 @@ class LoomConnection:
 			del self._file['tiles']
 
 		ordering = list(np.array(ordering).flatten())  # Flatten the ordering, in case we got a column vector
+		self.layers.permute(ordering, axis=axis)
 		if axis == 0:
-			for layer in self.layer:
-				if layer == "":
-					obj = self._file['/matrix']
-				else:
-					obj = self._file['/layers/' + layer]
-				chunksize = 5000
-				start = 0
-				while start < self.shape[1]:
-					submatrix = obj[:, start:start + chunksize]
-					obj[:, start:start + chunksize] = submatrix[ordering, :]
-					start = start + chunksize
-			for key in list(self.row_attrs.keys()):
-				self.set_attr(key, self.row_attrs[key][ordering], axis=0)
-			# Permute the edges
-			for name in self.list_edges(axis=0):
-				(a, b, w) = self.get_edges(name, axis=0)
-				a = _renumber(a, np.array(ordering), np.arange(self.shape[0]))
-				b = _renumber(b, np.array(ordering), np.arange(self.shape[0]))
-				self.set_edges(name, a, b, w, 0)
-			self._file.flush()
+			self.row_attrs.permute(ordering)
+			self.row_graphs.permute(ordering)
 		if axis == 1:
-			# Permute the columns of each layer
-			for layer in self.layer:
-				if layer == "":
-					obj = self._file['/matrix']
-				else:
-					obj = self._file['/layers/' + layer]
-				chunksize = 100000000 // self.shape[1]
-				start = 0
-				while start < self.shape[0]:
-					submatrix = obj[start:start + chunksize, :]
-					obj[start:start + chunksize, :] = submatrix[:, ordering]
-					start = start + chunksize
-			# Permute the column attributes
-			for key in list(self.col_attrs.keys()):
-				self.set_attr(key, self.col_attrs[key][ordering], axis=1)
-			# Permute the edges
-			for name in self.list_edges(axis=1):
-				(a, b, w) = self.get_edges(name, axis=1)
-				a = _renumber(a, np.array(ordering), np.arange(self.shape[1]))
-				b = _renumber(b, np.array(ordering), np.arange(self.shape[1]))
-				self.set_edges(name, a, b, w, 1)
-			self._file.flush()
+			self.col_attrs.permute(ordering)
+			self.col_graphs.permute(ordering)
 
 	def export(self, out_file: str, layer: str = None, format: str = "tab") -> None:
+		"""
+		Export the specified layer and row/col attributes as tab-delimited file
+		"""
 		if format != "tab":
 			raise NotImplementedError("Only 'tab' is supported")
 
@@ -1153,37 +710,47 @@ class LoomConnection:
 					for v in self[row, :]:
 						f.write(str(v) + "\t")
 				else:
-					for v in self.layer[layer][row, :]:
+					for v in self.layers[layer][row, :]:
 						f.write(str(v) + "\t")
 				f.write("\n")
 
 
-def _create_sparse(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], col_attrs: Dict[str, np.ndarray], *, layers: Dict[str, np.ndarray] = None, file_attrs: Dict[str, str] = None, chunks: Tuple[int, int] = (64, 64), chunk_cache: int = 512, dtype: str = "float32", compression_opts: int = 2) -> LoomConnection:
+def _create_sparse(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], col_attrs: Dict[str, np.ndarray], *, layers: Dict[str, np.ndarray] = None, file_attrs: Dict[str, str] = None) -> None:
+	"""
+	Create a new loom file from a sparse matrix input
+	"""
 	logging.info("Converting to csc format")
 	matrix = matrix.tocsc()
 	window = 2000
 	ix = 0
-	ds = None  # type: LoomConnection
 	while ix < matrix.shape[1]:
 		window = min(window, matrix.shape[1] - ix)
 		ca = {key: val[ix:ix + window] for (key, val) in col_attrs.items()}
-		if ds is None:
-			logging.info("Creating")
-			ds = create(filename, matrix[:, ix:ix + window].toarray(), row_attrs, ca, file_attrs=file_attrs, chunks=chunks, chunk_cache=chunk_cache, dtype=dtype, compression_opts=compression_opts)
-		else:
-			logging.info("Adding columns")
-			ds.add_columns(matrix[:, ix:ix + window].toarray(), ca)
+		create_append(filename, matrix[:, ix:ix + window].toarray(), row_attrs, ca, file_attrs=file_attrs)
 		ix += window
-	return ds
 
 
-def create(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], col_attrs: Dict[str, np.ndarray], *, layers: Dict[str, np.ndarray] = None, file_attrs: Dict[str, str] = None, chunks: Tuple[int, int] = (64, 64), chunk_cache: int = 512, dtype: str = "float32", compression_opts: int = 2) -> LoomConnection:
+def create_append(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loompy.LayerManager], row_attrs: Dict[str, np.ndarray], col_attrs: Dict[str, np.ndarray], *, file_attrs: Dict[str, str] = None, fill_values: Dict[str, np.ndarray] = None) -> None:
+	"""
+	Append columns to a loom file, or create a new loom file if it doesn't exist
+	"""
+	if os.path.exists(filename):
+		with connect(filename) as ds:
+			ds.add_columns(layers, col_attrs, fill_values=fill_values)
+	else:
+		create(filename, layers, row_attrs, col_attrs, file_attrs=file_attrs)
+
+
+def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loompy.LayerManager], row_attrs: Dict[str, np.ndarray], col_attrs: Dict[str, np.ndarray], *, file_attrs: Dict[str, str] = None) -> None:
 	"""
 	Create a new .loom file from the given data.
 
 	Args:
 		filename (str):         The filename (typically using a `.loom` file extension)
-		matrix (numpy.ndarray): Two-dimensional (N-by-M) numpy ndarray of float values
+		layers (np.ndarray or Dict[str, np.ndarray] or LayerManager): 
+								Two-dimensional (N-by-M) numpy ndarray of float values
+								Or dictionary of named layers, each an N-by-M ndarray
+								or LayerManager, each layer an N-by-M ndarray
 		row_attrs (dict):       Row attributes, where keys are attribute names and values
 								are numpy arrays (float or string) of length N
 		col_attrs (dict):       Column attributes, where keys are attribute names and
@@ -1193,32 +760,27 @@ def create(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], 
 								if matrix is None, otherwise it will be ignored
 		file_attrs (dict):      Global attributes, where keys are attribute names and
 								values are strings
-		chunks (tuple):         The chunking of the matrix. Small chunks are slow
-								when loading a large batch of rows/columns in sequence,
-								but fast for single column/row retrieval.
-								Defaults to (64,64).
-		chunk_cache (int):      Sets the chunk cache used by the HDF5 format inside
-								the loom file, in MB. If the cache is too small to
-								contain all chunks of a row/column in memory, then
-								sequential row/column access will be a lot slower.
-								Defaults to 512.
-		dtype (str):           Dtype of the matrix. Default float32 (uint16, float16 could be used)
-		compression_opts (int): Strength of the gzip compression. Default None.
 	Returns:
-		LoomConnection to created loom file.
+		Nothing
+	
+	Remarks:
+		If the file exists, it will be overwritten. See create_append for a function that will append to existing files.
 	"""
 	if filename.startswith("~/"):
 		filename = os.path.expanduser(filename)
 	if file_attrs is None:
 		file_attrs = {}
 
-	if matrix is None:
-		matrix = layers[""]
-
-	if scipy.sparse.issparse(matrix):
-		if layers is not None:
+	if isinstance(layers, np.ndarray):
+		layers = {"": layers}
+	elif isinstance(layers, loompy.LayerManager):
+		layers = {k: v[:, :] for k, v in layers.items()}
+	if "" not in layers:
+		raise ValueError("Data for default layer must be provided")
+	if scipy.sparse.issparse(layers[""]):
+		if len(layers) > 1:
 			raise NotImplementedError("Creating from sparse matrix supports only single layer")
-		return _create_sparse(filename, matrix, row_attrs, col_attrs, file_attrs=file_attrs, layers=layers, chunks=chunks, chunk_cache=chunk_cache, dtype=dtype, compression_opts=compression_opts)
+		_create_sparse(filename, layers[""], row_attrs, col_attrs, file_attrs=file_attrs, layers=layers)
 
 	# Create the file (empty).
 	# Yes, this might cause an exception, which we prefer to send to the caller
@@ -1230,42 +792,37 @@ def create(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], 
 	f.close()
 
 	try:
-		ds = connect(filename)
-		ds.set_layer("", matrix, chunks, chunk_cache, dtype, compression_opts)
-
-		if layers is not None:
+		with connect(filename) as ds:
 			for key, vals in layers.items():
-				if key != "":
-					ds.set_layer(key, vals)
+				ds.layer[key] = vals
 
-		for key, vals in row_attrs.items():
-			ds.set_attr(key, vals, axis=0)
+			for key, vals in row_attrs.items():
+				ds.ra[key] = vals
 
-		for key, vals in col_attrs.items():
-			ds.set_attr(key, vals, axis=1)
+			for key, vals in col_attrs.items():
+				ds.ca[key] = vals
 
-		for vals in file_attrs:
-			ds.attrs[vals] = file_attrs[vals]
+			for vals in file_attrs:
+				ds.attrs[vals] = file_attrs[vals]
+
+			# store creation date
+			currentTime = time.localtime(time.time())
+			ds.attrs['CreationDate'] = time.strftime('%Y/%m/%d %H:%M:%S', currentTime)
 
 	except ValueError as ve:
 		ds.close(suppress_warning=True)
 		os.remove(filename)
 		raise ve
 
-	# store creation date
-	currentTime = time.localtime(time.time())
-	ds.attrs['creation_date'] = time.strftime('%Y/%m/%d %H:%M:%S', currentTime)
-	return ds
 
-
-def create_from_cellranger(indir: str, outdir: str = None, genome: str = None) -> LoomConnection:
+def create_from_cellranger(indir: str, outdir: str = None, genome: str = None) -> None:
 	"""
 	Create a .loom file from 10X Genomics cellranger output
 
 	Args:
 		indir (str):	path to the cellranger output folder (the one that contains 'outs')
 		outdir (str):	output folder wher the new loom file should be saved (default to indir)
-		genome (str):	genome build to load (e.g. 'mm10'; default: determine species from outs folder)
+		genome (str):	genome build to load (e.g. 'mm10'; if None, determine species from outs folder)
 
 	Returns:
 		LoomConnection to created loom file.
@@ -1296,15 +853,15 @@ def create_from_cellranger(indir: str, outdir: str = None, genome: str = None) -
 		tsne_file = os.path.join(indir, "outs", "analysis", "tsne", "2_components", "projection.csv")
 	if os.path.exists(tsne_file):
 		tsne = np.loadtxt(tsne_file, usecols=(1, 2), delimiter=',', skiprows=1)
-		col_attrs["_X"] = tsne[:, 0].astype('float32')
-		col_attrs["_Y"] = tsne[:, 1].astype('float32')
+		col_attrs["X"] = tsne[:, 0].astype('float32')
+		col_attrs["Y"] = tsne[:, 1].astype('float32')
 
 	clusters_file = os.path.join(indir, "outs", "analysis", "clustering", "graphclust", "clusters.csv")
 	if os.path.exists(clusters_file):
 		labels = np.loadtxt(clusters_file, usecols=(1, ), delimiter=',', skiprows=1)
-		col_attrs["Clusters"] = labels.astype('int') - 1
+		col_attrs["ClusterID"] = labels.astype('int') - 1
 
-	return create(os.path.join(outdir, sampleid + ".loom"), matrix, row_attrs, col_attrs, file_attrs={"Genome": genome})
+	create(os.path.join(outdir, sampleid + ".loom"), matrix, row_attrs, col_attrs, file_attrs={"Genome": genome})
 
 
 def combine(files: List[str], output_file: str, key: str = None, file_attrs: Dict[str, str]=None, batch_size: int=1000) -> None:
@@ -1353,5 +910,13 @@ def connect(filename: str, mode: str = 'r+') -> LoomConnection:
 
 	Returns:
 		A LoomConnection instance.
+
+	Remarks:
+		This function should typically be called as a context manager:
+
+			with loompy.connect(filename) as ds:
+				...do something...
+
+		This ensures that the file will be closed automatically when the context block ends
 	"""
 	return LoomConnection(filename, mode)
