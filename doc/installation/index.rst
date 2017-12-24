@@ -69,7 +69,9 @@ files from your own website. See the loom-viewer`<https://github.com/linnarsson-
 Getting Started
 ===============
 
-Go to http://loom.linnarssonlab.org (**Note:** currently broken in Safari; use Chrome instead) and download one of the datasets. We will use ``cortex.loom`` below.
+Go to http://loom.linnarssonlab.org and download one of the datasets. We will use ``cortex.loom`` below.
+
+**Note:** The Loom web site is currently broken in Safari. Use Chrome instead for now.
 
 Run the following in a Jupyter notebook:
 
