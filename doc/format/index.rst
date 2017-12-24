@@ -91,7 +91,7 @@ A valid ``.loom`` file conforms to the following:
 -  There MUST be a group ``/col_graphs``
 -  There can OPTIONALLY be one or more groups at ``/col_graphs/{name}``
 -  Under each ``/col_graphs/{name}`` group, there MUST be three one-dimensional datasets
-   called ``a`` (integer), ``b`` (integer) and ``w` (float). These should
+   called ``a`` (integer), ``b`` (integer) and ``w`` (float). These should
    be interpreted as a sparse graph in `coordinate list <https://en.wikipedia.org/wiki/Sparse_matrix`_ 
    format. The lengths of the three datasets MUST be equal, which defines the number 
    of edges in the graph. Note that the number of columns in the dataset defines 
@@ -99,7 +99,7 @@ A valid ``.loom`` file conforms to the following:
 -  There MUST be a group ``/row_graphs``
 -  There can OPTIONALLY be one or more groups at ``/row_graphs/{name}``
 -  Under each ``/row_graphs/{name}`` group, there MUST be three one-dimensional datasets
-   called ``a`` (integer), ``b`` (integer) and ``w` (float). These should
+   called ``a`` (integer), ``b`` (integer) and ``w`` (float). These should
    be interpreted as a sparse graph in `coordinate list <https://en.wikipedia.org/wiki/Sparse_matrix>`_
    format. The lengths of the three datasets MUST be equal, which defines the number 
    of edges in the graph. Note that the number of rows in the dataset defines 
