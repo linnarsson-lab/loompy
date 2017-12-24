@@ -2,6 +2,7 @@ import numpy as np
 import scipy.sparse as sparse
 from typing import *
 import html
+import logging
 
 
 def normalize_attr_strings(a: np.ndarray) -> np.ndarray:
@@ -60,6 +61,10 @@ def normalize_attr_values(a: Any) -> np.ndarray:
 		This method should be used to prepare the values to be stored in the HDF5 file. You should not
 		return the values to the caller; for that, use materialize_attr_values()
 	"""
+	scalar = False
+	if np.isscalar(a):
+		a = np.array([a])
+		scalar = True
 	arr = normalize_attr_array(a)
 	if np.issubdtype(arr.dtype, np.integer) or np.issubdtype(arr.dtype, np.floating):
 		pass  # We allow all these types
@@ -67,16 +72,29 @@ def normalize_attr_values(a: Any) -> np.ndarray:
 		arr = normalize_attr_strings(arr)
 	elif np.issubdtype(arr.dtype, np.bool_):
 		arr = arr.astype('ubyte')
-	return arr
+	if scalar:
+		return arr[0]
+	else:
+		return arr
 
 
 def materialize_attr_values(a: np.ndarray) -> np.ndarray:
+	scalar = False
+	if np.isscalar(a):
+		scalar = True
+		a = np.array([a])
+	result: np.ndarray = None
 	if np.issubdtype(a.dtype, np.string_):
 		# First ensure that what we load is valid ascii (i.e. ignore anything outside 7-bit range)
 		temp = np.array([x.decode('ascii', 'ignore') for x in a])
 		# Then unescape XML entities and convert to unicode
-		return np.array([html.unescape(x) for x in temp.astype(str)], dtype=np.str_)
+		result = np.array([html.unescape(x) for x in temp.astype(str)], dtype=np.str_)
 	elif np.issubdtype(a.dtype, np.str_) or np.issubdtype(a.dtype, np.unicode_):
-		return np.array(a.astype(str), dtype=np.str_)
+		result = np.array(a.astype(str), dtype=np.str_)
 	else:
-		return a
+		result = a
+	if scalar:
+		return result[0]
+	else:
+		return result
+

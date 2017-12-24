@@ -11,7 +11,7 @@ class FileAttributeManager(object):
 		storage: Dict[str, str] = {}
 		setattr(self, "!storage", storage)
 		for key, val in f.attrs.items():
-			materialized = loompy.materialize_attr_values(np.array([val]))[0]
+			materialized = loompy.materialize_attr_values(val)
 			self.__dict__["storage"][key] = materialized
 
 	def keys(self) -> List[str]:
@@ -41,7 +41,7 @@ class FileAttributeManager(object):
 			if self.f is not None:
 				if name in self.f.attrs:
 					val = self.f.attrs[name]
-					materialized = loompy.materialize_attr_values(np.array([val]))[0]
+					materialized = loompy.materialize_attr_values(val)
 					self.__dict__["storage"][name] = materialized
 				return materialized
 			raise AttributeError(f"'{type(self)}' object has no attribute '{name}'")
@@ -54,10 +54,10 @@ class FileAttributeManager(object):
 			super(FileAttributeManager, self).__setattr__(name[1:], val)
 		else:
 			if self.f is not None:
-				normalized = loompy.normalize_attr_values(np.array([val]))[0]
+				normalized = loompy.normalize_attr_values(val)
 				self.f.attrs[name] = normalized
 				self.f.flush()
 				val = self.f.attrs[name]
 				# Read it back in to ensure it's synced and normalized
-				normalized = loompy.materialize_attr_values(np.array([val]))[0]
+				normalized = loompy.materialize_attr_values(val)
 				self.__dict__["storage"][name] = normalized
