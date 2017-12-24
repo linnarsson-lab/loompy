@@ -18,6 +18,7 @@ needed when you access them through the connection object.
 The canonical way to connect to a Loom file is:
 
 .. code:: python
+
     with loompy.connect("filename.loom") as ds:
         # do something with the connection object ds
 
@@ -26,9 +27,13 @@ This ensures that the file is automatically closed when no longer needed.
 For interactive usage, it may be more convenient to connect directly:
 
 .. code:: python
+
     ds = loompy.connect("filename.loom")
     # do something with the connection object ds
     ds.close()
+
+In that case, you need to close the connection explicitly.
+
 
 Reading and writing
 ~~~~~~~~~~~~~~~~~~~
