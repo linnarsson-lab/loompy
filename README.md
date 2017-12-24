@@ -1,10 +1,12 @@
 
 
-# loompy
+# loompy 2
+
+⭐ Loompy v2.0 was released Dec. 24, 2017! ([what's new](https://github.com/linnarsson-lab/loompy/releases/tag/untagged-0d70a4c3491c00f930c6)?)
 
 `.loom` is an efficient file format for very large omics datasets, 
-consisting of a main matrix, optional additional layers, and a variable number of row and column 
-annotations. We use loom files to store single-cell gene expression 
+consisting of a main matrix, optional additional layers, a variable number of row and column 
+annotations. Loom also supports sparse graphs. We use loom files to store single-cell gene expression 
 data: the main matrix contains the actual expression values (one 
 column per cell, one row per gene); row and column annotations 
 contain metadata for genes and cells, such as `Name`, `Chromosome`, 
@@ -16,7 +18,7 @@ HDF5 is supported by many computer languages, including Java, MATLAB,
 Mathematica, Python, R, and Julia. `.loom` files are accessible from 
 any language that supports HDF5.
 
-To get started, head over to [the documentation at loompy.org](http://loompy.org/loompy-docs/)!
+To get started, head over to [the documentation](http://loompy.org/loompy-docs/)!
 
 Loom, loompy, and the [loom-viewer](https://github.com/linnarsson-lab/loom-viewer) are being developed by members of the [Linnarsson Lab](http://linnarssonlab.org).
 
