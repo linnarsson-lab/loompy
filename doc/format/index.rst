@@ -39,49 +39,6 @@ Finally, we recognize the importance of graph-based analyses of such
 datasets. Loom supports graphs of both the rows (e.g. genes) and the
 columns (e.g. cells), and multiple graphs can be stored each file.
 
-.. _specifications:
-
-Specification
--------------
-
-A valid ``.loom`` file conforms to the following:
-
--  There MUST be a single dataset at ``/matrix``
--  There can OPTIONALLY be a subgroup ``/layers`` containing additional
-   matrices (called "layers")
--  Each additional layer MUST have the same (N, M) shape
--  Each layer can have a different data type, compression, chunking etc.
--  There can OPTIONALLY be at least one `HDF5
-   attribute <https://www.hdfgroup.org/HDF5/Tutor/crtatt.html>`__ on the
-   root ``/`` group, which MUST be of type ``float64`` or ``string`` and should be
-   interpreted as attributes of the whole ``.loom`` file. The following
-   HDF5 attributes are standard:
--  ``title``, a short title for the dataset
--  ``description``, a longer description of the dataset
--  ``url``, a link to a web page for the dataset
--  ``doi``, a DOI for the paper where the dataset was published
--  There MUST be a group ``/row_attrs``
--  There can OPTIONALLY be one or more datasets at ``/row_attrs/{name}``
-   of length N and type ``float64`` or ``string``
--  There MUST be a group ``/col_attrs``
--  There can OPTIONALLY be one or more datasets at ``/col_attrs/{name}``
-   of length M and type ``float64`` or ``string``
-
-The datasets under ``/row_attrs`` should be semantically interpreted as
-row attributes, with one value per row of the main matrix, and in the
-same order. Therefore, all datasets under this group must be
-one-dimensional arrays with exactly N elements, where N is the number of
-rows in the main matrix.
-
-The datasets under ``/col_attrs`` should be semantically interpreted as
-column attributes, with one value per column of the main matrix, and in
-the same order. Therefore, all datasets under this group must be
-one-dimensional arrays with exactly M elements, where M is the number of
-columns in the main matrix.
-
-As noted above, only two datatypes are allowed for attributes;
-``float64`` or ``string``.
-
 .. _hd5concepts:
 
 HDF5 concepts
@@ -109,6 +66,68 @@ any language that supports HDF5, including `Python <http://h5py.org>`__,
 `Java <https://www.hdfgroup.org/products/java/>`__, and
 `Ruby <https://rubygems.org/gems/hdf5/versions/0.3.5>`__.
 
+.. _specifications:
+
+Specification
+-------------
+
+A valid ``.loom`` file conforms to the following:
+
+-  There MUST be a single `HDF5 dataset <hdf5 dataset append>`_ at ``/matrix``, of dimensions (N, M)
+-  There can OPTIONALLY be a `HDF5 group <https://support.hdfgroup.org/HDF5/doc/H5.intro.html#Intro-OGroups`_ ``/layers`` containing additional
+   matrices (called "layers")
+-  Each additional layer MUST have the same (N, M) shape
+-  Each layer can have a different data type, compression, chunking etc.
+-  There can OPTIONALLY be at least one `HDF5
+   attribute <https://www.hdfgroup.org/HDF5/Tutor/crtatt.html>`__ on the
+   root ``/`` group, which can be any valid scalar or multidimensional datatype and should be
+   interpreted as attributes of the whole ``.loom`` file. 
+-  There MUST be a group ``/row_attrs``
+-  There can OPTIONALLY be one or more datasets at ``/row_attrs/{name}``
+   of length N and type ``float64`` or ``string``
+-  There MUST be a group ``/col_attrs``
+-  There can OPTIONALLY be one or more datasets at ``/col_attrs/{name}``
+   of length M and type ``float64`` or ``string``
+-  There MUST be a group ``/col_graphs``
+-  There can OPTIONALLY be one or more groups at ``/col_graphs/{name}``
+-  Under each ``/col_graphs/{name}`` group, there MUST be three one-dimensional datasets
+   called ``a`` (integer), ``b`` (integer) and ``w` (float). These should
+   be interpreted as a sparse graph in `coordinate list <https://en.wikipedia.org/wiki/Sparse_matrix`_ 
+   format. The lengths of the three datasets MUST be equal, which defines the number 
+   of edges in the graph. Note that the number of columns in the dataset defines 
+   the vertices, so an unconnected vertex is one that has no entry in ``a`` or ``b``.
+-  There MUST be a group ``/row_graphs``
+-  There can OPTIONALLY be one or more groups at ``/row_graphs/{name}``
+-  Under each ``/row_graphs/{name}`` group, there MUST be three one-dimensional datasets
+   called ``a`` (integer), ``b`` (integer) and ``w` (float). These should
+   be interpreted as a sparse graph in `coordinate list <https://en.wikipedia.org/wiki/Sparse_matrix>`_
+   format. The lengths of the three datasets MUST be equal, which defines the number 
+   of edges in the graph. Note that the number of rows in the dataset defines 
+   the vertices, so an unconnected vertex is one that has no entry in ``a`` or ``b``.
+ 
+The datasets under ``/row_attrs`` should be semantically interpreted as
+row attributes, with one value per row of the main matrix, and in the
+same order. Therefore, all datasets under this group must be
+arrays with exactly N elements, where N is the number of
+rows in the main matrix.
+
+The datasets under ``/col_attrs`` should be semantically interpreted as
+column attributes, with one value per column of the main matrix, and in
+the same order. Therefore, all datasets under this group must be
+arrays with exactly M elements, where M is the number of
+columns in the main matrix.
+
+Datatypes
+---------
+
+The main matrix and additional layers MUST be two-dimensional arrays of one of these numeric types: ``int8``, ``int16``, ``int32``, ``int64``, ``uint8``, ``uint16``, ``uint32``, ``uint64``, ``float16``, ``float32`` and ``float64``. Each layer can have its own datatype.
+
+Row and column attributes are multidimensional arrays whose first dimension matches the corresponding main matrix dimension. The elements MUST be of one of the numeric datatypes ``int8``, ``int16``, ``int32``, ``int64``, ``uint8``, ``uint16``, ``uint32``, ``uint64``, ``float16``, ``float32`` and ``float64`` or fixed-length ASCII strings.
+
+Global attributes are scalars or multidimensional arrays of any shape, whose elements are any of the numeric datatypes ``int8``, ``int16``, ``int32``, ``int64``, ``uint8``, ``uint16``, ``uint32``, ``uint64``, ``float16``, ``float32`` and ``float64`` or fixed-length ASCII strings.
+
+All strings in Loom files are stored as fixed-length 7-bit ASCII. Unicode characters outside 7-bit ASCII are stored using `XML entity encoding <https://en.wikipedia.org/wiki/List_of_XML_and_HTML_character_entity_references>`_, to ensure maximum compatibility. Strings SHOULD be decoded when read and encoded when written. A compatible implementation may choose to encode/decode or not, but MUST decode on reading if it encodes on writing.
+
 .. _loomexample:
 
 Example
@@ -130,6 +149,16 @@ Here's an example of the structure of a valid ``.loom`` file:
 | /col\_attrs/         | (subgroup)                    | Subgroup of all column attributes           |
 +----------------------+-------------------------------+---------------------------------------------+
 | /col\_attrs/CellID   | float64[M]                    | Column attribute "CellID" of type float64   |
++----------------------+-------------------------------+---------------------------------------------+
+| /col\_graphs/        | (subgroup)                    | Subgroup of all column graphs               |
++----------------------+-------------------------------+---------------------------------------------+
+| /col\_graphs/KNN     | (subgroup)                    | A column graph "KNN"                        |
++----------------------+-------------------------------+---------------------------------------------+
+| /col\_graphs/KNN/a   | int32[E]                      | Vector of edge 'from' vertices              |
++----------------------+-------------------------------+---------------------------------------------+
+| /col\_graphs/KNN/b   | int32[E]                      | Vector of edge 'to' vertices                |
++----------------------+-------------------------------+---------------------------------------------+
+| /col\_graphs/KNN/w   | float32[E]                    | Vector of edge weights                      |
 +----------------------+-------------------------------+---------------------------------------------+
 
 
