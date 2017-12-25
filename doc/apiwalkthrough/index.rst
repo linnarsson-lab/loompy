@@ -175,15 +175,19 @@ attributes. For example:
   ds.ra.Gene         # Return a numpy array of gene names (assuming the attribute exists)
   del ds.ra.Gene     # Delete the Gene row attribute
 
-Attributes can be one-dimensional arrays of integers, floats or strings. The
+Attributes can be any of the following:
+
+* One-dimensional arrays of integers, floats or strings. The
 number of elements in the array must match the corresponding matrix dimension.
-They can also be multidimensional arrays, in which case the length along the first 
+
+* Multidimensional arrays of any of the same element types. The length along the first 
 dimension of a row attribute must equal the number of rows in the main matrix (and vice
-versa for column attributes). Remaining dimensions can be any size. For example, the 
-result of a dimensionality reduction (for example, a PCA) to 20 dimensions could be 
+versa for column attributes). Remaining dimensions can be any size. 
+
+For example, the result of a dimensionality reduction (for example, a PCA) to 20 dimensions could be 
 stored as a column attribute with shape (n_columns, 20).
 
-Using attributes in this way results in a very compact and readable
+Using attributes as masks for indexing the main matrix results in a very compact and readable
 syntax for selecting subarrays:
 
 .. code:: python
@@ -215,84 +219,64 @@ expressions to ensure proper operator precedence. For example:
 Adding columns
 ~~~~~~~~~~~~~~
 
-You can add columns to an existing loom file. It is not
-possible to add rows or to delete attributes or any part of the matrix.
-
-To add an attribute, which also saves it to the loom file:
+You can add columns to an existing loom file. It's not possible to add rows or to 
+delete any part of the matrix.
 
 .. code:: python
 
-        def set_attr(self, name, values, axis = 0, dtype=None):
-            """
-            Create or modify an attribute.
+ ds.add_columns(submatrix, col_attrs)
 
-            Args:
-                name (str):             Name of the attribute
-                values (numpy.ndarray): Array of values of length equal to the axis length      
-                axis (int):             Axis of the attribute (0 = rows, 1 = columns)
-                dtype (str):            Type ("float64" or "string")
-
-            Returns:
-                Nothing.
-
-            This will overwrite any existing attribute of the same name.
-            """
-
-**Note:** If you use an existing attribute name, the existing attribute
-will be overwritten. This is pefectly fine, and is the only way to
-change an attribute or its type.
-
-To add columns:
-
-.. code:: python
-
-    def add_columns(self, submatrix, col_attrs):
-        """
-        Add columns of data and attribute values to the dataset.
-
-        Args:
-            submatrix (numpy.ndarray):  An N-by-M matrix of floats (N rows, M columns)
-            col_attrs (dict):           Column attributes, where keys are attribute names and values are numpy arrays (float or string) of length M
-
-        Returns:
-            Nothing.
-
-        Note that this will modify the underlying HDF5 file, which will interfere with any concurrent readers.
-        """
-
-You need to provide a submatrix corresponding to the columns, as well as
+You need to provide a submatrix corresponding to the new columns, as well as
 a dictionary of column attributes with values for all the new columns.
-
-**Note:** It is not possible to add rows.
 
 You can also add the contents of another .loom file:
 
 .. code:: python
 
-        def add_loom(self, other_file: str, key: str = None, fill_values: Dict[str, np.ndarray] = None) -> None:
-            """
-            Add the content of another loom file
-
-            Args:
-                other_file (str):   filename of the loom file to append
-                fill_values (dict): default values to use for missing attributes (or None to drop missing attrs, or 'auto' to fill with sensible defaults)
-
-            Returns:
-                Nothing, but adds the loom file. Note that the other loom file must have exactly the same
-                number of rows, and must have exactly the same column attributes.
-                The all the contents including layers but ignores layers in `other_file` that are not already persent in self
-            """
+  ds.add_loom(other_file, key="Gene")
 
 The content of the other file is added as columns on the right of the
 current dataset. The rows must match for this to work. That is, the two
-files must have exactly the same rows (genes). If ``key`` is given, the
-rows may be out of order, and will be aligned based on the key
-attribute. Furthermore, the two datasets must have the same column
+files must have exactly the same number of rows. If ``key`` is given, the
+rows will be ordered based on the key attribute. Furthermore, the two 
+datasets must have the same column
 attributes (but of course can have different *values* for those
 attributes at each column). Missing attributes can be given default
-values using ``fill_values`` .
+values using the ``fill_values`` argument.
 
+There is also a convenent function to create or append to a loom file:
+
+.. code:: python
+
+  loompy.create_append(filename, layers, row_attrs, col_attrs)
+
+This will create the file if it doesn't exist, and append to it if it does. This function
+is commonly used when combining several loom files while performing a selection on the columns:
+
+.. code:: python
+
+  for f in input_files:
+    with loompy.connect(f) as ds:
+      cells = # select the desired columns in ds
+      for (_, _, view) in ds.scan(items=cells):
+        loompy.create_append(outout_file, view.layers, view.ra, view.ca)
+
+The code above loops over a number of input files, then scans across each file to select
+a desired subset of the columns (cells) and writes them to the output file. Since it uses
+``scan()``, it will never load entire datasets in RAM and will work no matter how big the 
+input datasets are.
+  
 .. _loomoperations:
+
+Graphs
+~~~~~~
+
+TBD
+
+Views
+~~~~~
+
+TBD
 
 Operations
 ~~~~~~~~~~
@@ -305,93 +289,59 @@ loading the entire dataset into memory:
 
 .. code:: python
 
-        def map(self, f_list: List[Callable[[np.ndarray], int]], axis: int = 0, chunksize: int = 1000, selection: np.ndarray = None) -> List[np.ndarray]:
-            """
-            Apply a function along an axis without loading the entire dataset in memory.
+  ds.map([np.mean, np.std], axis=1)
 
-            Args:
-                f (list of func):       Function(s) that takes a numpy ndarray as argument
+The functions will receive an array (of floats or integers) as their only argument, and
+should return a single float or integer value. Internally, ``map()`` uses ``scan()`` to
+loop across the file.
 
-                axis (int):     Axis along which to apply the function (0 = rows, 1 = columns)
-
-                chunksize (int): Number of rows (columns) to load per chunk
-
-                selection (array of bool): Columns (rows) to include
-
-            Returns:
-                numpy.ndarray result of function application
-
-                If you supply a list of functions, the result will be a list of numpy arrays. This is more
-                efficient than repeatedly calling map() one function at a time.
-            """
-
-The function will receive an array (of floats) as its only argument, and
-should return a single float value.
-
-Example:
-
-.. code:: python
-
-    >>> import numpy as np
-    >>> ds.map([np.mean])[0]
-    # Returns an array of row means
-    np.array([1.23, 0.32, ...])   
+The result is a list of vectors, one per function that was supplied. 
 
 Permutation
 ^^^^^^^^^^^
 
-Permute the order of the rows (or columns):
+Permute the order of the rows or columns:
 
 .. code:: python
 
-    def permute(self, ordering, axis):
-        """
-        Permute the dataset along the indicated axis.
+  ordering = np.random.permutation(np.arange(ds.shape[1]))
+  ds.permute(ordering, axis=1)
 
-        Args:
-            ordering (list of int):     The desired order along the axis
-            axis (int):                 The axis along which to permute
+This permutes the order of rows or columns in the file, without loading
+the entire file in RAM. The ``ordering`` argument should be a numpy array
+of ds.shape[axis] elements, in the desired order.
 
-        Returns:
-            Nothing.
-        """
-
-Batch scan
-^^^^^^^^^^
+Scan
+^^^^
 
 For very large loom files, it's very useful to scan across the file
 (along either rows or columns) in *batches*, to avoid loading the entire
-file in memory. This can be achieved using the ``batch_scan`` method:
+file in memory. This can be achieved using the ``scan()`` method:
 
-::
+.. code:: python
 
-        def batch_scan(self, cells: np.ndarray = None, genes: np.ndarray = None, axis: int = 0, batch_size: int = 1000) -> Iterable[Tuple[int, np.ndarray, np.ndarray]]:
-            """Performs a batch scan of the loom file
+  for (ix, selection, view) in ds.scan(axis=1):
+    # do something with each view
 
-            Args
-            ----
-            cells: np.ndarray
-                the indexes [1,2,3,..,1000] of the cells to select
-            genes: np.ndarray
-                the indexes [1,2,3,..,1000] of the genes to select
-            axis: int
-                0:rows or 1:cols
-            batch_size: int
-                the chuncks returned at every element of the iterator
+Inside the loop, you can access the current ``view`` into the file, which is an in-memory
+version of a LoomConnection object. It has all the attributes, graphs and data of the original
+loom file, but only for the columns included in ``selection`` (or rows, if axis=0). 
 
-            Returns
-            ------
-            Iterable that yields triplets
-            (ix, indexes, vals)
+In essence, you get a succession of slices through the loom file, corresponding to 
+bands of columns (rows). The ``ix`` variable tells you the starting column of the band, whereas
+the ``selection`` gives you the list of columns contained in the current view.
 
-            ix: int
-                first position / how many rows/cols have been yielded alredy
-            indexes: np.ndarray[int]
-                the indexes with the same numbering of the input args cells / genes (i.e. np.arange(len(ds.shape[axis])))
-                this is ix + selection
-            vals: np.ndarray
-                the matrix corresponding to the chunk
-            """
+You can also scan across a selected subset of the columns or rows. For example:
+
+.. code:: python
+
+  cells = # List of columns you want to see
+  for (ix, selection, view) in ds.scan(items=cells, axis=1):
+    # do something with each view
+
+This works exactly the same, except that each ``selection`` and ``view`` now include only 
+the columns you asked for.
+
 
 .. _loomlayers:
 
