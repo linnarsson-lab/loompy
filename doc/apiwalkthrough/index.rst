@@ -54,9 +54,7 @@ statement:
   with loompy.connect("filename.loom") as ds:
     # do something with ds
 
-In the rest of the documentation below, ``ds`` is assumed to be an
-instance of ``LoomConnection`` obtained by connecting to a ``.loom``
-file.
+The connection will be automatically closed at the end of the ``with`` block.
 
 Sometimes, especially in interactive use in a Jupyter notebook, you may want
 to just open the file and keep the connection around:
@@ -74,6 +72,9 @@ In that case, you should close the file when you are done:
 In most cases, forgetting to close the file will do no harm, but may (for example)
 prevent concurrent processes from accessing the file, and will leak file handles.
 
+In the rest of the documentation below, ``ds`` is assumed to be an
+instance of ``LoomConnection`` obtained by connecting to a ``.loom``
+file.
 
 .. _loommanipulate:
 
