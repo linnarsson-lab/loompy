@@ -171,9 +171,18 @@ attributes. For example:
 
   ds.ra.keys()       # Return list of row attribute names
   ds.ca.keys()       # Return list of column attribute names
+  ds.ra.Gene = ...   # Create or replace the Gene attribute
   ds.ra.Gene         # Return a numpy array of gene names (assuming the attribute exists)
   del ds.ra.Gene     # Delete the Gene row attribute
-  
+
+Attributes can be one-dimensional arrays of integers, floats or strings. The
+number of elements in the array must match the corresponding matrix dimension.
+They can also be multidimensional arrays, in which case the length along the first 
+dimension of a row attribute must equal the number of rows in the main matrix (and vice
+versa for column attributes). Remaining dimensions can be any size. For example, the 
+result of a dimensionality reduction (for example, a PCA) to 20 dimensions could be 
+stored as a column attribute with shape (n_columns, 20).
+
 Using attributes in this way results in a very compact and readable
 syntax for selecting subarrays:
 
@@ -186,7 +195,7 @@ syntax for selecting subarrays:
     array([[  2.,   9.,   9., ...,   0.,  14.,   0.],
            [  0.,   1.,   4., ...,   0.,  14.,   3.]], dtype=float32)
 
-    >>> ds[:, ds.CellID == "AAACATACATTCTC-1"]
+    >>> ds[:, ds.ca.CellID == "AAACATACATTCTC-1"]
     array([[ 0.],
            [ 0.],
            [ 0.],
@@ -196,13 +205,17 @@ syntax for selecting subarrays:
            [ 0.]], dtype=float32)
 
 Note that numpy logical functions overload the bitwise, not the boolean operators. Use ``|`` 
-for 'or', ``&`` for 'and' and ``~`` for 'not'. You also must place parenthese around the comparison 
-expressions to ensure proper operator precedence: ``(a == b) & (a > c) | ~(c <= b)``.
+for 'or', ``&`` for 'and' and ``~`` for 'not'. You also must place parentheses around the comparison 
+expressions to ensure proper operator precedence. For example:
 
-Adding attributes and columns
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. code:: python
 
-You can add attributes and columns to an existing loom file. It is not
+  (a == b) & (a > c) | ~(c <= b)
+
+Adding columns
+~~~~~~~~~~~~~~
+
+You can add columns to an existing loom file. It is not
 possible to add rows or to delete attributes or any part of the matrix.
 
 To add an attribute, which also saves it to the loom file:
