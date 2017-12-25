@@ -114,81 +114,75 @@ the main matrix is two-dimensional, two arguments are always needed. Examples:
     ds[:, bool_array] # Return columns where bool_array elements are True
 
 Note that performance will be poor if you select many individual rows (columns) out
-of a large matrix. For example, loading 1000 individual elements out of
-a file with shape (27998, 160796) took 189 ms, whereas loading 3000 elements
-took two seconds. Loading ten randomly chosen individual full columns took 914 ms, 
-whereas loading 1000 columns took 1 minute and 6 seconds.
+of a large matrix. For example, in a dataset with shape (27998, 160796), loading ten 
+randomly chosen individual full columns took 914 ms, 
+whereas loading 1000 columns took 1 minute and 6 seconds and 5000 columns took 13 minutes.
+This slowdown is caused by a `performance bug <https://github.com/h5py/h5py/issues/293>`_ 
+in h5py.
 
-It may be better to use the ``scan()`` method (see below), which in this case took
+If the whole dataset fits in RAM, loading it in full and then selecting the row/columns you want
+will be faster. If it doesn't, consider using the ``scan()`` method (see below), which in this case took
 1 minute and 12 seconds regardless of how many columns were selected. As a rule of thumb,
 ``scan()`` will be faster whenever you are loading more than about 1% of the rows
-or columns (randomly selected).
+or columns (randomly selected). 
 
-
+  
 Global attributes
 ~~~~~~~~~~~~~~~~~
 
-Global attributes are available as
+Global attributes are available at ``ds.attrs`` and can be accessed by name or
+as a dictionary. You create new attributes by assignment, and delete them
+using the ``del`` statement:
 
 .. code:: python
 
-    >>> ds.attrs["title"]
+    >>> ds.attrs.title
     "The title of the dataset"
 
-    >>> ds.attrs["title"] = "New title"
+    >>> ds.attrs.title = "New title"
     >>> ds.attrs["title"]
     "New title"
 
-The following global attributes are standard:
+    >>> del ds.attrs.title
 
--  ``title``, a short title for the dataset
--  ``description``, a longer description of the dataset
--  ``url``, a link to a web page for the dataset
--  ``doi``, a DOI for the paper where the dataset was published
+You can list the attributes and loop over them as you would with a dictionary:
 
-(They are standard in the sense that you are encouraged to use ``title``
-rather than ``Title`` or ``TITLE`` for a title, but they are not
-guaranteed to exist, or required)
+.. code:: python
 
-The following global attributes are reserved:
+  >>> ds.attrs.keys()
+  ["title", "description"]
 
--  ``schema``, a type annotation schema (JSON-formatted string)
+  >>> for key, value in ds.attrs.items():
+  >>>   print(f"{key} = {value}")
+  title = New title
+  description = Fancy dataset
 
-DO NOT attempt to set reserved global attributes to a different value.
+Global attributes can be scalars or multidimensional arrays of any shape, and 
+the elements can be integers, floats or strings.
 
 Row and column attributes
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Row and column attributes are accessed as dictionaries on ``row_attrs``
-and ``col_attrs``, respectively. For example:
+Row and column attributes are accessed at ``ds.ra``
+and ``ds.ca``, respectively, and support the same interface as global 
+attributes. For example:
 
 .. code:: python
 
-    ds.row_attrs.keys()       # Return list of row attribute names
-    ds.col_attrs.keys()       # Return list of column attribute names
-    ds.row_attrs["Gene"]  # Return a numpy array of gene names (assuming the attribute exists)
-
-Note that these dictionaries are **read-only**. Any modifications will
-not be saved in the .loom file and will cause internal inconsistencies
-in the ``LoomConnection`` object. Use *set\_attr()* (below) to add or
-modify attributes.
-
-For convenience, attributes are also available directly on the
-``LoomConnection`` object:
-
-.. code:: python
-
-    ds.Gene     # Equivalent to ds.row_attrs["Gene"]
-
+  ds.ra.keys()       # Return list of row attribute names
+  ds.ca.keys()       # Return list of column attribute names
+  ds.ra.Gene         # Return a numpy array of gene names (assuming the attribute exists)
+  del ds.ra.Gene     # Delete the Gene row attribute
+  
 Using attributes in this way results in a very compact and readable
 syntax for selecting subarrays:
 
 .. code:: python
 
-    >>> ds[ds.Gene == "Actb",:]
+    >>> ds[ds.ra.Gene == "Actb", :]
     array([[  2.,   9.,   9., ...,   0.,  14.,   0.]], dtype=float32)
 
-    >>> ds[np.logical_or(ds.Gene == "Actb", ds.Gene == "Gapdh"),:]
+    >>> ds[(ds.ra.Gene == "Actb") | (ds.ra.Gene == "Gapdh"), :]
     array([[  2.,   9.,   9., ...,   0.,  14.,   0.],
            [  0.,   1.,   4., ...,   0.,  14.,   3.]], dtype=float32)
 
@@ -201,20 +195,9 @@ syntax for selecting subarrays:
            [ 0.],
            [ 0.]], dtype=float32)
 
-There are some limitations:
-
--  Custom attributes do not override existing ``LoomConnection``
-   attributes, such as method names. For example, if your .loom file has
-   a row attribute ``shape``, then ``ds.shape`` will not return that
-   attribute, but will still return the shape of the main matrix.
--  Column attributes take precedence. For example, if you have both
-   ``ds.row_attrs["Name"]`` and ``ds.col_attrs["Name"]``, then
-   ``ds.Name`` returns the column attribute, not the row attribute.
-
-Note again, that you should not assign to these attributes, because your
-assignment will not be saved in the .loom file and will cause internal
-inconsistencies in the ``LoomConnection`` object. Use *set\_attr()*
-(below) to add or modify attributes.
+Note that numpy logical functions overload the bitwise, not the boolean operators. Use ``|`` 
+for 'or', ``&`` for 'and' and ``~`` for 'not'. You also must place parenthese around the comparison 
+expressions to ensure proper operator precedence: ``(a == b) & (a > c) | ~(c <= b)``.
 
 Adding attributes and columns
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
