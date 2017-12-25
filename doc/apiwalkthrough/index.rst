@@ -100,13 +100,8 @@ slicing. The following are supported:
 -  Mask arrays (i.e. numpy array of bool indicating the rows/columns you
    want)
 
-Lists and mask arrays are supported along one dimension at a time only.
-Note that performance will be poor if you select many rows (columns) out
-of a large matrix. It may be better to load the entire matrix and then
-perform the sub-selection in memory (using numpy slicing).
-
-Since the main matrix is two-dimensional, two arguments are always
-needed. Examples:
+Lists and mask arrays are supported along one dimension at a time only. Since 
+the main matrix is two-dimensional, two arguments are always needed. Examples:
 
 .. code:: python
 
@@ -117,6 +112,18 @@ needed. Examples:
     ds[:, 99]         # Return the 100th column
     ds[[0,3,5], :]    # Return rows with index 0, 3 and 5
     ds[:, bool_array] # Return columns where bool_array elements are True
+
+Note that performance will be poor if you select many individual rows (columns) out
+of a large matrix. For example, loading 1000 individual elements out of
+a file with shape (27998, 160796) took 189 ms, whereas loading 3000 elements
+took two seconds. Loading ten randomly chosen individual full columns took 914 ms, 
+whereas loading 1000 columns took 1 minute and 6 seconds.
+
+It may be better to use the ``scan()`` method (see below), which in this case took
+1 minute and 12 seconds regardless of how many columns were selected. As a rule of thumb,
+``scan()`` will be faster whenever you are loading more than about 1% of the rows
+or columns (randomly selected).
+
 
 Global attributes
 ~~~~~~~~~~~~~~~~~
