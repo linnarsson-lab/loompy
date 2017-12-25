@@ -15,6 +15,8 @@ To create a loom file from data, you need to supply a main matrix (numpy ndarray
 
 .. code:: python
 
+  import numpy as np
+  import loompy
   filename = "test.loom"
   matrix = np.arange(10000).reshape(100,100)
   row_attrs = { "SomeRowAttr": np.arange(100) }
