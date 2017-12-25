@@ -11,125 +11,67 @@ Creating and connecting
 Creating ``.loom`` files
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Create from data:
+To create a loom file from data, you need to supply a main matrix (numpy ndarray or scipy sparse matrix) and two dictionaries of row and column attributes (with attribute names as keys, and numpy ndarrays as values). For example, the following creates a loom file with a 100x100 main matrix, one row attribute and one column attribute:
 
 .. code:: python
 
+  filename = "test.loom"
+  matrix = np.arange(10000).reshape(100,100)
+  row_attrs = { "SomeRowAttr": np.arange(100) }
+  col_attrs = { "SomeColAttr": np.arange(100) }
+  loompy.create(filename, matrix, row_attrs, col_attrs)
 
-    def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loompy.LayerManager], row_attrs: Dict[str, np.ndarray], col_attrs: Dict[str, np.ndarray], *, file_attrs: Dict[str, str] = None) -> None:
-        """
-        Create a new .loom file from the given data.
-
-        Args:
-            filename (str):         The filename (typically using a `.loom` file extension)
-            layers (np.ndarray or Dict[str, np.ndarray] or LayerManager): 
-                                    Two-dimensional (N-by-M) numpy ndarray of float values
-                                    or dictionary of named layers, each an N-by-M ndarray
-                                    or LayerManager, each layer an N-by-M ndarray
-            row_attrs (dict):       Row attributes, where keys are attribute names and values
-                                    are numpy arrays (float or string) of length N
-            col_attrs (dict):       Column attributes, where keys are attribute names and
-                                    values are numpy arrays (float or string) of length M
-            layers (dict):			Additional layers to add to the loom file. If the dictionary
-                                    contains a key "", this will be used as the main matrix
-                                    if matrix is None, otherwise it will be ignored
-            file_attrs (dict):      Global attributes, where keys are attribute names and
-                                    values are strings
-        Returns:
-            Nothing
-        
-        Remarks:
-            If the file exists, it will be overwritten. See create_append for a function that will append to existing files.
-        """
-
-Create by combining existing .loom files:
+You can also create a file by combining existing loom files. The files will be concatenated along the column
+axis, and therefore must have the same number of rows. If the rows are potentially not in the same order, 
+you can supply a ``key`` argument; the row attribute corresponding to the key will be used to sort the files. 
+For example, the following code will combine files and use the "Gene" row attribute as the key: 
 
 .. code:: python
 
+  loompy.combine(files, output_filename, key="Gene")
 
-    def combine(files: List[str], output_file: str, key: str = None, file_attrs: Dict[str, str] = None) -> None:
-        """
-        Combine two or more loom files and save as a new loom file
-
-        Args:
-            files (list of str):    the list of input files (full paths)
-            output_file (str):      full path of the output loom file
-            key (string):           Row attribute to use to verify row ordering
-            file_attrs (dict):      file attributes (title, description, url, etc.)
-
-        Returns:
-            Nothing, but creates a new loom file combining the input files.
-
-        The input files must (1) have exactly the same number of rows, (2) have
-        exactly the same sets of row and column attributes.
-        """
-
-Create from a 10X Genomics
+You can import a 10X Genomics
 `cellranger <http://support.10xgenomics.com/single-cell/software/pipelines/latest/what-is-cell-ranger>`__
 output folder:
 
-::
+.. code:: python
 
-    def create_from_cellranger(folder: str, loom_file: str, cell_id_prefix: str = '', sample_annotation: Dict[str, np.ndarray] = None, genome: str = 'mm10') -> LoomConnection:
-        """
-        Create a .loom file from 10X Genomics cellranger output
-
-        Args:
-            folder (str):               path to the cellranger output folder (usually called `outs`)
-            loom_file (str):            full path of the resulting loom file
-            cell_id_prefix (str):       prefix to add to cell IDs (e.g. the sample id for this sample)
-            sample_annotation (dict):   dict of additional sample attributes
-            genome (str):               genome build to load (e.g. 'mm10')
-
-        Returns:
-            Nothing, but creates loom_file
-        """
-
-You can use the *sample\_annotation* dictionary to add column (cell)
-annotations to all cells in the dataset. For example, this is useful to
-add a sample ID to each of several datasets before combining them into a
-single .loom file.
+  loompy.create_from_cellranger(folder, output_filename)
 
 
 Connecting to ``.loom`` files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Establish a connection to an existing ``.loom`` file:
+In order to work with a loom file, you must first connect to it. This does not load the data
+or databases, so is very quick regardless of the size of the file. Loom supports
+Python context management, similar to file objects, so normally you should use a ``with`` 
+statement:
 
 .. code:: python
 
-    def connect(filename: str, mode: str = 'r+') -> LoomConnection:
-        """
-        Establish a connection to a .loom file.
-
-        Args:
-            filename (str):     Name of the .loom file to open
-            mode (str):         read/write mode, accepts 'r+' (read/write) or
-                                'r' (read-only), defaults to 'r+'
-
-        Returns:
-            A LoomConnection instance.
-        """
-
-Example:
-
-.. code:: python
-
-    ds = loompy.connect("filename.loom")
+  with loompy.connect("filename.loom") as ds:
+    # do something with ds
 
 In the rest of the documentation below, ``ds`` is assumed to be an
 instance of ``LoomConnection`` obtained by connecting to a ``.loom``
 file.
 
-Note: there is usually no need to close the connection. The exception is
-if you need to write to the loom file from two different processes
-(sequentially, not simultaneously). In that case, the first process
-needs to let go of the file by calling ``close()`` on the connection,
-before the second can start writing:
+Sometimes, especially in interactive use in a Jupyter notebook, you may want
+to just open the file and keep the connection around:
+
+.. code:: python
+
+  ds = loompy.connect("filename.loom")
+
+In that case, you should close the file when you are done:
 
 .. code:: python
 
     ds.close()
+
+In most cases, forgetting to close the file will do no harm, but may (for example)
+prevent concurrent processes from accessing the file, and will leak file handles.
+
 
 .. _loommanipulate:
 
@@ -144,7 +86,7 @@ The ``shape`` property returns the row and column count as a tuple:
 .. code:: python
 
     >>> ds.shape
-    (100,2345)
+    (100, 2345)
 
 The data stored in the main matrix can be retrieved by indexing and
 slicing. The following are supported:
