@@ -45,7 +45,7 @@ Connecting to ``.loom`` files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In order to work with a loom file, you must first connect to it. This does not load the data
-or databases, so is very quick regardless of the size of the file. Loom supports
+or attributes, so is very quick regardless of the size of the file. Loom supports
 Python context management, similar to file objects, so normally you should use a ``with`` 
 statement:
 
