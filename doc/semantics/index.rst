@@ -70,7 +70,7 @@ Matrix and attributes
 ~~~~~~~~~~~~~~~~~~~~~
 
 Loom files represent a two-dimensional matrix with named row and column
-attributes. If the main matrix has N rows and M columns, then each row
+attributes. If the main matrix has N rows and M columns, then each column
 attribute has M elements (one per column) and vice versa.
 
 By convention, the matrix represents measurements of some property (e.g.
