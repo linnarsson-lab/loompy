@@ -73,21 +73,49 @@ Specification
 
 A valid ``.loom`` file conforms to the following:
 
+Main matrix and layers
+^^^^^^^^^^^^^^^^^^^^^^
+
 -  There MUST be a single `HDF5 dataset <hdf5 dataset append>`_ at ``/matrix``, of dimensions (N, M)
 -  There can OPTIONALLY be a `HDF5 group <https://support.hdfgroup.org/HDF5/doc/H5.intro.html#Intro-OGroups`_ ``/layers`` containing additional
    matrices (called "layers")
 -  Each additional layer MUST have the same (N, M) shape
 -  Each layer can have a different data type, compression, chunking etc.
+
+Global attributes
+^^^^^^^^^^^^^^^^^
+
 -  There can OPTIONALLY be at least one `HDF5
    attribute <https://www.hdfgroup.org/HDF5/Tutor/crtatt.html>`__ on the
    root ``/`` group, which can be any valid scalar or multidimensional datatype and should be
    interpreted as attributes of the whole ``.loom`` file. 
+
+Row and column attributes
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
 -  There MUST be a group ``/row_attrs``
 -  There can OPTIONALLY be one or more datasets at ``/row_attrs/{name}``
-   of length N and type ``float64`` or ``string``
+   whose first dimension has length N
 -  There MUST be a group ``/col_attrs``
 -  There can OPTIONALLY be one or more datasets at ``/col_attrs/{name}``
-   of length M and type ``float64`` or ``string``
+   whose first dimension has length M
+
+ 
+The datasets under ``/row_attrs`` should be semantically interpreted as
+row attributes, with one value per row of the main matrix, and in the
+same order. Therefore, all datasets under this group must be
+arrays with exactly N elements, where N is the number of
+rows in the main matrix.
+
+The datasets under ``/col_attrs`` should be semantically interpreted as
+column attributes, with one value per column of the main matrix, and in
+the same order. Therefore, all datasets under this group must be
+arrays with exactly M elements, where M is the number of
+columns in the main matrix.
+
+Row and column sparse graphs
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 -  There MUST be a group ``/col_graphs``
 -  There can OPTIONALLY be one or more groups at ``/col_graphs/{name}``
 -  Under each ``/col_graphs/{name}`` group, there MUST be three one-dimensional datasets
@@ -104,18 +132,6 @@ A valid ``.loom`` file conforms to the following:
    format. The lengths of the three datasets MUST be equal, which defines the number 
    of edges in the graph. Note that the number of rows in the dataset defines 
    the vertices, so an unconnected vertex is one that has no entry in ``a`` or ``b``.
- 
-The datasets under ``/row_attrs`` should be semantically interpreted as
-row attributes, with one value per row of the main matrix, and in the
-same order. Therefore, all datasets under this group must be
-arrays with exactly N elements, where N is the number of
-rows in the main matrix.
-
-The datasets under ``/col_attrs`` should be semantically interpreted as
-column attributes, with one value per column of the main matrix, and in
-the same order. Therefore, all datasets under this group must be
-arrays with exactly M elements, where M is the number of
-columns in the main matrix.
 
 Datatypes
 ---------
