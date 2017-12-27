@@ -429,7 +429,7 @@ Here's an example where we select cells that have more than 500 detected UMIs in
 
   for f in input_files:
     with loompy.connect(f) as ds:
-      totals = ds.map([np.sum], axis=1)
+      totals = ds.map([np.sum], axis=1)[0]
       cells = np.where(totals > 500)[0] # Select the cells that passed QC (totals > 500)
       for (ix, selection, view) in ds.scan(items=cells, axis=1, key="Gene"):
         loompy.create_append(out_file, view.layers, view.ra, view.ca)
