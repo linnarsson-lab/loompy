@@ -11,7 +11,9 @@ Creating and connecting
 Creating ``.loom`` files
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-To create a loom file from data, you need to supply a main matrix (numpy ndarray or scipy sparse matrix) and two dictionaries of row and column attributes (with attribute names as keys, and numpy ndarrays as values). For example, the following creates a loom file with a 100x100 main matrix, one row attribute and one column attribute:
+To create a loom file from data, you need to supply a main matrix (numpy ndarray or scipy sparse matrix) and two dictionaries of row and column attributes (with attribute names as keys, and numpy ndarrays as values). If the main matrix is N×M, then the row attributes must have N elements, and the column attributes must have M elements.
+
+For example, the following creates a loom file with a 100x100 main matrix, one row attribute and one column attribute:
 
 .. code:: python
 
@@ -45,9 +47,9 @@ Connecting to ``.loom`` files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In order to work with a loom file, you must first connect to it. This does not load the data
-or attributes, so is very quick regardless of the size of the file. Loom supports
-Python context management, similar to file objects, so normally you should use a ``with`` 
-statement:
+or attributes, so is very quick regardless of the size of the file. It's more like connecting to a 
+database than reading a file. Loom supports
+Python context management, so normally you should use a ``with`` statement to take care of the connection:
 
 .. code:: python
 
@@ -116,12 +118,12 @@ the main matrix is two-dimensional, two arguments are always needed. Examples:
 Note that performance will be poor if you select many individual rows (columns) out
 of a large matrix. For example, in a dataset with shape (27998, 160796), loading ten 
 randomly chosen individual full columns took 914 ms, 
-whereas loading 1000 columns took 1 minute and 6 seconds and 5000 columns took 13 minutes.
+whereas loading 1000 columns took 1 minute and 6 seconds, and loadingh 5000 columns took 13 minutes.
 This slowdown is caused by a `performance bug <https://github.com/h5py/h5py/issues/293>`_ 
 in h5py.
 
 If the whole dataset fits in RAM, loading it in full and then selecting the row/columns you want
-will be faster. If it doesn't, consider using the ``scan()`` method (see below), which in this case took
+will be faster. If it doesn't, consider using the ``scan()`` method (see below), which in this example took
 1 minute and 12 seconds regardless of how many columns were selected. As a rule of thumb,
 ``scan()`` will be faster whenever you are loading more than about 1% of the rows
 or columns (randomly selected). 
@@ -157,8 +159,8 @@ You can list the attributes and loop over them as you would with a dictionary:
   title = New title
   description = Fancy dataset
 
-Global attributes can be scalars or multidimensional arrays of any shape, and 
-the elements can be integers, floats or strings.
+Global attributes can be scalars, or multidimensional arrays of any shape, and 
+the elements can be integers, floats or strings. See below for the exact types allowed.
 
 Row and column attributes
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -172,7 +174,7 @@ attributes. For example:
   ds.ra.keys()       # Return list of row attribute names
   ds.ca.keys()       # Return list of column attribute names
   ds.ra.Gene = ...   # Create or replace the Gene attribute
-  ds.ra.Gene         # Return a numpy array of gene names (assuming the attribute exists)
+  a = ds.ra.Gene     # Assign the array of gene names (assuming the attribute exists)
   del ds.ra.Gene     # Delete the Gene row attribute
 
 Attributes can be any of the following:
@@ -184,8 +186,11 @@ number of elements in the array must match the corresponding matrix dimension.
 dimension of a row attribute must equal the number of rows in the main matrix (and vice
 versa for column attributes). Remaining dimensions can be any size. 
 
-For example, the result of a dimensionality reduction (for example, a PCA) to 20 dimensions could be 
-stored as a column attribute with shape (n_columns, 20).
+For example, if the main matrix has M columns, the result of a dimensionality reduction
+(for example, a PCA) to 20 dimensions could be stored as a column attribute with shape (M, 20).
+
+You can assign attributes using almost any array or list-like type, but attributes will 
+always return numPy array (``np.ndarray``). 
 
 Using attributes as masks for indexing the main matrix results in a very compact and readable
 syntax for selecting subarrays:
@@ -244,7 +249,7 @@ attributes (but of course can have different *values* for those
 attributes at each column). Missing attributes can be given default
 values using the ``fill_values`` argument.
 
-There is also a convenent function to create or append to a loom file:
+There is also a convenient function to create or append to a loom file:
 
 .. code:: python
 
@@ -265,18 +270,88 @@ The code above loops over a number of input files, then scans across each file t
 a desired subset of the columns (cells) and writes them to the output file. Since it uses
 ``scan()``, it will never load entire datasets in RAM and will work no matter how big the 
 input datasets are.
-  
+
+.. _loomlayers:
+
+Layers
+~~~~~~~~~~~~~~~~~~~
+
+Loom supports multiple layers. There is always a single main matrix, but
+optionally one or more additional layers having the same number of rows
+and columns. Layers are accessed using the ``layers`` property on the
+``LoomConnection`` object.
+
+Layers support the same pythonic API as attributes:
+
+.. code:: python
+
+  ds.layers.keys()            # Return list of layers
+  ds.layers["unspliced"]      # Return the layer named "unspliced"
+  ds.layers["spliced"] = ...  # Create or replace the "spliced" layer
+  a = ds.layers["spliced"][:, 10] # Assign the 10th column of layer "spliced" to the variable a
+  del ds.layers["spliced"]     # Delete the "spliced" layer
+
+The main matrix is availabe as a layer named "" (the empty string). It cannot be deleted but
+otherwise supports the same operations as any other layer.
+
+As a convenience, layers are also available directly on the connection object. The above
+expressions are equivalent to the following:
+
+.. code:: python
+
+  ds["unspliced"]      # Return the layer named "unspliced"
+  ds["spliced"] = ...  # Create or replace the "spliced" layer
+  a = ds["spliced"][:, 10] # Assign the 10th column of layer "spliced" to the variable a
+  del ds["spliced"]     # Delete the "spliced" layer
+
+
+
 .. _loomoperations:
 
 Graphs
 ~~~~~~
 
-TBD
+Loom supports sparse graphs with either the rows or the columns as nodes. For example,
+a sparse graph of cells (stored in the columns) could represent a K nearest-neighbors 
+graph of the cells. In that case, the cells are the nodes (so there are M nodes in the
+graph if there are M columns in the main matrix), which are connected by an arbitrary
+number of edges. The graph could be considered directed or undirected, and can have float-valued
+weights on the edges. Loom even supports multigraphs (permitting multiple edges between pairs of nodes).
+Graphs are stored as arrays of edges and the associated edge weights.
+
+Row and column graphs are accessed at ``ds.row_graphs`` and ``ds.col_graphs``, respectively, 
+and support the same interface as attributes. For example:
+
+.. code:: python
+
+  ds.row_graphs.keys()      # Return list of row graphs
+  ds.col_graphs.KNN = ...   # Create or replace the column-oriented graph KNN
+  a = ds.col_graphs.KNN     # Assign the KNN column graph to variable a
+  del ds.col_graphs.KNN     # Delete the KNN graph
+
+Graphs are returned as ``scipy.sparse.coo_matrix``, and can be created/assigned from any
+scipy sparse format as well as from a numpy dense matrix or ndarray. In each case, the matrix
+represents the adjacency matrix of the graph.
 
 Views
 ~~~~~
 
-TBD
+Loompy views are in-memory views of a slice through the underlying loom file. Views can be created
+explicitly by slicing:
+
+.. code:: python
+
+  ds.view[:, 10:20]
+
+This will create a view, fully loaded in memory, containing all the rows of the underlying loom file,
+but only columns 10 through 19 (zero-based). You can use fancy indexing including slices, arrays of integers
+(to pick out specific rows/columns) and boolean arrays.
+
+The power of the view is that it slices through *everything*: the main matrix, every layer, every attribute, 
+and every graph (leaving only edges between selected nodes). This hides a lot of messy and error-prone code,
+and makes it easy to extract relevant subsets of a loom file.
+
+The most common use of a ``view`` is in scanning through a file (see ``scan()`` below).
 
 Operations
 ~~~~~~~~~~
@@ -284,7 +359,7 @@ Operations
 Map
 ^^^
 
-You can map a function across all rows (all columns), while avoiding
+You can map one or more functions across all rows (all columns), while avoiding
 loading the entire dataset into memory:
 
 .. code:: python
@@ -295,7 +370,8 @@ The functions will receive an array (of floats or integers) as their only argume
 should return a single float or integer value. Internally, ``map()`` uses ``scan()`` to
 loop across the file.
 
-The result is a list of vectors, one per function that was supplied. 
+Note that you must always provide a list of functions, even if it has only one element, and
+that the result is a list of vectors, one per function that was supplied.
 
 Permutation
 ^^^^^^^^^^^
@@ -323,9 +399,9 @@ file in memory. This can be achieved using the ``scan()`` method:
   for (ix, selection, view) in ds.scan(axis=1):
     # do something with each view
 
-Inside the loop, you can access the current ``view`` into the file, which is an in-memory
-version of a LoomConnection object. It has all the attributes, graphs and data of the original
-loom file, but only for the columns included in ``selection`` (or rows, if axis=0). 
+Inside the loop, you get access to the current ``view`` into the file. It has all the 
+attributes, graphs and data of the original loom file, but only for the columns included 
+in ``selection`` (or rows, if axis=0). 
 
 In essence, you get a succession of slices through the loom file, corresponding to 
 bands of columns (rows). The ``ix`` variable tells you the starting column of the band, whereas
@@ -343,53 +419,4 @@ This works exactly the same, except that each ``selection`` and ``view`` now inc
 the columns you asked for.
 
 
-.. _loomlayers:
-
-Layers
-------
-
-Working with layers
-~~~~~~~~~~~~~~~~~~~
-
-Loom supports multiple layers. There is always a single main matrix, but
-optionally one or more additional layers having the same number of rows
-and columns. Layers are accessed using the ``layer`` property on the
-``LoomConnection``.
-
-Create a layer
-^^^^^^^^^^^^^^
-
-::
-
-    def set_layer(self, name: str, matrix: np.ndarray, chunks: Tuple[int, int] = (64, 64), chunk_cache: int = 512, dtype: str = "float32", compression_opts: int = 2) -> None:
-
-Access a layer
-^^^^^^^^^^^^^^
-
-The ``layer`` property returns a Layer object, which can be sliced to
-get the data:
-
-::
-
-    ds.layer["layer"][10, :]
-
-The default layer can be accessed directly:
-
-::
-
-    ds[10, :]
-
-It can also be accessed using the empty string:
-
-::
-
-    ds.layer[""]
-
-Layers can be loaded in memory as sparse matrices, efficiently:
-
-::
-
-    LoomLayer.as_coo() -> sparse.coo_matrix:
-    LoomLayer.as_csr() -> sparse.csr_matrix:
-    LoomLayer.as_csc() -> sparse.csc_matrix:
 
