@@ -179,18 +179,15 @@ attributes. For example:
 
 Attributes can be any of the following:
 
-* One-dimensional arrays of integers, floats or strings. The
-number of elements in the array must match the corresponding matrix dimension.
+* One-dimensional arrays of integers, floats or strings. The number of elements in the array must match the corresponding matrix dimension.
 
-* Multidimensional arrays of any of the same element types. The length along the first 
-dimension of a row attribute must equal the number of rows in the main matrix (and vice
-versa for column attributes). Remaining dimensions can be any size. 
+* Multidimensional arrays of any of the same element types. The length along the first dimension of a row attribute must equal the number of rows in the main matrix (and vice versa for column attributes). Remaining dimensions can be any size. 
 
 For example, if the main matrix has M columns, the result of a dimensionality reduction
 (for example, a PCA) to 20 dimensions could be stored as a column attribute with shape (M, 20).
 
 You can assign attributes using almost any array or list-like type, but attributes will 
-always return numPy array (``np.ndarray``). 
+always return numpy array (``np.ndarray``). 
 
 Using attributes as masks for indexing the main matrix results in a very compact and readable
 syntax for selecting subarrays:
@@ -348,7 +345,7 @@ but only columns 10 through 19 (zero-based). You can use fancy indexing includin
 (to pick out specific rows/columns) and boolean arrays.
 
 The power of the view is that it slices through *everything*: the main matrix, every layer, every attribute, 
-and every graph (leaving only edges between selected nodes). This hides a lot of messy and error-prone code,
+and every graph. This hides a lot of messy and error-prone code,
 and makes it easy to extract relevant subsets of a loom file.
 
 The most common use of a ``view`` is in scanning through a file (see ``scan()`` below).
@@ -418,5 +415,27 @@ You can also scan across a selected subset of the columns or rows. For example:
 This works exactly the same, except that each ``selection`` and ``view`` now include only 
 the columns you asked for.
 
+A common use-case is that you want to scan through a number of input files (for example, raw
+data files from multiple experiments), select a subset of the columns (e.g. cells passing QC)
+and write them to a new file. A common gotcha then is if the input files do not have their 
+rows in the same order. ``scan()`` supports a ``key`` argument to designate a primary key; 
+each view is returned sorted on the primary key on the *other axis*. For example, if you're
+scanning across columns, you should provide a row attribute as key, and each view will be sorted
+on that attribute. 
+
+Here's an example where we select cells that have more than 500 detected UMIs in each of several files:
+
+.. code:: python
+
+  for f in input_files:
+    with loompy.connect(f) as ds:
+      totals = ds.map([np.sum], axis=1)
+      cells = np.where(totals > 500)[0] # Select the cells that passed QC (totals > 500)
+      for (ix, selection, view) in ds.scan(items=cells, axis=1, key="Gene"):
+        loompy.create_append(out_file, view.layers, view.ra, view.ca)
+
+The example makes use of the ``create_append`` function to progressively build the output file. By
+supplying the ``key="Gene"`` argument to ``scan()`` we ensure that each view arrives sorted along the 
+rows, so that the output file will not have its rows mixed.
 
 
