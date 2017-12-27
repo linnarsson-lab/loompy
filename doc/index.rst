@@ -22,8 +22,10 @@ Loom files (``.loom``) are created in the
 `HDF5 <https://en.wikipedia.org/wiki/Hierarchical_Data_Format>`__ file
 format, which supports an internal collection of numerical
 multidimensional datasets. HDF5 is supported by many computer languages,
-including Java, MATLAB, Mathematica, Python, R, and Julia. ``.loom``
+including Java, MATLAB, Mathematica, Python, R (see `LoomR <https://github.com/mojaveazure/loomR>`_ 
+from Rahul Satija's lab for a specific implementation), and Julia. ``.loom``
 files are accessible from any language that supports HDF5.
+
 
 Content
 -------
