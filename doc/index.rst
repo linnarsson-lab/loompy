@@ -6,7 +6,7 @@
 Welcome to loompy!
 ==================
 
-``loompy`` is a python library to agilely work with the ``.loom`` file format.
+``loompy`` is the python library for working with ``.loom`` file format.
 
 ``.loom`` is an efficient file format for very large omics datasets,
 consisting of a main matrix, optional additional layers, a variable
