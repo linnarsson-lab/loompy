@@ -5,6 +5,21 @@ Cookbook
 
 In this section, we will show by example how to complete common tasks with idiomatic use of loompy.
 
+Working with a newly created file
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Loompy 2 changes the behaviour of `loompy.create`: it no onger returns a value. Thus in order to work with a newly created file you have to do this:
+
+.. code:: python
+
+  loompy.create("filename.loom", m, row_attrs, col_attrs)
+  with loompy.connect("filename.loom") as ds:
+      ....do something with ds
+  # File closes automatically
+
+The reason for the change is that we would often create files without closing the returned file handle, which causes issues especially in multi-process scenarios.
+
+
 Loading attributes from Pandas
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
