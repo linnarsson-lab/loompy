@@ -431,27 +431,4 @@ You can also scan across a selected subset of the columns or rows. For example:
 This works exactly the same, except that each ``selection`` and ``view`` now include only 
 the columns you asked for.
 
-A common use-case is that you want to scan through a number of input files (for example, raw
-data files from multiple experiments), select a subset of the columns (e.g. cells passing QC)
-and write them to a new file. A common gotcha then is if the input files do not have their 
-rows in the same order. ``scan()`` supports a ``key`` argument to designate a primary key; 
-each view is returned sorted on the primary key on the *other axis*. For example, if you're
-scanning across columns, you should provide a row attribute as key, and each view will be sorted
-on that attribute. 
-
-Here's an example where we select cells that have more than 500 detected UMIs in each of several files:
-
-.. code:: python
-
-  for f in input_files:
-    with loompy.connect(f) as ds:
-      totals = ds.map([np.sum], axis=1)[0]
-      cells = np.where(totals > 500)[0] # Select the cells that passed QC (totals > 500)
-      for (ix, selection, view) in ds.scan(items=cells, axis=1, key="Gene"):
-        loompy.create_append(out_file, view.layers, view.ra, view.ca)
-
-The example makes use of the ``create_append`` function to progressively build the output file. By
-supplying the ``key="Gene"`` argument to ``scan()`` we ensure that each view arrives sorted along the 
-rows, so that the output file will not have its rows mixed.
-
 
