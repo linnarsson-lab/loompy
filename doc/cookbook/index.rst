@@ -83,6 +83,6 @@ example, we can use incremental PCA to learn a PCA transform by batch-wise parti
 
   from sklearn.decomposition import IncrementalPCA
   genes = (ds.ra.Selected == 1)
-  pca = IncrementalPCA(n_components=self.n_components)
+  pca = IncrementalPCA(n_components=50)
     for (ix, selection, view) in ds.scan(axis=1):
       self.pca.partial_fit(view[genes, :].transpose())
