@@ -2,7 +2,7 @@
 
 # loompy 2
 
-⭐ Loompy v2.0 was released Dec. 24, 2017! ([what's new](https://github.com/linnarsson-lab/loompy/releases/tag/untagged-0d70a4c3491c00f930c6)?)
+⭐ Loompy v2.0 was released Dec. 24, 2017! ([what's new](https://github.com/linnarsson-lab/loompy/releases/tag/v2.0)?)
 
 `.loom` is an efficient file format for very large omics datasets, 
 consisting of a main matrix, optional additional layers, a variable number of row and column 
