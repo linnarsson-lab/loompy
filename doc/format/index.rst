@@ -1,7 +1,7 @@
 .. _format:
 
-``.loom`` file format
-=====================
+Loom file format specs
+======================
 
 .. _formatinfo:
 
