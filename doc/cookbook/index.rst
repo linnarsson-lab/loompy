@@ -8,7 +8,7 @@ In this section, we will show by example how to complete common tasks with idiom
 Working with a newly created file
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Loompy 2 changes the behaviour of `loompy.create`: it no onger returns a value. Thus in order to work with a newly created file you have to do this:
+Loompy 2 changes the behaviour of ``loompy.create``: it no longer returns a value. Thus in order to work with a newly created file you have to do this:
 
 .. code:: python
 
