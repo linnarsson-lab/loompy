@@ -1,3 +1,5 @@
+Conventions
+===========
 
 In order to maximize interoperability of Loom files between analysis pipelines, 
 we suggest adhering to the following conventions. 
