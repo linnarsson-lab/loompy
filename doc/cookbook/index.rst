@@ -1,6 +1,6 @@
 
 Cookbook
---------
+========
 
 In this section, we will show by example how to complete common tasks with idiomatic use of loompy.
 
