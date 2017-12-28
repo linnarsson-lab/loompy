@@ -73,3 +73,16 @@ are sorted on the accession identifier along rows:
       for (ix, selection, view) in ds.scan(items=cells, axis=1, key="Accession"):
         loompy.create_append(out_file, view.layers, view.ra, view.ca)
 
+Fitting an incremental PCA
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Incremental algorithms are a powerful way of working with datasets that won't fit in RAM. For
+example, we can use incremental PCA to learn a PCA transform by batch-wise partial fits:
+
+.. code:: python
+
+  from sklearn.decomposition import IncrementalPCA
+  genes = (ds.ra.Selected == 1)
+  pca = IncrementalPCA(n_components=self.n_components)
+    for (ix, selection, view) in ds.scan(axis=1):
+      self.pca.partial_fit(view[genes, :].transpose())
