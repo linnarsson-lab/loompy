@@ -11,7 +11,7 @@ Creating and connecting
 Creating ``.loom`` files
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-To create a loom file from data, you need to supply a main matrix (numpy ndarray or scipy sparse matrix) and two dictionaries of row and column attributes (with attribute names as keys, and numpy ndarrays as values). If the main matrix is N×M, then the row attributes must have N elements, and the column attributes must have M elements.
+To create a loom file from data, you need to supply a main matrix (numpy ndarray or scipy sparse matrix) and two dictionaries of row and column attributes (with attribute names as keys, and numpy ndarrays as values). If the main matrix is N×M, then the row attributes must have N elements, and the column attributes must have M elements. 
 
 For example, the following creates a loom file with a 100x100 main matrix, one row attribute and one column attribute:
 
@@ -129,6 +129,22 @@ will be faster. If it doesn't, consider using the ``scan()`` method (see below),
 or columns (randomly selected). 
 
   
+Sparse data
+~~~~~~~~~~~
+
+On disk, every layer is stored chunked and block-compressed, for efficient storage and access along both axes.
+
+The main matrix and additional layers can be assigned from dense or sparse matrices (any scipy.sparse format).
+
+You can load the main matrix or any layer as sparse:
+
+.. code:: python
+
+  ds.layers["exons"].sparse()  # Returns a scipy.sparse.coo_matrix()
+  ds.layers["unspliced"].sparse(rows, cols)  # Returns only the indicated rows and columns (ndarrays of integers)
+
+
+
 Global attributes
 ~~~~~~~~~~~~~~~~~
 
