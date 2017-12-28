@@ -55,6 +55,7 @@ Content
 .. toctree::
 
    apiwalkthrough/index
+   cookbook/index
    fullapi/index
 
 .. toctree::
