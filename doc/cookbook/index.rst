@@ -1,8 +1,11 @@
 
+Cookbook
+--------
+
 In this section, we will show by example how to complete common tasks with idiomatic use of loompy.
 
 Loading attributes from Pandas
-------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If you have your metadata in a Pandas DataFrame, you can easily use it to create a Loom file. You will
 need one DataFrame for the column metadata and one for the row metadata. Convert each DataFrame into a dictionary
