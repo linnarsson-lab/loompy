@@ -77,7 +77,7 @@ Main matrix and layers
 ^^^^^^^^^^^^^^^^^^^^^^
 
 -  There MUST be a single `HDF5 dataset <hdf5 dataset append>`_ at ``/matrix``, of dimensions (N, M)
--  There can OPTIONALLY be a `HDF5 group <https://support.hdfgroup.org/HDF5/doc/H5.intro.html#Intro-OGroups`_ ``/layers`` containing additional
+-  There can OPTIONALLY be a `HDF5 group <https://support.hdfgroup.org/HDF5/doc/H5.intro.html#Intro-OGroups>`_ ``/layers`` containing additional
    matrices (called "layers")
 -  Each additional layer MUST have the same (N, M) shape
 -  Each layer can have a different data type, compression, chunking etc.
@@ -120,7 +120,7 @@ Row and column sparse graphs
 -  There can OPTIONALLY be one or more groups at ``/col_graphs/{name}``
 -  Under each ``/col_graphs/{name}`` group, there MUST be three one-dimensional datasets
    called ``a`` (integer), ``b`` (integer) and ``w`` (float). These should
-   be interpreted as a sparse graph in `coordinate list <https://en.wikipedia.org/wiki/Sparse_matrix`_ 
+   be interpreted as a sparse graph in `coordinate list <https://en.wikipedia.org/wiki/Sparse_matrix>`_ 
    format. The lengths of the three datasets MUST be equal, which defines the number 
    of edges in the graph. Note that the number of columns in the dataset defines 
    the vertices, so an unconnected vertex is one that has no entry in ``a`` or ``b``.
