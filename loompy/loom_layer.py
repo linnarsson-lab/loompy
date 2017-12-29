@@ -15,8 +15,8 @@ class MemoryLoomLayer():
 	def __setitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]], data: np.ndarray) -> None:
 		self.values[slice] = data
 
-	def sparse(self, genes: np.ndarray, cells: np.ndarray) -> scipy.sparse.coo_matrix:
-		return scipy.sparse.coo_matrix(self.values[genes, :][:, cells])
+	def sparse(self, rows: np.ndarray, cols: np.ndarray) -> scipy.sparse.coo_matrix:
+		return scipy.sparse.coo_matrix(self.values[rows, :][:, cols])
 
 	def permute(self, ordering: np.ndarray, *, axis: int) -> None:
 		if axis == 0:
@@ -44,13 +44,13 @@ class LoomLayer():
 		else:
 			self.ds._file['/layers/' + self.name][slice] = data
 
-	def sparse(self, genes: np.ndarray, cells: np.ndarray) -> scipy.sparse.coo_matrix:
-		n_genes = self.ds.shape[0] if genes is None else genes.shape[0]
-		n_cells = self.ds.shape[1] if cells is None else cells.shape[0]
+	def sparse(self, rows: np.ndarray, cols: np.ndarray) -> scipy.sparse.coo_matrix:
+		n_genes = self.ds.shape[0] if rows is None else rows.shape[0]
+		n_cells = self.ds.shape[1] if cols is None else cols.shape[0]
 		data: np.ndarray = None
 		row: np.ndarray = None
 		col: np.ndarray = None
-		for (ix, selection, vals) in self.ds.batch_scan(genes=genes, cells=cells, axis=1, layer=self.name):
+		for (ix, selection, vals) in self.ds.batch_scan(genes=rows, cells=cols, axis=1, layer=self.name):
 			nonzeros = np.where(vals > 0)
 			if data is None:
 				data = vals[nonzeros]

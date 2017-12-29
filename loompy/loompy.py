@@ -48,8 +48,6 @@ class LoomConnection:
 
 		Returns:
 			Nothing.
-
-		Row and column attributes are loaded into memory for fast access.
 		"""
 
 		# make sure a valid mode was passed, if not default to read-only
@@ -114,7 +112,7 @@ class LoomConnection:
 			slice:		A slice object (see http://docs.h5py.org/en/latest/high/dataset.html), or np.ndarray, or int
 
 		Returns:
-			A numpy matrix
+			A numpy ndarray matrix
 		"""
 		if type(slice_) is str:
 			return self.layers[slice_]
@@ -128,20 +126,29 @@ class LoomConnection:
 
 		Args:
 			slice:		A slice object (see http://docs.h5py.org/en/latest/high/dataset.html), or np.ndarray, or int
+			data:		A matrix corresponding to the slice, of the same datatype as the main matrix
 
 		Returns:
 			Nothing.
 		"""
 		self.layers[""][slice] = data
 
-	def sparse(self, genes: np.ndarray = None, cells: np.ndarray = None, layer: str = None) -> scipy.sparse.coo_matrix:
+	def sparse(self, rows: np.ndarray = None, cols: np.ndarray = None, layer: str = None) -> scipy.sparse.coo_matrix:
 		"""
 		Return the main matrix as a scipy.sparse.coo_matrix, without loading dense matrix in RAM
+
+		Args:
+			rows:		Rows to include, or None to include all
+			cols:		Columns to include, or None to include all
+			layer:		Layer to return, or None to return the default layer
+		
+		Returns:
+			scipy.sparse.coo_matrix
 		"""
 		if layer is None:
-			return self.layers[""].sparse(genes=genes, cells=cells)
+			return self.layers[""].sparse(rows=rows, cols=cols)
 		else:
-			return self.layers[layer].sparse(genes=genes, cells=cells)
+			return self.layers[layer].sparse(rows=rows, cols=cols)
 
 	def close(self, suppress_warning: bool = False) -> None:
 		"""
@@ -173,6 +180,9 @@ class LoomConnection:
 		return self._closed
 
 	def set_layer(self, name: str, matrix: np.ndarray, chunks: Tuple[int, int] = (64, 64), chunk_cache: int = 512, dtype: str = "float32", compression_opts: int = 2) -> None:
+		"""
+		DEPRECATED.
+		"""
 		deprecated("'set_layer' is deprecated. Use 'ds.layer.Name = matrix' or 'ds.layer['Name'] = matrix' instead")
 		self.layers[name] = matrix
 
@@ -188,6 +198,7 @@ class LoomConnection:
 				3) A LayerManager object (such as what is returned by view.layers)
 			col_attrs (dict):
 				Column attributes, where keys are attribute names and values are numpy arrays (float or string) of length M
+			fill_values: dictionary of values to use if a column attribute is missing, or "auto" to fill with zeros or empty strings
 
 		Returns:
 			Nothing.
@@ -195,7 +206,7 @@ class LoomConnection:
 		Notes
 		-----
 		- This will modify the underlying HDF5 file, which will interfere with any concurrent readers.
-		- Column attributes in the file that are NOT provided, will be deleted.
+		- Column attributes in the file that are NOT provided, will be deleted (unless fill value provided).
 		- Array with Nan should not be provided
 
 		"""
@@ -282,6 +293,7 @@ class LoomConnection:
 
 		Args:
 			other_file (str):	filename of the loom file to append
+			key:				Primary key to use to align rows in the other file with this file
 			fill_values (dict): default values to use for missing attributes (or None to drop missing attrs, or 'auto' to fill with sensible defaults)
 			batch_size (int): the batch size used by batchscan (limits the number of rows/columns read in memory)
 
@@ -324,6 +336,9 @@ class LoomConnection:
 		other.close()
 
 	def delete_attr(self, name: str, axis: int = 0) -> None:
+		"""
+		DEPRECATED
+		"""
 		deprecated("'delete_attr' is deprecated. Use 'del ds.ra.key' or 'del ds.ca.key' instead")
 		if axis == 0:
 			del self.ra[name]
@@ -331,6 +346,9 @@ class LoomConnection:
 			del self.ca[name]
 
 	def set_attr(self, name: str, values: np.ndarray, axis: int = 0, dtype: str = None) -> None:
+		"""
+		DEPRECATED
+		"""
 		deprecated("'set_attr' is deprecated. Use 'ds.ra.key = values' or 'ds.ca.key = values' instead")
 		if axis == 0:
 			self.ra[name] = values
@@ -338,6 +356,9 @@ class LoomConnection:
 			self.ca[name] = values
 
 	def list_edges(self, *, axis: int) -> List[str]:
+		"""
+		DEPRECATED
+		"""
 		deprecated("'list_edges' is deprecated. Use 'ds.row_graphs.keys()' or 'ds.col_graphs.keys()' instead")
 		if axis == 0:
 			return self.row_graphs.keys()
@@ -347,6 +368,9 @@ class LoomConnection:
 			return []
 
 	def get_edges(self, name: str, *, axis: int) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+		"""
+		DEPRECATED
+		"""
 		deprecated("'get_edges' is deprecated. Use 'ds.row_graphs[name]' or 'ds.col_graphs[name]' instead")
 		if axis == 0:
 			g = self.row_graphs[name]
@@ -357,6 +381,9 @@ class LoomConnection:
 		raise ValueError("Axis must be 0 or 1")
 
 	def set_edges(self, name: str, a: np.ndarray, b: np.ndarray, w: np.ndarray, *, axis: int) -> None:
+		"""
+		DEPRECATED
+		"""
 		deprecated("'set_edges' is deprecated. Use 'ds.row_graphs[name] = g' or 'ds.col_graphs[name] = g' instead")
 		try:
 			g = scipy.sparse.coo_matrix((w, (a, b)), (self.shape[axis], self.shape[axis]))
@@ -474,31 +501,8 @@ class LoomConnection:
 			raise ValueError("axis must be 0 or 1")
 
 	def batch_scan(self, cells: np.ndarray = None, genes: np.ndarray = None, axis: int = 0, batch_size: int = 1000, layer: str = None) -> Iterable[Tuple[int, np.ndarray, np.ndarray]]:
-		"""Performs a batch scan of the loom file
-
-		Args
-		----
-		cells: np.ndarray
-			the indexes [1,2,3,..,1000] of the cells to select
-		genes: np.ndarray
-			the indexes [1,2,3,..,1000] of the genes to select
-		axis: int
-			0:rows or 1:cols
-		batch_size: int
-			the chuncks returned at every element of the iterator
-
-		Returns
-		------
-		Iterable that yields triplets
-		(ix, indexes, vals)
-
-		ix: int
-			first position / how many rows/cols have been yielded alredy
-		indexes: np.ndarray[int]
-			the indexes with the same numbering of the input args cells / genes (i.e. np.arange(len(ds.shape[axis])))
-			this is ix + selection
-		vals: np.ndarray
-			the matrix corresponding to the chunk
+		"""
+		DEPRECATED
 		"""
 		deprecated("'batch_scan' is deprecated. Use 'scan' instead")
 		if cells is None:
@@ -549,34 +553,8 @@ class LoomConnection:
 				ix += rows_per_chunk
 
 	def batch_scan_layers(self, cells: np.ndarray = None, genes: np.ndarray = None, axis: int = 0, batch_size: int = 1000, layers: Iterable = None) -> Iterable[Tuple[int, np.ndarray, Dict]]:
-		"""Performs a batch scan of the loom file dealing with multiple layer files
-
-		Args
-		----
-		cells: np.ndarray
-			the indexes [1,2,3,..,1000] of the cells to select
-		genes: np.ndarray
-			the indexes [1,2,3,..,1000] of the genes to select
-		axis: int
-			0:rows or 1:cols
-		batch_size: int
-			the chuncks returned at every element of the iterator
-		layers: iterable
-			if specified it will batch scan only accross some of the layers of the loom file
-			i.g. if layers = [""] batch_scan_layers is equivalent to batch_scan
-
-		Returns
-		------
-		Iterable that yields triplets
-		(ix, indexes, vals)
-
-		ix: int
-			first position / how many rows/cols have been yielded alredy
-		indexes: np.ndarray[int]
-			the indexes with the same numbering of the input args cells / genes (i.e. np.arange(len(ds.shape[axis])))
-			this is ix + selection
-		vals: Dict[layername, np.ndarray]
-			a dictionary of the matrixes corresponding to the chunks of different layers
+		"""
+		DEPRECATED
 		"""
 		deprecated("'batch_scan_layers' is deprecated. Use 'scan' instead")
 		if cells is None:
@@ -645,9 +623,8 @@ class LoomConnection:
 
 		Returns:
 			numpy.ndarray result of function application
-
-			If you supply a list of functions, the result will be a list of numpy arrays. This is more
-			efficient than repeatedly calling map() one function at a time.
+			The result is a list of numpy arrays, one per supplied function in f_list.
+			This is more efficient than repeatedly calling map() one function at a time.
 		"""
 		return self.layers[""].map(f_list, axis, chunksize, selection)
 
@@ -733,6 +710,21 @@ def _create_sparse(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.nd
 def create_append(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loompy.LayerManager], row_attrs: Dict[str, np.ndarray], col_attrs: Dict[str, np.ndarray], *, file_attrs: Dict[str, str] = None, fill_values: Dict[str, np.ndarray] = None) -> None:
 	"""
 	Append columns to a loom file, or create a new loom file if it doesn't exist
+
+	Args:
+		filename (str):         The filename (typically using a `.loom` file extension)
+		layers (np.ndarray or Dict[str, np.ndarray] or LayerManager): 
+								Two-dimensional (N-by-M) numpy ndarray of float values
+								Or dictionary of named layers, each an N-by-M ndarray
+								or LayerManager, each layer an N-by-M ndarray
+		row_attrs (dict):       Row attributes, where keys are attribute names and values
+								are numpy arrays (float or string) of length N
+		col_attrs (dict):       Column attributes, where keys are attribute names and
+								values are numpy arrays (float or string) of length M
+		file_attrs (dict):      Global attributes, where keys are attribute names and
+								values are strings
+	Returns:
+		Nothing
 	"""
 	if os.path.exists(filename):
 		with connect(filename) as ds:
@@ -755,9 +747,6 @@ def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loomp
 								are numpy arrays (float or string) of length N
 		col_attrs (dict):       Column attributes, where keys are attribute names and
 								values are numpy arrays (float or string) of length M
-		layers (dict):			Additional layers to add to the loom file. If the dictionary
-								contains a key "", this will be used as the main matrix
-								if matrix is None, otherwise it will be ignored
 		file_attrs (dict):      Global attributes, where keys are attribute names and
 								values are strings
 	Returns:
