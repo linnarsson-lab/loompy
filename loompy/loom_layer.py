@@ -47,20 +47,17 @@ class LoomLayer():
 	def sparse(self, rows: np.ndarray, cols: np.ndarray) -> scipy.sparse.coo_matrix:
 		n_genes = self.ds.shape[0] if rows is None else rows.shape[0]
 		n_cells = self.ds.shape[1] if cols is None else cols.shape[0]
-		data: np.ndarray = None
-		row: np.ndarray = None
-		col: np.ndarray = None
-		for (ix, selection, vals) in self.ds.batch_scan(genes=rows, cells=cols, axis=1, layer=self.name):
+
+		data: List[np.ndarray] = []
+		row: List[np.ndarray] = []
+		col: List[np.ndarray] = []
+		for (ix, selection, view) in self.ds.scan(items=cols, axis=1, layers=[self.name]):
+			vals = view.layers[self.name][rows, :]
 			nonzeros = np.where(vals > 0)
-			if data is None:
-				data = vals[nonzeros]
-				row = nonzeros[0]
-				col = selection[nonzeros[1]]
-			else:
-				data = np.concatenate([data, vals[nonzeros]])
-				row = np.concatenate([row, nonzeros[0]])
-				col = np.concatenate([col, selection[nonzeros[1]]])
-		return scipy.sparse.coo_matrix((data, (row, col)), shape=(n_genes, n_cells))
+			data.append(vals[nonzeros])
+			row.append(nonzeros[0])
+			col.append(nonzeros[1])
+		return scipy.sparse.coo_matrix((np.concatenate(data), (np.concatenate(row), np.concatenate(col))), shape=(n_genes, n_cells))
 
 	def resize(self, size: Tuple[int, int], axis: int = None) -> None:
 		"""Resize the dataset, or the specified axis.
