@@ -52,7 +52,10 @@ class LoomLayer():
 		row: List[np.ndarray] = []
 		col: List[np.ndarray] = []
 		for (ix, selection, view) in self.ds.scan(items=cols, axis=1, layers=[self.name]):
-			vals = view.layers[self.name][rows, :]
+			if rows is not None:
+				vals = view.layers[self.name][rows, :]
+			else:
+				vals = view.layers[self.name][:, :]
 			nonzeros = np.where(vals > 0)
 			data.append(vals[nonzeros])
 			row.append(nonzeros[0])
