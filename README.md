@@ -12,6 +12,8 @@ column per cell, one row per gene); row and column annotations
 contain metadata for genes and cells, such as `Name`, `Chromosome`, 
 `Position` (for genes), and `Strain`, `Sex`, `Age` (for cells).
 
+![Illustration of Loom format structure](/doc/Loom-images.png)
+
 Loom files (`.loom`) are created in the [HDF5](https://en.wikipedia.org/wiki/Hierarchical_Data_Format) file format, which 
 supports an internal collection of numerical multidimensional datasets.
 HDF5 is supported by many computer languages, including Java, MATLAB, 
