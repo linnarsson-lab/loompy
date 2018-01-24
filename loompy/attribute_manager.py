@@ -1,6 +1,7 @@
 from typing import *
 import numpy as np
 import loompy
+from loompy import timestamp
 
 
 class AttributeManager:
@@ -38,6 +39,33 @@ class AttributeManager:
 	def __iter__(self) -> Iterator[str]:
 		for key in self.keys():
 			yield key
+
+	def last_modified(self, name: str = None) -> str:
+		"""
+		Return a compact ISO8601 timestamp (UTC timezone) indicating when an attribute was last modified
+
+		Note: if no attribute name is given (the default), the modification time of the most recently modified attribute will be returned
+		Note: if the attributes do not contain a timestamp, and the mode is 'r+', a new timestamp is created and returned.
+		Otherwise, the current time in UTC will be returned.
+		"""
+		a = ["/row_attrs/", "/col_attrs/"][self.axis]
+
+		if self.ds is not None:
+			if name is None:
+				if "last_modified" in self.ds._file[a].attrs:
+					return self.ds._file[a].attrs["last_modified"]
+				elif self.ds.mode == 'r+':
+					self.ds._file[a].attrs["last_modified"] = timestamp()
+					self.ds._file.flush()
+					return self.ds._file[a].attrs["last_modified"]
+			if name is not None:
+				if "last_modified" in self.ds._file[a + name].attrs:
+					return self.ds._file[a + name].attrs["last_modified"]
+				elif self.ds.mode == 'r+':
+					self.ds._file[a + name].attrs["last_modified"] = timestamp()
+					self.ds._file.flush()
+					return self.ds._file[a + name].attrs["last_modified"]
+		return timestamp()
 
 	def __getitem__(self, thing: Any) -> np.ndarray:
 		"""
@@ -105,6 +133,9 @@ class AttributeManager:
 				if self.ds._file[a].__contains__(name):
 					del self.ds._file[a + name]
 				self.ds._file[a + name] = values  # TODO: for 2D arrays, use block compression along columns/rows
+				self.ds._file[a + name].attrs["last_modified"] = timestamp()
+				self.ds._file[a].attrs["last_modified"] = timestamp()
+				self.ds._file.attrs["last_modified"] = timestamp()
 				self.ds._file.flush()
 				self.__dict__["storage"][name] = loompy.materialize_attr_values(self.ds._file[a][name][:])
 			else:

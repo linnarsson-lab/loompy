@@ -32,7 +32,7 @@ from shutil import copyfile
 import logging
 import time
 import loompy
-from loompy import deprecated
+from loompy import deprecated, timestamp
 
 
 class LoomConnection:
@@ -81,6 +81,52 @@ class LoomConnection:
 			logging.warn("initialising LoomConnection to %s failed, closing file connection", filename)
 			self.close()
 			raise e
+
+	def last_modified(self) -> str:
+		"""
+		Return an ISO8601 timestamp when the file was last modified
+
+		Note: if the file has no timestamp, and mode is 'r+', a new timestamp is created and returned.
+		Otherwise, the current time in UTC is returned
+		"""	
+		if "last_modified" in self._file.attrs:
+			return self._file.attrs["last_modified"]
+		elif self.mode == "r+":
+			# Make sure the file has modification timestamps
+			self._file.attrs["last_modified"] = timestamp()
+			self._file.flush()
+			return self._file.attrs["last_modified"]
+		return timestamp()
+
+	def get_changes_since(self, timestamp: str) -> Dict[str, List]:
+		rg = []
+		cg = []
+		ra = []
+		ca = []
+		layers = []
+
+		if self.last_modified() > timestamp:
+			if self.row_graphs.last_modified() > timestamp:
+				for name in self.row_graphs.keys():
+					if self.row_graphs.last_modified(name) > timestamp:
+						rg.append(name)
+			if self.col_graphs.last_modified() > timestamp:
+				for name in self.col_graphs.keys():
+					if self.col_graphs.last_modified(name) > timestamp:
+						cg.append(name)
+			if self.ra.last_modified() > timestamp:
+				for name in self.ra.keys():
+					if self.ra.last_modified(name) > timestamp:
+						ra.append(name)
+			if self.ca.last_modified() > timestamp:
+				for name in self.ca.keys():
+					if self.ca.last_modified(name) > timestamp:
+						ca.append(name)
+			if self.layers.last_modified() > timestamp:
+				for name in self.layers.keys():
+					if self.layers.last_modified(name) > timestamp:
+						layers.append(name)
+		return {"row_graphs": rg, "col_graphs": cg, "row_attrs": ra, "col_attrs": ca, "layers": layers}
 
 	def __enter__(self) -> Any:
 		"""

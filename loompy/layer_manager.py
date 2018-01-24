@@ -20,6 +20,23 @@ class LayerManager:
 			else:
 				ds._file.create_group('/layers')
 
+	def last_modified(self, name: str = None) -> str:
+		"""
+		Return a compact ISO8601 timestamp (UTC timezone) indicating when the layer was last modified
+
+		Note: if name is None, the modification time of the most recently modified layer is returned
+		"""
+		if name is not None:
+			return self[name].last_modified()
+		ts = None
+		for name in self.keys():
+			if ts is None:
+				ts = self[name].last_modified()
+			else:
+				if self[name].last_modified() > ts:
+					ts = self[name].last_modified()
+		return ts
+
 	def keys(self) -> List[str]:
 		return list(self.__dict__["storage"].keys())
 

@@ -1,6 +1,7 @@
 import numpy as np
 from typing import *
 import scipy
+from loompy import timestamp
 
 
 class MemoryLoomLayer():
@@ -33,6 +34,31 @@ class LoomLayer():
 		self.name = name
 		self.shape = ds.shape
 
+	def last_modified(self) -> str:
+		"""
+		Return a compact ISO8601 timestamp (UTC timezone) indicating when the file was last modified
+
+		Note: if the layer does not contain a timestamp, and the mode is 'r+', a new timestamp will be set and returned.
+		Otherwise, the current time in UTC will be returned.
+		"""
+		if self.name == "":
+			if "last_modified" in self.ds._file["/matrix"].attrs:
+				return self.ds._file["/matrix"].attrs["last_modified"]
+			elif self.ds.mode == 'r+':
+				self.ds._file["/matrix"].attrs["last_modified"] = timestamp()
+				self.ds._file.flush()
+				return self.ds._file["/matrix"].attrs["last_modified"]
+
+		if self.name != "":
+			if "last_modified" in self.ds._file["/layers/" + self.name].attrs:
+				return self.ds._file["/layers" + self.name].attrs["last_modified"]
+			elif self.ds.mode == 'r+':
+				self.ds._file["/layers" + self.name].attrs["last_modified"] = timestamp()
+				self.ds._file.flush()
+				return self.ds._file["/layers" + self.name].attrs["last_modified"]
+
+		return timestamp()
+
 	def __getitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]]) -> np.ndarray:
 		if self.name == "":
 			return self.ds._file['/matrix'].__getitem__(slice)
@@ -41,8 +67,14 @@ class LoomLayer():
 	def __setitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]], data: np.ndarray) -> None:
 		if self.name == "":
 			self.ds._file['/matrix'][slice] = data
+			self.ds._file["/matrix"].attrs["last_modified"] = timestamp()
+			self.ds._file.attrs["last_modified"] = timestamp()
+			self.ds._file.flush()
 		else:
 			self.ds._file['/layers/' + self.name][slice] = data
+			self.ds._file["/layers" + self.name].attrs["last_modified"] = timestamp()
+			self.ds._file.attrs["last_modified"] = timestamp()
+			self.ds._file.flush()
 
 	def sparse(self, rows: np.ndarray, cols: np.ndarray) -> scipy.sparse.coo_matrix:
 		n_genes = self.ds.shape[0] if rows is None else rows.shape[0]

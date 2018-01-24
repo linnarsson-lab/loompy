@@ -1,6 +1,7 @@
 import scipy.sparse as sparse
 import numpy as np
 from typing import *
+from loompy import timestamp
 
 
 def _renumber(a: np.ndarray, keys: np.ndarray, values: np.ndarray) -> np.ndarray:
@@ -48,6 +49,32 @@ class GraphManager:
 	def __iter__(self) -> Iterator[str]:
 		for key in self.keys():
 			yield key
+
+	def last_modified(self, name: str = None) -> str:
+		"""
+		Return a compact ISO8601 timestamp (UTC timezone) indicating when a graph was last modified
+
+		Note: if no graph name is given (the default), the modification time of the most recently modified graph will be returned
+		Note: if the graphs do not contain a timestamp, and the mode is 'r+', a new timestamp is created and returned.
+		Otherwise, the current time in UTC will be returned.
+		"""
+		a = ["/row_edges/", "/col_edges/"][self.axis]
+
+		if name is None:
+			if "last_modified" in self.ds._file[a].attrs:
+				return self.ds._file[a].attrs["last_modified"]
+			elif self.ds.mode == 'r+':
+				self.ds._file[a].attrs["last_modified"] = timestamp()
+				self.ds._file.flush()
+				return self.ds._file[a].attrs["last_modified"]
+		if name is not None:
+			if "last_modified" in self.ds._file[a + name].attrs:
+				return self.ds._file[a][name].attrs["last_modified"]
+			elif self.ds.mode == 'r+':
+				self.ds._file[a][name].attrs["last_modified"] = timestamp()
+				self.ds._file.flush()
+				return self.ds._file[a][name].attrs["last_modified"]
+		return timestamp()
 
 	def __getitem__(self, thing: Any) -> sparse.coo_matrix:
 		if type(thing) is slice or type(thing) is np.ndarray or type(thing) is int:
@@ -104,6 +131,9 @@ class GraphManager:
 				self.ds._file[a][name]["a"] = g.row
 				self.ds._file[a][name]["b"] = g.col
 				self.ds._file[a][name]["w"] = g.data
+				self.ds._file[a][name].attrs["last_modified"] = timestamp()
+				self.ds._file[a].attrs["last_modified"] = timestamp()
+				self.ds._file.attrs["last_modified"] = timestamp()
 				self.ds._file.flush()
 				self.__dict__["storage"][name] = g
 			else:
