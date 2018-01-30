@@ -43,7 +43,7 @@ class FileAttributeManager(object):
 					val = self.f.attrs[name]
 					materialized = loompy.materialize_attr_values(val)
 					self.__dict__["storage"][name] = materialized
-				return materialized
+					return materialized
 			raise AttributeError(f"'{type(self)}' object has no attribute '{name}'")
 
 	def __setitem__(self, name: str, val: Any) -> None:
