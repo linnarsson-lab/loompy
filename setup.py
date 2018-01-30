@@ -15,5 +15,6 @@ setup(
     description="Work with .loom files for single-cell RNA-seq data",
     license="BSD",
     keywords="loom omics transcriptomics bioinformatics",
-    url="https://github.com/linnarsson-lab/loompy"
+    url="https://github.com/linnarsson-lab/loompy",
+    download_url=f"https://github.com/linnarsson-lab/loompy/archive/{__version__}.tar.gz",
 )
