@@ -25,6 +25,7 @@ class LayerManager:
 		Return a compact ISO8601 timestamp (UTC timezone) indicating when the layer was last modified
 
 		Note: if name is None, the modification time of the most recently modified layer is returned
+		Otherwise, "19700101T000000Z" (start of Unix Time) will be returned.
 		"""
 		if name is not None:
 			return self[name].last_modified()

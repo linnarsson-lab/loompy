@@ -56,7 +56,7 @@ class GraphManager:
 
 		Note: if no graph name is given (the default), the modification time of the most recently modified graph will be returned
 		Note: if the graphs do not contain a timestamp, and the mode is 'r+', a new timestamp is created and returned.
-		Otherwise, the current time in UTC will be returned.
+		Otherwise, "19700101T000000Z" (start of Unix Time) will be returned.
 		"""
 		a = ["/row_edges/", "/col_edges/"][self.axis]
 
@@ -153,7 +153,7 @@ class GraphManager:
 				self.ds._file.flush()
 		if name in self.__dict__["storage"]:
 			del self.__dict__["storage"][name]
-	
+
 	def permute(self, ordering: np.ndarray) -> None:
 		for name in self.keys():
 			g = self[name]

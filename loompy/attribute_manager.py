@@ -46,7 +46,7 @@ class AttributeManager:
 
 		Note: if no attribute name is given (the default), the modification time of the most recently modified attribute will be returned
 		Note: if the attributes do not contain a timestamp, and the mode is 'r+', a new timestamp is created and returned.
-		Otherwise, the current time in UTC will be returned.
+		Otherwise, "19700101T000000Z" (start of Unix Time) will be returned.
 		"""
 		a = ["/row_attrs/", "/col_attrs/"][self.axis]
 
@@ -65,7 +65,7 @@ class AttributeManager:
 					self.ds._file[a + name].attrs["last_modified"] = timestamp()
 					self.ds._file.flush()
 					return self.ds._file[a + name].attrs["last_modified"]
-		return timestamp()
+		return "19700101T000000Z"
 
 	def __getitem__(self, thing: Any) -> np.ndarray:
 		"""
