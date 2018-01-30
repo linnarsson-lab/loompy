@@ -72,7 +72,7 @@ class LoomLayer():
 			self.ds._file.flush()
 		else:
 			self.ds._file['/layers/' + self.name][slice] = data
-			self.ds._file["/layers" + self.name].attrs["last_modified"] = timestamp()
+			self.ds._file["/layers/" + self.name].attrs["last_modified"] = timestamp()
 			self.ds._file.attrs["last_modified"] = timestamp()
 			self.ds._file.flush()
 
