@@ -46,7 +46,7 @@ class AttributeManager:
 
 		Note: if no attribute name is given (the default), the modification time of the most recently modified attribute will be returned
 		Note: if the attributes do not contain a timestamp, and the mode is 'r+', a new timestamp is created and returned.
-		Otherwise, "19700101T000000Z" (start of Unix Time) will be returned.
+		Otherwise, "19700101T000000Z" (start of Unix Time) is returned.
 		"""
 		a = ["/row_attrs/", "/col_attrs/"][self.axis]
 
