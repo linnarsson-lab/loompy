@@ -91,8 +91,9 @@ class LoomConnection:
 		"""
 		Return an ISO8601 timestamp when the file was last modified
 
-		Note: if the file has no timestamp, and mode is 'r+', a new timestamp is created and returned.
-		Otherwise, "19700101T000000Z" (start of Unix Time) is returned.
+		If the loom file has no timestamp and is connected in read-write mode, it will be initialised to current time.
+
+		If the loom file has no timestamp and connected in read-only mode, "19700101T000000Z" (start of Unix Time) is returned.
 		"""
 		if "last_modified" in self._file.attrs:
 			return self._file.attrs["last_modified"]
@@ -399,24 +400,26 @@ class LoomConnection:
 		DEPRECATED
 		"""
 		deprecated("'delete_attr' is deprecated. Use 'del ds.ra.key' or 'del ds.ca.key' instead")
-		if not self._write_access:
-			raise IOError("Cannot modify loom file when connected in read-only mode")
-		if axis == 0:
-			del self.ra[name]
+		if self._write_access:
+			if axis == 0:
+				del self.ra[name]
+			else:
+				del self.ca[name]
 		else:
-			del self.ca[name]
+			raise IOError("Cannot modify loom file when connected in read-only mode")
 
 	def set_attr(self, name: str, values: np.ndarray, axis: int = 0, dtype: str = None) -> None:
 		"""
 		DEPRECATED
 		"""
 		deprecated("'set_attr' is deprecated. Use 'ds.ra.key = values' or 'ds.ca.key = values' instead")
-		if not self._write_access:
-			raise IOError("Cannot modify loom file when connected in read-only mode")
-		if axis == 0:
-			self.ra[name] = values
+		if self._write_access:
+			if axis == 0:
+				self.ra[name] = values
+			else:
+				self.ca[name] = values
 		else:
-			self.ca[name] = values
+			raise IOError("Cannot modify loom file when connected in read-only mode")
 
 	def list_edges(self, *, axis: int) -> List[str]:
 		"""
@@ -448,18 +451,19 @@ class LoomConnection:
 		DEPRECATED
 		"""
 		deprecated("'set_edges' is deprecated. Use 'ds.row_graphs[name] = g' or 'ds.col_graphs[name] = g' instead")
-		if not self._write_access:
-			raise IOError("Cannot modify loom file when connected in read-only mode")
-		try:
-			g = scipy.sparse.coo_matrix((w, (a, b)), (self.shape[axis], self.shape[axis]))
-		except Exception:
-			raise ValueError("Input arrays could not be converted to a sparse matrix")
-		if axis == 0:
-			self.row_graphs[name] = g
-		elif axis == 1:
-			self.col_graphs[name] = g
+		if self._write_access:
+			try:
+				g = scipy.sparse.coo_matrix((w, (a, b)), (self.shape[axis], self.shape[axis]))
+			except Exception:
+				raise ValueError("Input arrays could not be converted to a sparse matrix")
+			if axis == 0:
+				self.row_graphs[name] = g
+			elif axis == 1:
+				self.col_graphs[name] = g
+			else:
+				raise ValueError("axis must be 0 (rows) or 1 (columns)")
 		else:
-			raise ValueError("axis must be 0 (rows) or 1 (columns)")
+			raise IOError("Cannot modify loom file when connected in read-only mode")
 
 	def scan(self, *, items: np.ndarray = None, axis: int = None, layers: Iterable = None, key: str = None, batch_size: int = 1000) -> Iterable[Tuple[int, np.ndarray, loompy.LoomView]]:
 		"""
