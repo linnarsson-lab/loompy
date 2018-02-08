@@ -39,7 +39,7 @@ class LoomLayer():
 		Return a compact ISO8601 timestamp (UTC timezone) indicating when the file was last modified
 
 		Note: if the layer does not contain a timestamp, and the mode is 'r+', a new timestamp will be set and returned.
-		Otherwise, the current time in UTC will be returned.
+		Otherwise, "19700101T000000Z" (start of Unix Time) is returned.
 		"""
 		if self.name == "":
 			if "last_modified" in self.ds._file["/matrix"].attrs:
@@ -57,7 +57,7 @@ class LoomLayer():
 				self.ds._file.flush()
 				return self.ds._file["/layers/" + self.name].attrs["last_modified"]
 
-		return timestamp()
+		return "19700101T000000Z"
 
 	def __getitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]]) -> np.ndarray:
 		if self.name == "":

@@ -56,7 +56,7 @@ class GraphManager:
 
 		Note: if no graph name is given (the default), the modification time of the most recently modified graph will be returned
 		Note: if the graphs do not contain a timestamp, and the mode is 'r+', a new timestamp is created and returned.
-		Otherwise, the current time in UTC will be returned.
+		Otherwise, "19700101T000000Z" (start of Unix Time) is returned.
 		"""
 		a = ["/row_edges/", "/col_edges/"][self.axis]
 
@@ -74,7 +74,7 @@ class GraphManager:
 				self.ds._file[a][name].attrs["last_modified"] = timestamp()
 				self.ds._file.flush()
 				return self.ds._file[a][name].attrs["last_modified"]
-		return timestamp()
+		return "19700101T000000Z"
 
 	def __getitem__(self, thing: Any) -> sparse.coo_matrix:
 		if type(thing) is slice or type(thing) is np.ndarray or type(thing) is int:
@@ -153,7 +153,7 @@ class GraphManager:
 				self.ds._file.flush()
 		if name in self.__dict__["storage"]:
 			del self.__dict__["storage"][name]
-	
+
 	def permute(self, ordering: np.ndarray) -> None:
 		for name in self.keys():
 			g = self[name]
