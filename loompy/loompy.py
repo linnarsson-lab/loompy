@@ -842,7 +842,7 @@ def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loomp
 
 			# store creation date
 			currentTime = time.localtime(time.time())
-			ds.attrs['CreationDate'] = time.strftime('%Y/%m/%d %H:%M:%S', currentTime)
+			ds.attrs['CreationDate'] = timestamp()
 
 	except ValueError as ve:
 		ds.close(suppress_warning=True)
