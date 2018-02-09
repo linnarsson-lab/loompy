@@ -19,6 +19,14 @@ Loompy 2 changes the behaviour of ``loompy.create``: it no longer returns a valu
 
 The reason for the change is that we would often create files without closing the returned file handle, which causes issues especially in multi-process scenarios.
 
+Note: if you simply want to create the file, and not access it, there is no need to use a ``with`` statement:
+
+.. code:: python
+
+  loompy.create("filename.loom", m, row_attrs, col_attrs)
+
+This will leave the file closed.
+
 
 Loading attributes from Pandas
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
