@@ -785,8 +785,9 @@ def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loomp
 
 	Args:
 		filename (str):         The filename (typically using a `.loom` file extension)
-		layers (np.ndarray or Dict[str, np.ndarray] or LayerManager): 
+		layers (np.ndarray or scipy.sparse or Dict[str, np.ndarray] or LayerManager): 
 								Two-dimensional (N-by-M) numpy ndarray of float values
+								Or sparse matrix
 								Or dictionary of named layers, each an N-by-M ndarray
 								or LayerManager, each layer an N-by-M ndarray
 		row_attrs (dict):       Row attributes, where keys are attribute names and values
@@ -808,14 +809,12 @@ def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loomp
 
 	if isinstance(layers, np.ndarray):
 		layers = {"": layers}
+	elif scipy.sparse.issparse(layers):
+		_create_sparse(filename, layers, row_attrs, col_attrs, file_attrs=file_attrs)
 	elif isinstance(layers, loompy.LayerManager):
 		layers = {k: v[:, :] for k, v in layers.items()}
 	if "" not in layers:
 		raise ValueError("Data for default layer must be provided")
-	if scipy.sparse.issparse(layers[""]):
-		if len(layers) > 1:
-			raise NotImplementedError("Creating from sparse matrix supports only single layer")
-		_create_sparse(filename, layers[""], row_attrs, col_attrs, file_attrs=file_attrs, layers=layers)
 
 	# Create the file (empty).
 	# Yes, this might cause an exception, which we prefer to send to the caller
