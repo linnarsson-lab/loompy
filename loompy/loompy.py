@@ -811,6 +811,7 @@ def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loomp
 		layers = {"": layers}
 	elif scipy.sparse.issparse(layers):
 		_create_sparse(filename, layers, row_attrs, col_attrs, file_attrs=file_attrs)
+		return
 	elif isinstance(layers, loompy.LayerManager):
 		layers = {k: v[:, :] for k, v in layers.items()}
 	if "" not in layers:
