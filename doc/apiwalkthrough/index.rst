@@ -25,6 +25,20 @@ For example, the following creates a loom file with a 100x100 main matrix, one r
   col_attrs = { "SomeColAttr": np.arange(100) }
   loompy.create(filename, matrix, row_attrs, col_attrs)
 
+``loompy.create`` accepts numpy dense matrices (``np.ndarray``) as well as scipy sparse matrices (``scipy.coo_matrix``, ``scipy.csc_matrix``,
+ or ``scipy.csr_matrix``). For example:
+
+.. code:: python
+
+  import numpy as np
+  import loompy
+  import scipy.sparse as sparse
+  filename = "test.loom"
+  matrix = sparse.coo_matrix((100, 100))
+  row_attrs = { "SomeRowAttr": np.arange(100) }
+  col_attrs = { "SomeColAttr": np.arange(100) }
+  loompy.create(filename, matrix, row_attrs, col_attrs)
+
 You can also create a file by combining existing loom files. The files will be concatenated along the column
 axis, and therefore must have the same number of rows. If the rows are potentially not in the same order, 
 you can supply a ``key`` argument; the row attribute corresponding to the key will be used to sort the files. 
