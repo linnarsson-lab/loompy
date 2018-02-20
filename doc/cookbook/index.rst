@@ -41,7 +41,7 @@ of lists:
   df_col_metadata = ... # A pandas DataFrame holding column metadata
   data = ... # A numpy ndarray holding the main dataset
   
-  loompy.create(filename, data, df_row_metadata.todict("list"), df_col_metadata.todict("list"))
+  loompy.create(filename, data, df_row_metadata.to_dict("list"), df_col_metadata.to_dict("list"))
 
 
 Combining data using scan()
