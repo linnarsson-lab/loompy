@@ -88,7 +88,7 @@ class LoomConnection:
 
 		Note: if the file has no timestamp, and mode is 'r+', a new timestamp is created and returned.
 		Otherwise, the current time in UTC is returned
-		"""	
+		"""
 		if "last_modified" in self._file.attrs:
 			return self._file.attrs["last_modified"]
 		elif self.mode == "r+":
@@ -187,7 +187,7 @@ class LoomConnection:
 			rows:		Rows to include, or None to include all
 			cols:		Columns to include, or None to include all
 			layer:		Layer to return, or None to return the default layer
-		
+
 		Returns:
 			scipy.sparse.coo_matrix
 		"""
@@ -277,7 +277,7 @@ class LoomConnection:
 			if n_cols == 0:
 				n_cols = matrix.shape[1]
 			elif matrix.shape[1] != n_cols:
-				raise ValueError(f"Layer {layer} has {matrix.shape[1]} columns but the first layer had {n_cols}")				
+				raise ValueError(f"Layer {layer} has {matrix.shape[1]} columns but the first layer had {n_cols}")
 		for layer in self.layers.keys():
 			if layer not in layers_dict.keys():
 				raise ValueError(f"Layer {layer} does not exist in the target loom file")
@@ -742,12 +742,16 @@ def _create_sparse(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.nd
 	"""
 	Create a new loom file from a sparse matrix input
 	"""
+	if os.path.exists(filename):
+		raise FileExistsError("Cannot overwrite existing file " + filename)
 	logging.info("Converting to csc format")
 	matrix = matrix.tocsc()
 	window = 2000
 	ix = 0
 	while ix < matrix.shape[1]:
 		window = min(window, matrix.shape[1] - ix)
+		if window == 0:
+			break
 		ca = {key: val[ix:ix + window] for (key, val) in col_attrs.items()}
 		create_append(filename, matrix[:, ix:ix + window].toarray(), row_attrs, ca, file_attrs=file_attrs)
 		ix += window
@@ -759,7 +763,7 @@ def create_append(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray]
 
 	Args:
 		filename (str):         The filename (typically using a `.loom` file extension)
-		layers (np.ndarray or Dict[str, np.ndarray] or LayerManager): 
+		layers (np.ndarray or Dict[str, np.ndarray] or LayerManager):
 								Two-dimensional (N-by-M) numpy ndarray of float values
 								Or dictionary of named layers, each an N-by-M ndarray
 								or LayerManager, each layer an N-by-M ndarray
@@ -785,7 +789,7 @@ def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loomp
 
 	Args:
 		filename (str):         The filename (typically using a `.loom` file extension)
-		layers (np.ndarray or scipy.sparse or Dict[str, np.ndarray] or LayerManager): 
+		layers (np.ndarray or scipy.sparse or Dict[str, np.ndarray] or LayerManager):
 								Two-dimensional (N-by-M) numpy ndarray of float values
 								Or sparse matrix
 								Or dictionary of named layers, each an N-by-M ndarray
@@ -798,7 +802,7 @@ def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loomp
 								values are strings
 	Returns:
 		Nothing
-	
+
 	Remarks:
 		If the file exists, it will be overwritten. See create_append for a function that will append to existing files.
 	"""
