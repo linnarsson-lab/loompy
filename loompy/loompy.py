@@ -844,6 +844,8 @@ def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loomp
 	f.create_group('/layers')
 	f.create_group('/row_attrs')
 	f.create_group('/col_attrs')
+	f.create_group('/row_graphs')
+	f.create_group('/col_graphs')
 	f.flush()
 	f.close()
 
@@ -864,6 +866,7 @@ def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loomp
 			# store creation date
 			currentTime = time.localtime(time.time())
 			ds.attrs['CreationDate'] = timestamp()
+			ds.attrs["LOOM_SPEC_VERSION"] = loompy.loom_spec_version
 
 	except ValueError as ve:
 		ds.close(suppress_warning=True)
