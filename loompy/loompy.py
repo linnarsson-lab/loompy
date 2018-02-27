@@ -291,7 +291,7 @@ class LoomConnection:
 						fill_with = np.zeros(1, dtype=col_attrs[key].dtype)[0]
 					else:
 						fill_with = fill_values[key]
-					self.set_attr(key, np.array([fill_with] * self.shape[1]), axis=1)
+					self.ca[key] = np.array([fill_with] * self.shape[1])
 				else:
 					did_remove = True
 					todel.append(key)
@@ -316,7 +316,7 @@ class LoomConnection:
 					did_remove = True
 					todel.append(key)
 		for key in todel:
-			self.delete_attr(key, axis=1)
+			del self.ca[key] # delete_attr(key, axis=1)
 		if did_remove:
 			logging.warn("Some column attributes were removed: " + ",".join(todel))
 
@@ -333,15 +333,16 @@ class LoomConnection:
 			self.layers[key][:, old_n_cols:n_cols] = layers_dict[key]
 		self._file.flush()
 
-	def add_loom(self, other_file: str, key: str = None, fill_values: Dict[str, np.ndarray]=None, batch_size: int=1000) -> None:
+	def add_loom(self, other_file: str, key: str = None, fill_values: Dict[str, np.ndarray]=None, batch_size: int=1000, convert_attrs: bool=False) -> None:
 		"""
 		Add the content of another loom file
 
 		Args:
-			other_file (str):	filename of the loom file to append
-			key:				Primary key to use to align rows in the other file with this file
-			fill_values (dict): default values to use for missing attributes (or None to drop missing attrs, or 'auto' to fill with sensible defaults)
-			batch_size (int): the batch size used by batchscan (limits the number of rows/columns read in memory)
+			other_file (str):       filename of the loom file to append
+			key:                    Primary key to use to align rows in the other file with this file
+			fill_values (dict):     default values to use for missing attributes (or None to drop missing attrs, or 'auto' to fill with sensible defaults)
+			batch_size (int):       the batch size used by batchscan (limits the number of rows/columns read in memory)
+			convert_attrs (bool):   convert file attributes that differ between files into column attributes
 
 		Returns:
 			Nothing, but adds the loom file. Note that the other loom file must have exactly the same
@@ -373,6 +374,22 @@ class LoomConnection:
 		diff_layers = set(self.layers.keys()) - set(other.layers.keys())
 		if len(diff_layers) > 0:
 			raise ValueError("%s is missing a layer, cannot merge with current file. layers missing:%s" % (other_file, diff_layers))
+
+		if convert_attrs:
+			# Prepare to replace any global attribute that differ between looms or is missing in either loom with a column attribute.
+			globalkeys = set(self.attrs)
+			globalkeys.update(other.attrs)
+			for globalkey in globalkeys:
+				if globalkey in self.attrs and globalkey in other.attrs and self.attrs[globalkey] == other.attrs[globalkey]:
+					continue
+				if globalkey not in self.col_attrs:
+					self_value = self.attrs[globalkey] if globalkey in self.attrs else np.zeros(1, dtype=other.attrs[globalkey].dtype)[0]
+					self.col_attrs[globalkey] = np.array([self_value] * self.shape[1])
+				if globalkey not in other.col_attrs:
+					other_value = other.attrs[globalkey] if globalkey in other.attrs else  np.zeros(1, dtype=self.attrs[globalkey].dtype)[0]
+					other.col_attrs[globalkey] =  np.array([other_value] * other.shape[1])
+				if globalkey in self.attrs:
+					delattr(self.attrs, globalkey)
 
 		for (ix, selection, vals) in other.batch_scan_layers(axis=1, layers=self.layers.keys(), batch_size=batch_size):
 			ca = {key: v[selection] for key, v in other.col_attrs.items()}
@@ -903,16 +920,17 @@ def create_from_cellranger(indir: str, outdir: str = None, genome: str = None) -
 	create(os.path.join(outdir, sampleid + ".loom"), matrix, row_attrs, col_attrs, file_attrs={"Genome": genome})
 
 
-def combine(files: List[str], output_file: str, key: str = None, file_attrs: Dict[str, str]=None, batch_size: int=1000) -> None:
+def combine(files: List[str], output_file: str, key: str = None, file_attrs: Dict[str, str]=None, batch_size: int=1000, convert_attrs: bool=False) -> None:
 	"""
 	Combine two or more loom files and save as a new loom file
 
 	Args:
-		files (list of str):	the list of input files (full paths)
-		output_file (str):		full path of the output loom file
-		key (string):			Row attribute to use to verify row ordering
-		file_attrs (dict):		file attributes (title, description, url, etc.)
-		batch_size (int):		limits the batch or cols/rows read in memory (default: 1000)
+		files (list of str):    the list of input files (full paths)
+		output_file (str):      full path of the output loom file
+		key (string):           Row attribute to use to verify row ordering
+		file_attrs (dict):      file attributes (title, description, url, etc.)
+		batch_size (int):       limits the batch or cols/rows read in memory (default: 1000)
+		convert_attrs (bool):   convert file attributes that differ between files into column attributes
 
 	Returns:
 		Nothing, but creates a new loom file combining the input files.
@@ -934,7 +952,7 @@ def combine(files: List[str], output_file: str, key: str = None, file_attrs: Dic
 
 	if len(files) >= 2:
 		for f in files[1:]:
-			ds.add_loom(f, key, batch_size=batch_size)
+			ds.add_loom(f, key, batch_size=batch_size, convert_attrs=convert_attrs)
 	ds.close()
 
 

@@ -61,3 +61,11 @@ class FileAttributeManager(object):
 				# Read it back in to ensure it's synced and normalized
 				normalized = loompy.materialize_attr_values(val)
 				self.__dict__["storage"][name] = normalized
+
+	def __delattr__(self, name: str) -> None:
+		if name.startswith("!"):
+			super(FileAttributeManager, self).__delattr__(name[1:])
+		else:
+			if self.f is not None:
+				del self.f.attrs[name]
+			del self.__dict__["storage"][name]
