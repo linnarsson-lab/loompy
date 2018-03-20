@@ -10,7 +10,7 @@ class LoomView:
 	def __init__(self, layers: loompy.LayerManager, row_attrs: loompy.AttributeManager, col_attrs: loompy.AttributeManager, row_graphs: loompy.GraphManager, col_graphs: loompy.GraphManager, *, filename: str, file_attrs: loompy.FileAttributeManager) -> None:
 		# In-memory views always have "write" access
 		self._mode = 'r+'
-		self._write_access = True
+		self._read_write_mode = True
 		self.filename = filename
 		self.view = loompy.ViewManager(self)
 		self.layers = layers

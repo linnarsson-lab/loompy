@@ -33,7 +33,7 @@ class LoomLayer():
 		self.ds = ds
 		self.name = name
 		self.shape = ds.shape
-		self._write_access = ds._write_access
+		self._read_write_mode = ds._read_write_mode
 
 	def last_modified(self) -> str:
 		"""
@@ -46,7 +46,7 @@ class LoomLayer():
 		if self.name == "":
 			if "last_modified" in self.ds._file["/matrix"].attrs:
 				return self.ds._file["/matrix"].attrs["last_modified"]
-			elif self._write_access:
+			elif self._read_write_mode:
 				self.ds._file["/matrix"].attrs["last_modified"] = timestamp()
 				self.ds._file.flush()
 				return self.ds._file["/matrix"].attrs["last_modified"]
@@ -54,7 +54,7 @@ class LoomLayer():
 		if self.name != "":
 			if "last_modified" in self.ds._file["/layers/" + self.name].attrs:
 				return self.ds._file["/layers/" + self.name].attrs["last_modified"]
-			elif self._write_access:
+			elif self._read_write_mode:
 				self.ds._file["/layers/" + self.name].attrs["last_modified"] = timestamp()
 				self.ds._file.flush()
 				return self.ds._file["/layers/" + self.name].attrs["last_modified"]
@@ -67,7 +67,9 @@ class LoomLayer():
 		return self.ds._file['/layers/' + self.name].__getitem__(slice)
 
 	def __setitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]], data: np.ndarray) -> None:
-		if self._write_access:
+		if not self._read_write_mode:
+			raise IOError("Cannot modify layer when connected in read-only mode")
+		else:
 			if self.name == "":
 				self.ds._file['/matrix'][slice] = data
 				self.ds._file["/matrix"].attrs["last_modified"] = timestamp()
@@ -78,8 +80,6 @@ class LoomLayer():
 				self.ds._file["/layers/" + self.name].attrs["last_modified"] = timestamp()
 				self.ds._file.attrs["last_modified"] = timestamp()
 				self.ds._file.flush()
-		else:
-			raise IOError("Cannot modify layer when connected in read-only mode")
 
 	def sparse(self, rows: np.ndarray, cols: np.ndarray) -> scipy.sparse.coo_matrix:
 		n_genes = self.ds.shape[0] if rows is None else rows.shape[0]
@@ -96,7 +96,7 @@ class LoomLayer():
 			nonzeros = np.where(vals > 0)
 			data.append(vals[nonzeros])
 			row.append(nonzeros[0])
-			col.append(nonzeros[1])
+			col.append(nonzeros[1] + ix)
 		return scipy.sparse.coo_matrix((np.concatenate(data), (np.concatenate(row), np.concatenate(col))), shape=(n_genes, n_cells))
 
 	def resize(self, size: Tuple[int, int], axis: int = None) -> None:
@@ -110,13 +110,13 @@ class LoomLayer():
 		The data is not "reshuffled" to fit in the new shape; each axis is grown or shrunk independently.
 		The coordinates of existing data are fixed.
 		"""
-		if self._write_access:
+		if not self._read_write_mode:
+			raise IOError("Cannot modify layer when connected in read-only mode")
+		else:
 			if self.name == "":
 				self.ds._file['/matrix'].resize(size, axis)
 			else:
 				self.ds._file['/layers/' + self.name].resize(size, axis)
-		else:
-			raise IOError("Cannot modify layer when connected in read-only mode")
 
 	def map(self, f_list: List[Callable[[np.ndarray], int]], axis: int = 0, chunksize: int = 1000, selection: np.ndarray = None) -> List[np.ndarray]:
 		"""
@@ -172,7 +172,9 @@ class LoomLayer():
 		return result
 
 	def permute(self, ordering: np.ndarray, *, axis: int) -> None:
-		if self._write_access:
+		if not self._read_write_mode:
+			raise IOError("Cannot modify layer when connected in read-only mode")
+		else:
 			if self.name == "":
 				obj = self.ds._file['/matrix']
 			else:
@@ -193,5 +195,3 @@ class LoomLayer():
 					start = start + chunksize
 			else:
 				raise ValueError("axis must be 0 or 1")
-		else:
-			raise IOError("Cannot modify layer when connected in read-only mode")

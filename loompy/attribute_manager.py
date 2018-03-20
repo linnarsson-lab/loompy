@@ -14,9 +14,9 @@ class AttributeManager:
 		storage: Dict[str, np.ndarray] = {}
 		setattr(self, "!storage", storage)
 
-		self._write_access = False
+		self._read_write_mode = False
 		if ds is not None:
-			self._write_access = ds._write_access
+			self._read_write_mode = ds._read_write_mode
 			a = ["/row_attrs/", "/col_attrs/"][self.axis]
 			for key in self.ds._file[a].keys():
 				self.__dict__["storage"][key] = None
@@ -58,14 +58,14 @@ class AttributeManager:
 			if name is None:
 				if "last_modified" in self.ds._file[a].attrs:
 					return self.ds._file[a].attrs["last_modified"]
-				elif self._write_access:
+				elif self._read_write_mode:
 					self.ds._file[a].attrs["last_modified"] = timestamp()
 					self.ds._file.flush()
 					return self.ds._file[a].attrs["last_modified"]
 			if name is not None:
 				if "last_modified" in self.ds._file[a + name].attrs:
 					return self.ds._file[a + name].attrs["last_modified"]
-				elif self._write_access:
+				elif self._read_write_mode:
 					self.ds._file[a + name].attrs["last_modified"] = timestamp()
 					self.ds._file.flush()
 					return self.ds._file[a + name].attrs["last_modified"]
@@ -112,9 +112,10 @@ class AttributeManager:
 		"""
 		Set the value of a named attribute
 		"""
-		if self._write_access:
+		if self._read_write_mode:
 			return self.__setattr__(name, val)
-		raise IOError("Cannot modify loom file when connected in read-only mode")
+		else:
+			raise IOError("Cannot modify loom file when connected in read-only mode")
 
 	def __setattr__(self, name: str, val: np.ndarray) -> None:
 		"""
@@ -128,7 +129,9 @@ class AttributeManager:
 			Length must match the corresponding matrix dimension
 			The values are automatically HMTL escaped and converted to ASCII for storage
 		"""
-		if self._write_access:
+		if not self._read_write_mode:
+			raise IOError("Cannot modify loom file when connected in read-only mode")
+		else:
 			if name.startswith("!"):
 				super(AttributeManager, self).__setattr__(name[1:], val)
 			else:
@@ -147,22 +150,23 @@ class AttributeManager:
 					self.__dict__["storage"][name] = loompy.materialize_attr_values(self.ds._file[a][name][:])
 				else:
 					self.__dict__["storage"][name] = val
-		else:
-			raise IOError("Cannot modify loom file when connected in read-only mode")
 
 	def __delitem__(self, name: str) -> None:
 		"""
 		Remove a named attribute
 		"""
-		if self._write_access:
+		if self._read_write_mode:
 			return self.__delattr__(name)
-		raise IOError("Cannot modify loom file when connected in read-only mode")
+		else:
+			raise IOError("Cannot modify loom file when connected in read-only mode")
 
 	def __delattr__(self, name: str) -> None:
 		"""
 		Remove a named attribute
 		"""
-		if self._write_access:
+		if not self._read_write_mode:
+			raise IOError("Cannot modify loom file when connected in read-only mode")
+		else:
 			if self.ds is not None:
 				a = ["/row_attrs/", "/col_attrs/"][self.axis]
 				if self.ds._file[a].__contains__(name):
@@ -170,8 +174,6 @@ class AttributeManager:
 					self.ds._file.flush()
 			if name in self.__dict__["storage"]:
 				del self.__dict__["storage"][name]
-		else:
-			raise IOError("Cannot modify loom file when connected in read-only mode")
 
 	def permute(self, ordering: np.ndarray) -> None:
 		"""
@@ -180,7 +182,8 @@ class AttributeManager:
 		Remarks:
 			This permutes the order of the values for each attribute in the file
 		"""
-		if self._write_access:
+		if self._read_write_mode:
 			for key in self.keys():
 				self[key] = self[key][ordering]
-		raise IOError("Cannot modify loom file when connected in read-only mode")
+		else:
+			raise IOError("Cannot modify loom file when connected in read-only mode")

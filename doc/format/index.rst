@@ -3,6 +3,12 @@
 Loom file format specs
 ======================
 
+Versions
+--------
+
+This specification defines the Loom file format version ``2.0.1``.
+
+
 .. _formatinfo:
 
 Introduction
@@ -89,6 +95,12 @@ Global attributes
    attribute <https://www.hdfgroup.org/HDF5/Tutor/crtatt.html>`__ on the
    root ``/`` group, which can be any valid scalar or multidimensional datatype and should be
    interpreted as attributes of the whole ``.loom`` file. 
+-  There can OPTIONALLY be an `HDF5
+   attribute <https://www.hdfgroup.org/HDF5/Tutor/crtatt.html>`__ on the
+   root ``/`` group named ``LOOM_SPEC_VERSION``, a string value giving the
+   loom file spec version that was followed in creating the file. See top of this
+   document for the current version of the spec.
+
 
 Row and column attributes
 ^^^^^^^^^^^^^^^^^^^^^^^^^

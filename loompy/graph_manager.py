@@ -26,14 +26,29 @@ class GraphManager:
 		storage: Dict[str, np.ndarray] = {}
 		setattr(self, "!storage", storage)
 
-		self._write_access = False
+		self._read_write_mode = False
 		if ds is not None:
-			self._write_access = ds._mode == 'r+'
-			a = ["row_edges", "col_edges"][self.axis]
+			self._read_write_mode = ds._mode == 'r+'
+			# Patch old files that use the old naming convention
+			if self._read_write_mode:
+				if "row_graphs" not in ds._file:
+					ds._file.create_group('/row_graphs')
+				if "col_graphs" not in ds._file:
+					ds._file.create_group('/col_graphs')
+				if "row_edges" in ds._file:
+					for key in ds._file["row_edges"]:
+						ds._file["row_graphs"][key] = ds._file["row_edges"][key]
+					del ds._file["row_edges"]
+				if "col_edges" in ds._file:
+					for key in ds._file["col_edges"]:
+						ds._file["col_graphs"][key] = ds._file["col_edges"][key]
+					del ds._file["col_edges"]
+
+			a = ["row_graphs", "col_graphs"][self.axis]
 			if a in ds._file:
 				for key in ds._file[a]:
 					self.__dict__["storage"][key] = None
-			elif self._write_access:
+			elif self._read_write_mode:
 				ds._file.create_group(a)
 			else:
 				logging.warn("Missing graph group not added: cannot modify loom file when connected in read-only mode")
@@ -65,19 +80,19 @@ class GraphManager:
 
 		If a graph has no timestamp and the loom file is connected in read-only mode, "19700101T000000Z" (start of Unix Time) is returned.
 		"""
-		a = ["/row_edges/", "/col_edges/"][self.axis]
+		a = ["row_graphs", "col_graphs"][self.axis]
 
 		if name is None:
 			if "last_modified" in self.ds._file[a].attrs:
 				return self.ds._file[a].attrs["last_modified"]
-			elif self._write_access:
+			elif self._read_write_mode:
 				self.ds._file[a].attrs["last_modified"] = timestamp()
 				self.ds._file.flush()
 				return self.ds._file[a].attrs["last_modified"]
 		if name is not None:
 			if "last_modified" in self.ds._file[a + name].attrs:
 				return self.ds._file[a][name].attrs["last_modified"]
-			elif self._write_access:
+			elif self._read_write_mode:
 				self.ds._file[a][name].attrs["last_modified"] = timestamp()
 				self.ds._file.flush()
 				return self.ds._file[a][name].attrs["last_modified"]
@@ -107,7 +122,7 @@ class GraphManager:
 			g = self.__dict__["storage"][name]
 			if g is None:
 				# Read values from the HDF5 file
-				a = ["row_edges", "col_edges"][self.axis]
+				a = ["row_graphs", "col_graphs"][self.axis]
 				r = self.ds._file[a][name]["a"]
 				c = self.ds._file[a][name]["b"]
 				w = self.ds._file[a][name]["w"]
@@ -118,12 +133,14 @@ class GraphManager:
 			raise AttributeError(f"'{type(self)}' object has no graph '{name}' on axis {self.axis}")
 
 	def __setitem__(self, name: str, g: sparse.coo_matrix) -> None:
-		if self._write_access:
+		if self._read_write_mode:
 			return self.__setattr__(name, g)
 		raise IOError("Cannot modify loom file when connected in read-only mode")
 
 	def __setattr__(self, name: str, g: sparse.coo_matrix) -> None:
-		if self._write_access:
+		if not self._read_write_mode:
+			raise IOError("Cannot modify loom file when connected in read-only mode")
+		else:
 			if name.startswith("!"):
 				super(GraphManager, self).__setattr__(name[1:], g)
 			else:
@@ -148,18 +165,19 @@ class GraphManager:
 					self.__dict__["storage"][name] = g
 				else:
 					self.__dict__["storage"][name] = g
+
+	def __delitem__(self, name: str) -> None:
+		if self._read_write_mode:
+			return self.__delattr__(name)
 		else:
 			raise IOError("Cannot modify loom file when connected in read-only mode")
 
-	def __delitem__(self, name: str) -> None:
-		if self._write_access:
-			return self.__delattr__(name)
-		raise IOError("Cannot modify loom file when connected in read-only mode")
-
 	def __delattr__(self, name: str) -> None:
-		if self._write_access:
+		if not self._read_write_mode:
+			raise IOError("Cannot modify loom file when connected in read-only mode")
+		else:
 			if self.ds is not None:
-				a = ["row_edges", "col_edges"][self.axis]
+				a = ["row_graphs", "col_graphs"][self.axis]
 				if self.ds._file[a].__contains__(name):
 					del self.ds._file[a][name]["a"]
 					del self.ds._file[a][name]["b"]
@@ -168,11 +186,9 @@ class GraphManager:
 					self.ds._file.flush()
 			if name in self.__dict__["storage"]:
 				del self.__dict__["storage"][name]
-		else:
-			raise IOError("Cannot modify loom file when connected in read-only mode")
-
+	
 	def permute(self, ordering: np.ndarray) -> None:
-		if self._write_access:
+		if self._read_write_mode:
 			for name in self.keys():
 				g = self[name]
 				(a, b, w) = (g.row, g.col, g.data)

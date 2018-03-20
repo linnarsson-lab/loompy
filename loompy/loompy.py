@@ -36,6 +36,7 @@ from loompy import deprecated, timestamp
 
 
 class LoomConnection:
+
 	def __init__(self, filename: str, mode: str = 'r+') -> None:
 		"""
 		Establish a connection to a .loom file.
@@ -53,13 +54,11 @@ class LoomConnection:
 		# make sure a valid mode was passed, if not default to read-only
 		# because you probably are doing something that you don't want to
 		if mode != 'r+' and mode != 'r':
-			logging.warn("Wrong mode passed to LoomConnection, using read-only")
-			mode = 'r'
-		self._mode = mode
-		self._write_access = mode == 'r+'
+			raise ValueError("Mode must be either 'r' or 'r+'")
 		self.filename = filename
 		self._file = h5py.File(filename, mode)
 		self._closed = False
+		self._read_write_mode = self._file.mode == 'r+'
 		try:
 			if "matrix" in self._file:
 				self.shape = self._file["/matrix"].shape
@@ -85,19 +84,19 @@ class LoomConnection:
 
 	@property
 	def mode(self) -> str:
-		return self._mode
+		return self._file.mode
 
 	def last_modified(self) -> str:
 		"""
-		Return an ISO8601 timestamp when the file was last modified
+		Return an ISO8601 timestamp of when the file was last modified
 
-		If the loom file has no timestamp and is connected in read-write mode, it will be initialised to current time.
+		Note: if the file has no timestamp, and mode is 'r+', a new timestamp is created and returned.
 
-		If the loom file has no timestamp and connected in read-only mode, "19700101T000000Z" (start of Unix Time) is returned.
+		Otherwise, `19700101T000000Z` (start of Unix Time) is returned.
 		"""
 		if "last_modified" in self._file.attrs:
 			return self._file.attrs["last_modified"]
-		elif self._write_access:
+		elif self._read_write_mode:
 			# Make sure the file has modification timestamps
 			self._file.attrs["last_modified"] = timestamp()
 			self._file.flush()
@@ -183,7 +182,7 @@ class LoomConnection:
 		Returns:
 			Nothing.
 		"""
-		if self._write_access:
+		if self._read_write_mode:
 			self.layers[""][slice] = data
 		else:
 			raise IOError("Cannot modify loom file when connected in read-only mode")
@@ -230,7 +229,7 @@ class LoomConnection:
 		self.shape = (0, 0)
 		self._closed = True
 		self._mode = 'r'
-		self._write_access = False
+		self._read_write_mode = False
 
 	@property
 	def closed(self) -> bool:
@@ -238,10 +237,10 @@ class LoomConnection:
 
 	def set_layer(self, name: str, matrix: np.ndarray, chunks: Tuple[int, int] = (64, 64), chunk_cache: int = 512, dtype: str = "float32", compression_opts: int = 2) -> None:
 		"""
-		DEPRECATED.
+		**DEPRECATED** - Use `ds.layer.Name = matrix` or `ds.layer[`Name`] = matrix` instead
 		"""
 		deprecated("'set_layer' is deprecated. Use 'ds.layer.Name = matrix' or 'ds.layer['Name'] = matrix' instead")
-		if self._write_access:
+		if self._read_write_mode:
 			self.layers[name] = matrix
 		else:
 			raise IOError("Cannot modify loom file when connected in read-only mode")
@@ -270,7 +269,7 @@ class LoomConnection:
 		- Array with Nan should not be provided
 
 		"""
-		if not self._write_access:
+		if not self._read_write_mode:
 			raise IOError("Cannot add columns when connected in read-only mode")
 
 		layers_dict: Dict[str, np.ndarray] = None
@@ -305,7 +304,7 @@ class LoomConnection:
 						fill_with = np.zeros(1, dtype=col_attrs[key].dtype)[0]
 					else:
 						fill_with = fill_values[key]
-					self.set_attr(key, np.array([fill_with] * self.shape[1]), axis=1)
+					self.ca[key] = np.array([fill_with] * self.shape[1])
 				else:
 					did_remove = True
 					todel.append(key)
@@ -330,7 +329,7 @@ class LoomConnection:
 					did_remove = True
 					todel.append(key)
 		for key in todel:
-			self.delete_attr(key, axis=1)
+			del self.ca[key] # delete_attr(key, axis=1)
 		if did_remove:
 			logging.warn("Some column attributes were removed: " + ",".join(todel))
 
@@ -347,22 +346,23 @@ class LoomConnection:
 			self.layers[key][:, old_n_cols:n_cols] = layers_dict[key]
 		self._file.flush()
 
-	def add_loom(self, other_file: str, key: str = None, fill_values: Dict[str, np.ndarray]=None, batch_size: int=1000) -> None:
+	def add_loom(self, other_file: str, key: str = None, fill_values: Dict[str, np.ndarray]=None, batch_size: int=1000, convert_attrs: bool=False) -> None:
 		"""
 		Add the content of another loom file
 
 		Args:
-			other_file (str):	filename of the loom file to append
-			key:				Primary key to use to align rows in the other file with this file
-			fill_values (dict): default values to use for missing attributes (or None to drop missing attrs, or 'auto' to fill with sensible defaults)
-			batch_size (int): the batch size used by batchscan (limits the number of rows/columns read in memory)
+			other_file (str):       filename of the loom file to append
+			key:                    Primary key to use to align rows in the other file with this file
+			fill_values (dict):     default values to use for missing attributes (or None to drop missing attrs, or 'auto' to fill with sensible defaults)
+			batch_size (int):       the batch size used by batchscan (limits the number of rows/columns read in memory)
+			convert_attrs (bool):   convert file attributes that differ between files into column attributes
 
 		Returns:
 			Nothing, but adds the loom file. Note that the other loom file must have exactly the same
 			number of rows, and must have exactly the same column attributes.
 			The all the contents including layers but ignores layers in `other_file` that are not already persent in self
 		"""
-		if not self._write_access:
+		if not self._read_write_mode:
 			raise IOError("Cannot add data when connected in read-only mode")
 		# Connect to the loom files
 		other = connect(other_file)
@@ -388,6 +388,22 @@ class LoomConnection:
 		if len(diff_layers) > 0:
 			raise ValueError("%s is missing a layer, cannot merge with current file. layers missing:%s" % (other_file, diff_layers))
 
+		if convert_attrs:
+			# Prepare to replace any global attribute that differ between looms or is missing in either loom with a column attribute.
+			globalkeys = set(self.attrs)
+			globalkeys.update(other.attrs)
+			for globalkey in globalkeys:
+				if globalkey in self.attrs and globalkey in other.attrs and self.attrs[globalkey] == other.attrs[globalkey]:
+					continue
+				if globalkey not in self.col_attrs:
+					self_value = self.attrs[globalkey] if globalkey in self.attrs else np.zeros(1, dtype=other.attrs[globalkey].dtype)[0]
+					self.col_attrs[globalkey] = np.array([self_value] * self.shape[1])
+				if globalkey not in other.col_attrs:
+					other_value = other.attrs[globalkey] if globalkey in other.attrs else  np.zeros(1, dtype=self.attrs[globalkey].dtype)[0]
+					other.col_attrs[globalkey] =  np.array([other_value] * other.shape[1])
+				if globalkey in self.attrs:
+					delattr(self.attrs, globalkey)
+
 		for (ix, selection, vals) in other.batch_scan_layers(axis=1, layers=self.layers.keys(), batch_size=batch_size):
 			ca = {key: v[selection] for key, v in other.col_attrs.items()}
 			if ordering is not None:
@@ -397,10 +413,10 @@ class LoomConnection:
 
 	def delete_attr(self, name: str, axis: int = 0) -> None:
 		"""
-		DEPRECATED
+		**DEPRECATED** - Use `del ds.ra.key` or `del ds.ca.key` instead, where `key` is replaced with the attribute name
 		"""
 		deprecated("'delete_attr' is deprecated. Use 'del ds.ra.key' or 'del ds.ca.key' instead")
-		if self._write_access:
+		if self._read_write_mode:
 			if axis == 0:
 				del self.ra[name]
 			else:
@@ -410,10 +426,10 @@ class LoomConnection:
 
 	def set_attr(self, name: str, values: np.ndarray, axis: int = 0, dtype: str = None) -> None:
 		"""
-		DEPRECATED
+		**DEPRECATED** - Use `ds.ra.key = values` or `ds.ca.key = values` instead
 		"""
 		deprecated("'set_attr' is deprecated. Use 'ds.ra.key = values' or 'ds.ca.key = values' instead")
-		if self._write_access:
+		if self._read_write_mode:
 			if axis == 0:
 				self.ra[name] = values
 			else:
@@ -423,7 +439,7 @@ class LoomConnection:
 
 	def list_edges(self, *, axis: int) -> List[str]:
 		"""
-		DEPRECATED
+		**DEPRECATED** - Use `ds.row_graphs.keys()` or `ds.col_graphs.keys()` instead
 		"""
 		deprecated("'list_edges' is deprecated. Use 'ds.row_graphs.keys()' or 'ds.col_graphs.keys()' instead")
 		if axis == 0:
@@ -435,7 +451,7 @@ class LoomConnection:
 
 	def get_edges(self, name: str, *, axis: int) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
 		"""
-		DEPRECATED
+		**DEPRECATED** - Use `ds.row_graphs[name]` or `ds.col_graphs[name]` instead
 		"""
 		deprecated("'get_edges' is deprecated. Use 'ds.row_graphs[name]' or 'ds.col_graphs[name]' instead")
 		if axis == 0:
@@ -448,10 +464,10 @@ class LoomConnection:
 
 	def set_edges(self, name: str, a: np.ndarray, b: np.ndarray, w: np.ndarray, *, axis: int) -> None:
 		"""
-		DEPRECATED
+		**DEPRECATED** - Use `ds.row_graphs[name] = g` or `ds.col_graphs[name] = g` instead
 		"""
 		deprecated("'set_edges' is deprecated. Use 'ds.row_graphs[name] = g' or 'ds.col_graphs[name] = g' instead")
-		if self._write_access:
+		if self._read_write_mode:
 			try:
 				g = scipy.sparse.coo_matrix((w, (a, b)), (self.shape[axis], self.shape[axis]))
 			except Exception:
@@ -465,7 +481,7 @@ class LoomConnection:
 		else:
 			raise IOError("Cannot modify loom file when connected in read-only mode")
 
-	def scan(self, *, items: np.ndarray = None, axis: int = None, layers: Iterable = None, key: str = None, batch_size: int = 1000) -> Iterable[Tuple[int, np.ndarray, loompy.LoomView]]:
+	def scan(self, *, items: np.ndarray = None, axis: int = None, layers: Iterable = None, key: str = None, batch_size: int = 8*64) -> Iterable[Tuple[int, np.ndarray, loompy.LoomView]]:
 		"""
 		Scan across one axis and return batches of rows (columns) as LoomView objects
 
@@ -473,6 +489,7 @@ class LoomConnection:
 		----
 		items: np.ndarray
 			the indexes [0, 2, 13, ... ,973] of the rows/cols to include along the axis
+			OR: boolean mask array giving the rows/cols to include
 		axis: int
 			0:rows or 1:cols
 		batch_size: int
@@ -503,6 +520,9 @@ class LoomConnection:
 			layers = self.layers.keys()
 		if layers == "":
 			layers = [""]
+
+		if (items is not None) and (np.issubdtype(items.dtype, np.bool_)):
+			items = np.where(items)[0]
 
 		ordering: np.ndarray = None
 		vals: Dict[str, loompy.MemoryLoomLayer] = {}
@@ -548,7 +568,7 @@ class LoomConnection:
 			while ix < self.shape[0]:
 				rows_per_chunk = min(self.shape[0] - ix, rows_per_chunk)
 				selection = items - ix
-				# Pick out the cells that are in this batch
+				# Pick out the genes that are in this batch
 				selection = selection[np.where(np.logical_and(selection >= 0, selection < rows_per_chunk))[0]]
 				if selection.shape[0] == 0:
 					ix += rows_per_chunk
@@ -571,7 +591,7 @@ class LoomConnection:
 
 	def batch_scan(self, cells: np.ndarray = None, genes: np.ndarray = None, axis: int = 0, batch_size: int = 1000, layer: str = None) -> Iterable[Tuple[int, np.ndarray, np.ndarray]]:
 		"""
-		DEPRECATED
+		**DEPRECATED** - Use `scan` instead
 		"""
 		deprecated("'batch_scan' is deprecated. Use 'scan' instead")
 		if cells is None:
@@ -623,7 +643,7 @@ class LoomConnection:
 
 	def batch_scan_layers(self, cells: np.ndarray = None, genes: np.ndarray = None, axis: int = 0, batch_size: int = 1000, layers: Iterable = None) -> Iterable[Tuple[int, np.ndarray, Dict]]:
 		"""
-		DEPRECATED
+		**DEPRECATED** - Use `scan` instead
 		"""
 		deprecated("'batch_scan_layers' is deprecated. Use 'scan' instead")
 		if cells is None:
@@ -709,7 +729,7 @@ class LoomConnection:
 		Returns:
 			Nothing.
 		"""
-		if not self._write_access:
+		if not self._read_write_mode:
 			raise IOError("Cannot modify loom file when connected in read-only mode")
 		if self._file.__contains__("tiles"):
 			del self._file['tiles']
@@ -767,12 +787,16 @@ def _create_sparse(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.nd
 	"""
 	Create a new loom file from a sparse matrix input
 	"""
+	if os.path.exists(filename):
+		raise FileExistsError("Cannot overwrite existing file " + filename)
 	logging.info("Converting to csc format")
 	matrix = matrix.tocsc()
-	window = 2000
+	window = 64
 	ix = 0
 	while ix < matrix.shape[1]:
 		window = min(window, matrix.shape[1] - ix)
+		if window == 0:
+			break
 		ca = {key: val[ix:ix + window] for (key, val) in col_attrs.items()}
 		create_append(filename, matrix[:, ix:ix + window].toarray(), row_attrs, ca, file_attrs=file_attrs)
 		ix += window
@@ -810,8 +834,9 @@ def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loomp
 
 	Args:
 		filename (str):         The filename (typically using a `.loom` file extension)
-		layers (np.ndarray or Dict[str, np.ndarray] or LayerManager):
+		layers (np.ndarray or scipy.sparse or Dict[str, np.ndarray] or LayerManager):
 								Two-dimensional (N-by-M) numpy ndarray of float values
+								Or sparse matrix
 								Or dictionary of named layers, each an N-by-M ndarray
 								or LayerManager, each layer an N-by-M ndarray
 		row_attrs (dict):       Row attributes, where keys are attribute names and values
@@ -833,14 +858,13 @@ def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loomp
 
 	if isinstance(layers, np.ndarray):
 		layers = {"": layers}
+	elif scipy.sparse.issparse(layers):
+		_create_sparse(filename, layers, row_attrs, col_attrs, file_attrs=file_attrs)
+		return
 	elif isinstance(layers, loompy.LayerManager):
 		layers = {k: v[:, :] for k, v in layers.items()}
 	if "" not in layers:
 		raise ValueError("Data for default layer must be provided")
-	if scipy.sparse.issparse(layers[""]):
-		if len(layers) > 1:
-			raise NotImplementedError("Creating from sparse matrix supports only single layer")
-		_create_sparse(filename, layers[""], row_attrs, col_attrs, file_attrs=file_attrs, layers=layers)
 
 	# Create the file (empty).
 	# Yes, this might cause an exception, which we prefer to send to the caller
@@ -848,6 +872,8 @@ def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loomp
 	f.create_group('/layers')
 	f.create_group('/row_attrs')
 	f.create_group('/col_attrs')
+	f.create_group('/row_graphs')
+	f.create_group('/col_graphs')
 	f.flush()
 	f.close()
 
@@ -867,7 +893,8 @@ def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loomp
 
 			# store creation date
 			currentTime = time.localtime(time.time())
-			ds.attrs['CreationDate'] = time.strftime('%Y/%m/%d %H:%M:%S', currentTime)
+			ds.attrs['CreationDate'] = timestamp()
+			ds.attrs["LOOM_SPEC_VERSION"] = loompy.loom_spec_version
 
 	except ValueError as ve:
 		ds.close(suppress_warning=True)
@@ -924,16 +951,17 @@ def create_from_cellranger(indir: str, outdir: str = None, genome: str = None) -
 	create(os.path.join(outdir, sampleid + ".loom"), matrix, row_attrs, col_attrs, file_attrs={"Genome": genome})
 
 
-def combine(files: List[str], output_file: str, key: str = None, file_attrs: Dict[str, str]=None, batch_size: int=1000) -> None:
+def combine(files: List[str], output_file: str, key: str = None, file_attrs: Dict[str, str]=None, batch_size: int=1000, convert_attrs: bool=False) -> None:
 	"""
 	Combine two or more loom files and save as a new loom file
 
 	Args:
-		files (list of str):	the list of input files (full paths)
-		output_file (str):		full path of the output loom file
-		key (string):			Row attribute to use to verify row ordering
-		file_attrs (dict):		file attributes (title, description, url, etc.)
-		batch_size (int):		limits the batch or cols/rows read in memory (default: 1000)
+		files (list of str):    the list of input files (full paths)
+		output_file (str):      full path of the output loom file
+		key (string):           Row attribute to use to verify row ordering
+		file_attrs (dict):      file attributes (title, description, url, etc.)
+		batch_size (int):       limits the batch or cols/rows read in memory (default: 1000)
+		convert_attrs (bool):   convert file attributes that differ between files into column attributes
 
 	Returns:
 		Nothing, but creates a new loom file combining the input files.
@@ -955,7 +983,7 @@ def combine(files: List[str], output_file: str, key: str = None, file_attrs: Dic
 
 	if len(files) >= 2:
 		for f in files[1:]:
-			ds.add_loom(f, key, batch_size=batch_size)
+			ds.add_loom(f, key, batch_size=batch_size, convert_attrs=convert_attrs)
 	ds.close()
 
 
