@@ -90,7 +90,7 @@ class LayerManager:
 		else:
 			if self.ds is not None:
 				matrix = val
-				if self.ds.mode != "r+":
+				if self.ds._file.mode != "r+":
 					raise IOError("Cannot save layers when connected in read-only mode")
 				if not np.isfinite(matrix).all():
 					raise ValueError("INF and NaN not allowed in loom matrix")

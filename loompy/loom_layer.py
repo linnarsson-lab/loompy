@@ -44,7 +44,7 @@ class LoomLayer():
 		if self.name == "":
 			if "last_modified" in self.ds._file["/matrix"].attrs:
 				return self.ds._file["/matrix"].attrs["last_modified"]
-			elif self.ds.mode == 'r+':
+			elif self.ds._file.mode == 'r+':
 				self.ds._file["/matrix"].attrs["last_modified"] = timestamp()
 				self.ds._file.flush()
 				return self.ds._file["/matrix"].attrs["last_modified"]
@@ -52,7 +52,7 @@ class LoomLayer():
 		if self.name != "":
 			if "last_modified" in self.ds._file["/layers/" + self.name].attrs:
 				return self.ds._file["/layers/" + self.name].attrs["last_modified"]
-			elif self.ds.mode == 'r+':
+			elif self.ds._file.mode == 'r+':
 				self.ds._file["/layers/" + self.name].attrs["last_modified"] = timestamp()
 				self.ds._file.flush()
 				return self.ds._file["/layers/" + self.name].attrs["last_modified"]
