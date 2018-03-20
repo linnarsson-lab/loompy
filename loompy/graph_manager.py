@@ -26,7 +26,16 @@ class GraphManager:
 		setattr(self, "!storage", storage)
 
 		if ds is not None:
-			a = ["row_edges", "col_edges"][self.axis]
+			# Patch old files that use the old naming convention
+			if self._file.mode == "r+":
+				if "row_edges" in ds._file:
+					for key in ds._file["row_edges"]:
+						ds._file["row_graphs"][key] = ds._file["row_edges"][key]
+				if "col_edges" in ds._file:
+					for key in ds._file["col_edges"]:
+						ds._file["col_graphs"][key] = ds._file["col_edges"][key]
+
+			a = ["row_graphs", "col_graphs"][self.axis]
 			if a in ds._file:
 				for key in ds._file[a]:
 					self.__dict__["storage"][key] = None
@@ -58,7 +67,7 @@ class GraphManager:
 		Note: if the graphs do not contain a timestamp, and the mode is 'r+', a new timestamp is created and returned.
 		Otherwise, the current time in UTC will be returned.
 		"""
-		a = ["/row_edges/", "/col_edges/"][self.axis]
+		a = ["row_graphs", "col_graphs"][self.axis]
 
 		if name is None:
 			if "last_modified" in self.ds._file[a].attrs:
@@ -100,7 +109,7 @@ class GraphManager:
 			g = self.__dict__["storage"][name]
 			if g is None:
 				# Read values from the HDF5 file
-				a = ["row_edges", "col_edges"][self.axis]
+				a = ["row_graphs", "col_graphs"][self.axis]
 				r = self.ds._file[a][name]["a"]
 				c = self.ds._file[a][name]["b"]
 				w = self.ds._file[a][name]["w"]
@@ -119,7 +128,7 @@ class GraphManager:
 		else:
 			g = sparse.coo_matrix(g)
 			if self.ds is not None:
-				a = ["row_edges", "col_edges"][self.axis]
+				a = ["row_graphs", "col_graphs"][self.axis]
 				if g.shape[0] != self.ds.shape[self.axis] or g.shape[1] != self.ds.shape[self.axis]:
 					raise ValueError(f"Adjacency matrix shape for axis {self.axis} must be ({self.ds.shape[self.axis]},{self.ds.shape[self.axis]}) but shape was {g.shape}")
 				if name in self.ds._file[a]:
@@ -144,7 +153,7 @@ class GraphManager:
 
 	def __delattr__(self, name: str) -> None:
 		if self.ds is not None:
-			a = ["row_edges", "col_edges"][self.axis]
+			a = ["row_graphs", "col_graphs"][self.axis]
 			if self.ds._file[a].__contains__(name):
 				del self.ds._file[a][name]["a"]
 				del self.ds._file[a][name]["b"]
