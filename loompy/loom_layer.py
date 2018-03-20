@@ -51,11 +51,11 @@ class LoomLayer():
 
 		if self.name != "":
 			if "last_modified" in self.ds._file["/layers/" + self.name].attrs:
-				return self.ds._file["/layers" + self.name].attrs["last_modified"]
+				return self.ds._file["/layers/" + self.name].attrs["last_modified"]
 			elif self.ds.mode == 'r+':
-				self.ds._file["/layers" + self.name].attrs["last_modified"] = timestamp()
+				self.ds._file["/layers/" + self.name].attrs["last_modified"] = timestamp()
 				self.ds._file.flush()
-				return self.ds._file["/layers" + self.name].attrs["last_modified"]
+				return self.ds._file["/layers/" + self.name].attrs["last_modified"]
 
 		return timestamp()
 
@@ -72,7 +72,7 @@ class LoomLayer():
 			self.ds._file.flush()
 		else:
 			self.ds._file['/layers/' + self.name][slice] = data
-			self.ds._file["/layers" + self.name].attrs["last_modified"] = timestamp()
+			self.ds._file["/layers/" + self.name].attrs["last_modified"] = timestamp()
 			self.ds._file.attrs["last_modified"] = timestamp()
 			self.ds._file.flush()
 
@@ -91,7 +91,7 @@ class LoomLayer():
 			nonzeros = np.where(vals > 0)
 			data.append(vals[nonzeros])
 			row.append(nonzeros[0])
-			col.append(nonzeros[1])
+			col.append(nonzeros[1] + ix)
 		return scipy.sparse.coo_matrix((np.concatenate(data), (np.concatenate(row), np.concatenate(col))), shape=(n_genes, n_cells))
 
 	def resize(self, size: Tuple[int, int], axis: int = None) -> None:

@@ -88,7 +88,7 @@ class LoomConnection:
 
 		Note: if the file has no timestamp, and mode is 'r+', a new timestamp is created and returned.
 		Otherwise, the current time in UTC is returned
-		"""	
+		"""
 		if "last_modified" in self._file.attrs:
 			return self._file.attrs["last_modified"]
 		elif self.mode == "r+":
@@ -187,7 +187,7 @@ class LoomConnection:
 			rows:		Rows to include, or None to include all
 			cols:		Columns to include, or None to include all
 			layer:		Layer to return, or None to return the default layer
-		
+
 		Returns:
 			scipy.sparse.coo_matrix
 		"""
@@ -277,7 +277,7 @@ class LoomConnection:
 			if n_cols == 0:
 				n_cols = matrix.shape[1]
 			elif matrix.shape[1] != n_cols:
-				raise ValueError(f"Layer {layer} has {matrix.shape[1]} columns but the first layer had {n_cols}")				
+				raise ValueError(f"Layer {layer} has {matrix.shape[1]} columns but the first layer had {n_cols}")
 		for layer in self.layers.keys():
 			if layer not in layers_dict.keys():
 				raise ValueError(f"Layer {layer} does not exist in the target loom file")
@@ -291,7 +291,7 @@ class LoomConnection:
 						fill_with = np.zeros(1, dtype=col_attrs[key].dtype)[0]
 					else:
 						fill_with = fill_values[key]
-					self.set_attr(key, np.array([fill_with] * self.shape[1]), axis=1)
+					self.ca[key] = np.array([fill_with] * self.shape[1])
 				else:
 					did_remove = True
 					todel.append(key)
@@ -316,7 +316,7 @@ class LoomConnection:
 					did_remove = True
 					todel.append(key)
 		for key in todel:
-			self.delete_attr(key, axis=1)
+			del self.ca[key] # delete_attr(key, axis=1)
 		if did_remove:
 			logging.warn("Some column attributes were removed: " + ",".join(todel))
 
@@ -333,15 +333,16 @@ class LoomConnection:
 			self.layers[key][:, old_n_cols:n_cols] = layers_dict[key]
 		self._file.flush()
 
-	def add_loom(self, other_file: str, key: str = None, fill_values: Dict[str, np.ndarray]=None, batch_size: int=1000) -> None:
+	def add_loom(self, other_file: str, key: str = None, fill_values: Dict[str, np.ndarray]=None, batch_size: int=1000, convert_attrs: bool=False) -> None:
 		"""
 		Add the content of another loom file
 
 		Args:
-			other_file (str):	filename of the loom file to append
-			key:				Primary key to use to align rows in the other file with this file
-			fill_values (dict): default values to use for missing attributes (or None to drop missing attrs, or 'auto' to fill with sensible defaults)
-			batch_size (int): the batch size used by batchscan (limits the number of rows/columns read in memory)
+			other_file (str):       filename of the loom file to append
+			key:                    Primary key to use to align rows in the other file with this file
+			fill_values (dict):     default values to use for missing attributes (or None to drop missing attrs, or 'auto' to fill with sensible defaults)
+			batch_size (int):       the batch size used by batchscan (limits the number of rows/columns read in memory)
+			convert_attrs (bool):   convert file attributes that differ between files into column attributes
 
 		Returns:
 			Nothing, but adds the loom file. Note that the other loom file must have exactly the same
@@ -373,6 +374,22 @@ class LoomConnection:
 		diff_layers = set(self.layers.keys()) - set(other.layers.keys())
 		if len(diff_layers) > 0:
 			raise ValueError("%s is missing a layer, cannot merge with current file. layers missing:%s" % (other_file, diff_layers))
+
+		if convert_attrs:
+			# Prepare to replace any global attribute that differ between looms or is missing in either loom with a column attribute.
+			globalkeys = set(self.attrs)
+			globalkeys.update(other.attrs)
+			for globalkey in globalkeys:
+				if globalkey in self.attrs and globalkey in other.attrs and self.attrs[globalkey] == other.attrs[globalkey]:
+					continue
+				if globalkey not in self.col_attrs:
+					self_value = self.attrs[globalkey] if globalkey in self.attrs else np.zeros(1, dtype=other.attrs[globalkey].dtype)[0]
+					self.col_attrs[globalkey] = np.array([self_value] * self.shape[1])
+				if globalkey not in other.col_attrs:
+					other_value = other.attrs[globalkey] if globalkey in other.attrs else  np.zeros(1, dtype=self.attrs[globalkey].dtype)[0]
+					other.col_attrs[globalkey] =  np.array([other_value] * other.shape[1])
+				if globalkey in self.attrs:
+					delattr(self.attrs, globalkey)
 
 		for (ix, selection, vals) in other.batch_scan_layers(axis=1, layers=self.layers.keys(), batch_size=batch_size):
 			ca = {key: v[selection] for key, v in other.col_attrs.items()}
@@ -742,12 +759,16 @@ def _create_sparse(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.nd
 	"""
 	Create a new loom file from a sparse matrix input
 	"""
+	if os.path.exists(filename):
+		raise FileExistsError("Cannot overwrite existing file " + filename)
 	logging.info("Converting to csc format")
 	matrix = matrix.tocsc()
-	window = 2000
+	window = 64
 	ix = 0
 	while ix < matrix.shape[1]:
 		window = min(window, matrix.shape[1] - ix)
+		if window == 0:
+			break
 		ca = {key: val[ix:ix + window] for (key, val) in col_attrs.items()}
 		create_append(filename, matrix[:, ix:ix + window].toarray(), row_attrs, ca, file_attrs=file_attrs)
 		ix += window
@@ -759,7 +780,7 @@ def create_append(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray]
 
 	Args:
 		filename (str):         The filename (typically using a `.loom` file extension)
-		layers (np.ndarray or Dict[str, np.ndarray] or LayerManager): 
+		layers (np.ndarray or Dict[str, np.ndarray] or LayerManager):
 								Two-dimensional (N-by-M) numpy ndarray of float values
 								Or dictionary of named layers, each an N-by-M ndarray
 								or LayerManager, each layer an N-by-M ndarray
@@ -785,8 +806,9 @@ def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loomp
 
 	Args:
 		filename (str):         The filename (typically using a `.loom` file extension)
-		layers (np.ndarray or Dict[str, np.ndarray] or LayerManager): 
+		layers (np.ndarray or scipy.sparse or Dict[str, np.ndarray] or LayerManager):
 								Two-dimensional (N-by-M) numpy ndarray of float values
+								Or sparse matrix
 								Or dictionary of named layers, each an N-by-M ndarray
 								or LayerManager, each layer an N-by-M ndarray
 		row_attrs (dict):       Row attributes, where keys are attribute names and values
@@ -797,7 +819,7 @@ def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loomp
 								values are strings
 	Returns:
 		Nothing
-	
+
 	Remarks:
 		If the file exists, it will be overwritten. See create_append for a function that will append to existing files.
 	"""
@@ -808,14 +830,13 @@ def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loomp
 
 	if isinstance(layers, np.ndarray):
 		layers = {"": layers}
+	elif scipy.sparse.issparse(layers):
+		_create_sparse(filename, layers, row_attrs, col_attrs, file_attrs=file_attrs)
+		return
 	elif isinstance(layers, loompy.LayerManager):
 		layers = {k: v[:, :] for k, v in layers.items()}
 	if "" not in layers:
 		raise ValueError("Data for default layer must be provided")
-	if scipy.sparse.issparse(layers[""]):
-		if len(layers) > 1:
-			raise NotImplementedError("Creating from sparse matrix supports only single layer")
-		_create_sparse(filename, layers[""], row_attrs, col_attrs, file_attrs=file_attrs, layers=layers)
 
 	# Create the file (empty).
 	# Yes, this might cause an exception, which we prefer to send to the caller
@@ -823,6 +844,8 @@ def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loomp
 	f.create_group('/layers')
 	f.create_group('/row_attrs')
 	f.create_group('/col_attrs')
+	f.create_group('/row_graphs')
+	f.create_group('/col_graphs')
 	f.flush()
 	f.close()
 
@@ -842,7 +865,8 @@ def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loomp
 
 			# store creation date
 			currentTime = time.localtime(time.time())
-			ds.attrs['CreationDate'] = time.strftime('%Y/%m/%d %H:%M:%S', currentTime)
+			ds.attrs['CreationDate'] = timestamp()
+			ds.attrs["LOOM_SPEC_VERSION"] = loompy.loom_spec_version
 
 	except ValueError as ve:
 		ds.close(suppress_warning=True)
@@ -899,16 +923,17 @@ def create_from_cellranger(indir: str, outdir: str = None, genome: str = None) -
 	create(os.path.join(outdir, sampleid + ".loom"), matrix, row_attrs, col_attrs, file_attrs={"Genome": genome})
 
 
-def combine(files: List[str], output_file: str, key: str = None, file_attrs: Dict[str, str]=None, batch_size: int=1000) -> None:
+def combine(files: List[str], output_file: str, key: str = None, file_attrs: Dict[str, str]=None, batch_size: int=1000, convert_attrs: bool=False) -> None:
 	"""
 	Combine two or more loom files and save as a new loom file
 
 	Args:
-		files (list of str):	the list of input files (full paths)
-		output_file (str):		full path of the output loom file
-		key (string):			Row attribute to use to verify row ordering
-		file_attrs (dict):		file attributes (title, description, url, etc.)
-		batch_size (int):		limits the batch or cols/rows read in memory (default: 1000)
+		files (list of str):    the list of input files (full paths)
+		output_file (str):      full path of the output loom file
+		key (string):           Row attribute to use to verify row ordering
+		file_attrs (dict):      file attributes (title, description, url, etc.)
+		batch_size (int):       limits the batch or cols/rows read in memory (default: 1000)
+		convert_attrs (bool):   convert file attributes that differ between files into column attributes
 
 	Returns:
 		Nothing, but creates a new loom file combining the input files.
@@ -930,7 +955,7 @@ def combine(files: List[str], output_file: str, key: str = None, file_attrs: Dic
 
 	if len(files) >= 2:
 		for f in files[1:]:
-			ds.add_loom(f, key, batch_size=batch_size)
+			ds.add_loom(f, key, batch_size=batch_size, convert_attrs=convert_attrs)
 	ds.close()
 
 
