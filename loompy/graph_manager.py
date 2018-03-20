@@ -28,12 +28,18 @@ class GraphManager:
 		if ds is not None:
 			# Patch old files that use the old naming convention
 			if ds._file.mode == "r+":
+				if "row_graphs" not in ds._file:
+					ds._file.create_group('/row_graphs')
+				if "col_graphs" not in ds._file:
+					ds._file.create_group('/col_graphs')
 				if "row_edges" in ds._file:
 					for key in ds._file["row_edges"]:
 						ds._file["row_graphs"][key] = ds._file["row_edges"][key]
+					del ds._file["row_edges"]
 				if "col_edges" in ds._file:
 					for key in ds._file["col_edges"]:
 						ds._file["col_graphs"][key] = ds._file["col_edges"][key]
+					del ds._file["col_edges"]
 
 			a = ["row_graphs", "col_graphs"][self.axis]
 			if a in ds._file:
