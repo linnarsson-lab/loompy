@@ -227,7 +227,7 @@ class LoomConnection:
 
 	def set_layer(self, name: str, matrix: np.ndarray, chunks: Tuple[int, int] = (64, 64), chunk_cache: int = 512, dtype: str = "float32", compression_opts: int = 2) -> None:
 		"""
-		DEPRECATED.
+		**DEPRECATED** - Use `ds.layer.Name = matrix` or `ds.layer[`Name`] = matrix` instead
 		"""
 		deprecated("'set_layer' is deprecated. Use 'ds.layer.Name = matrix' or 'ds.layer['Name'] = matrix' instead")
 		self.layers[name] = matrix
@@ -400,7 +400,7 @@ class LoomConnection:
 
 	def delete_attr(self, name: str, axis: int = 0) -> None:
 		"""
-		DEPRECATED
+		**DEPRECATED** - Use `del ds.ra.key` or `del ds.ca.key` instead, where `key` is replaced with the attribute name
 		"""
 		deprecated("'delete_attr' is deprecated. Use 'del ds.ra.key' or 'del ds.ca.key' instead")
 		if axis == 0:
@@ -410,7 +410,7 @@ class LoomConnection:
 
 	def set_attr(self, name: str, values: np.ndarray, axis: int = 0, dtype: str = None) -> None:
 		"""
-		DEPRECATED
+		**DEPRECATED** - Use `ds.ra.key = values` or `ds.ca.key = values` instead
 		"""
 		deprecated("'set_attr' is deprecated. Use 'ds.ra.key = values' or 'ds.ca.key = values' instead")
 		if axis == 0:
@@ -420,7 +420,7 @@ class LoomConnection:
 
 	def list_edges(self, *, axis: int) -> List[str]:
 		"""
-		DEPRECATED
+		**DEPRECATED** - Use `ds.row_graphs.keys()` or `ds.col_graphs.keys()` instead
 		"""
 		deprecated("'list_edges' is deprecated. Use 'ds.row_graphs.keys()' or 'ds.col_graphs.keys()' instead")
 		if axis == 0:
@@ -432,7 +432,7 @@ class LoomConnection:
 
 	def get_edges(self, name: str, *, axis: int) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
 		"""
-		DEPRECATED
+		**DEPRECATED** - Use `ds.row_graphs[name]` or `ds.col_graphs[name]` instead
 		"""
 		deprecated("'get_edges' is deprecated. Use 'ds.row_graphs[name]' or 'ds.col_graphs[name]' instead")
 		if axis == 0:
@@ -445,7 +445,7 @@ class LoomConnection:
 
 	def set_edges(self, name: str, a: np.ndarray, b: np.ndarray, w: np.ndarray, *, axis: int) -> None:
 		"""
-		DEPRECATED
+		**DEPRECATED** - Use `ds.row_graphs[name] = g` or `ds.col_graphs[name] = g` instead
 		"""
 		deprecated("'set_edges' is deprecated. Use 'ds.row_graphs[name] = g' or 'ds.col_graphs[name] = g' instead")
 		try:
@@ -565,7 +565,7 @@ class LoomConnection:
 
 	def batch_scan(self, cells: np.ndarray = None, genes: np.ndarray = None, axis: int = 0, batch_size: int = 1000, layer: str = None) -> Iterable[Tuple[int, np.ndarray, np.ndarray]]:
 		"""
-		DEPRECATED
+		**DEPRECATED** - Use `scan` instead
 		"""
 		deprecated("'batch_scan' is deprecated. Use 'scan' instead")
 		if cells is None:
@@ -617,7 +617,7 @@ class LoomConnection:
 
 	def batch_scan_layers(self, cells: np.ndarray = None, genes: np.ndarray = None, axis: int = 0, batch_size: int = 1000, layers: Iterable = None) -> Iterable[Tuple[int, np.ndarray, Dict]]:
 		"""
-		DEPRECATED
+		**DEPRECATED** - Use `scan` instead
 		"""
 		deprecated("'batch_scan_layers' is deprecated. Use 'scan' instead")
 		if cells is None:
