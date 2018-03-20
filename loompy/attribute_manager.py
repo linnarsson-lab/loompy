@@ -54,14 +54,14 @@ class AttributeManager:
 			if name is None:
 				if "last_modified" in self.ds._file[a].attrs:
 					return self.ds._file[a].attrs["last_modified"]
-				elif self.ds.mode == 'r+':
+				elif self.ds._file.mode == 'r+':
 					self.ds._file[a].attrs["last_modified"] = timestamp()
 					self.ds._file.flush()
 					return self.ds._file[a].attrs["last_modified"]
 			if name is not None:
 				if "last_modified" in self.ds._file[a + name].attrs:
 					return self.ds._file[a + name].attrs["last_modified"]
-				elif self.ds.mode == 'r+':
+				elif self.ds._file.mode == 'r+':
 					self.ds._file[a + name].attrs["last_modified"] = timestamp()
 					self.ds._file.flush()
 					return self.ds._file[a + name].attrs["last_modified"]

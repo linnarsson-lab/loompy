@@ -36,6 +36,10 @@ from loompy import deprecated, timestamp
 
 
 class LoomConnection:
+	@property
+	def mode(self):
+		return self._file.mode
+
 	def __init__(self, filename: str, mode: str = 'r+') -> None:
 		"""
 		Establish a connection to a .loom file.
@@ -53,9 +57,7 @@ class LoomConnection:
 		# make sure a valid mode was passed, if not default to read-only
 		# because you probably are doing something that you don't want to
 		if mode != 'r+' and mode != 'r':
-			logging.warn("Wrong mode passed to LoomConnection, using read-only")
-			mode = 'r'
-		self.mode = mode
+			raise ValueError("Mode must be either 'r' or 'r+'")
 		self.filename = filename
 		self._file = h5py.File(filename, mode)
 		self._closed = False
@@ -91,7 +93,7 @@ class LoomConnection:
 		"""
 		if "last_modified" in self._file.attrs:
 			return self._file.attrs["last_modified"]
-		elif self.mode == "r+":
+		elif self._file.mode == "r+":
 			# Make sure the file has modification timestamps
 			self._file.attrs["last_modified"] = timestamp()
 			self._file.flush()
@@ -256,7 +258,7 @@ class LoomConnection:
 		- Array with Nan should not be provided
 
 		"""
-		if self.mode != "r+":
+		if self._file.mode != "r+":
 			raise IOError("Cannot add columns when connected in read-only mode")
 
 		layers_dict: Dict[str, np.ndarray] = None
@@ -349,7 +351,7 @@ class LoomConnection:
 			number of rows, and must have exactly the same column attributes.
 			The all the contents including layers but ignores layers in `other_file` that are not already persent in self
 		"""
-		if self.mode != "r+":
+		if self._file.mode != "r+":
 			raise IOError("Cannot add data when connected in read-only mode")
 		# Connect to the loom files
 		other = connect(other_file)
@@ -459,7 +461,7 @@ class LoomConnection:
 		else:
 			raise ValueError("axis must be 0 (rows) or 1 (columns)")
 
-	def scan(self, *, items: np.ndarray = None, axis: int = None, layers: Iterable = None, key: str = None, batch_size: int = 1000) -> Iterable[Tuple[int, np.ndarray, loompy.LoomView]]:
+	def scan(self, *, items: np.ndarray = None, axis: int = None, layers: Iterable = None, key: str = None, batch_size: int = 8*64) -> Iterable[Tuple[int, np.ndarray, loompy.LoomView]]:
 		"""
 		Scan across one axis and return batches of rows (columns) as LoomView objects
 
@@ -467,6 +469,7 @@ class LoomConnection:
 		----
 		items: np.ndarray
 			the indexes [0, 2, 13, ... ,973] of the rows/cols to include along the axis
+			OR: boolean mask array giving the rows/cols to include
 		axis: int
 			0:rows or 1:cols
 		batch_size: int
@@ -497,6 +500,9 @@ class LoomConnection:
 			layers = self.layers.keys()
 		if layers == "":
 			layers = [""]
+
+		if (items is not None) and (np.issubdtype(items.dtype, np.bool_)):
+			items = np.where(items)[0]
 
 		ordering: np.ndarray = None
 		vals: Dict[str, loompy.MemoryLoomLayer] = {}
@@ -542,7 +548,7 @@ class LoomConnection:
 			while ix < self.shape[0]:
 				rows_per_chunk = min(self.shape[0] - ix, rows_per_chunk)
 				selection = items - ix
-				# Pick out the cells that are in this batch
+				# Pick out the genes that are in this batch
 				selection = selection[np.where(np.logical_and(selection >= 0, selection < rows_per_chunk))[0]]
 				if selection.shape[0] == 0:
 					ix += rows_per_chunk
