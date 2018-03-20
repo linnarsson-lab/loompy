@@ -459,7 +459,7 @@ class LoomConnection:
 		else:
 			raise ValueError("axis must be 0 (rows) or 1 (columns)")
 
-	def scan(self, *, items: np.ndarray = None, axis: int = None, layers: Iterable = None, key: str = None, batch_size: int = 1000) -> Iterable[Tuple[int, np.ndarray, loompy.LoomView]]:
+	def scan(self, *, items: np.ndarray = None, axis: int = None, layers: Iterable = None, key: str = None, batch_size: int = 8*64) -> Iterable[Tuple[int, np.ndarray, loompy.LoomView]]:
 		"""
 		Scan across one axis and return batches of rows (columns) as LoomView objects
 
@@ -467,6 +467,7 @@ class LoomConnection:
 		----
 		items: np.ndarray
 			the indexes [0, 2, 13, ... ,973] of the rows/cols to include along the axis
+			OR: boolean mask array giving the rows/cols to include
 		axis: int
 			0:rows or 1:cols
 		batch_size: int
@@ -497,6 +498,9 @@ class LoomConnection:
 			layers = self.layers.keys()
 		if layers == "":
 			layers = [""]
+
+		if (items is not None) and (np.issubdtype(items.dtype, np.bool_)):
+			items = np.where(items)[0]
 
 		ordering: np.ndarray = None
 		vals: Dict[str, loompy.MemoryLoomLayer] = {}
@@ -542,7 +546,7 @@ class LoomConnection:
 			while ix < self.shape[0]:
 				rows_per_chunk = min(self.shape[0] - ix, rows_per_chunk)
 				selection = items - ix
-				# Pick out the cells that are in this batch
+				# Pick out the genes that are in this batch
 				selection = selection[np.where(np.logical_and(selection >= 0, selection < rows_per_chunk))[0]]
 				if selection.shape[0] == 0:
 					ix += rows_per_chunk
