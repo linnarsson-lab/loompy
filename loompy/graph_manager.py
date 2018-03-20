@@ -27,7 +27,7 @@ class GraphManager:
 
 		if ds is not None:
 			# Patch old files that use the old naming convention
-			if self._file.mode == "r+":
+			if ds._file.mode == "r+":
 				if "row_edges" in ds._file:
 					for key in ds._file["row_edges"]:
 						ds._file["row_graphs"][key] = ds._file["row_edges"][key]
