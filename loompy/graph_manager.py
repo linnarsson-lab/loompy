@@ -26,11 +26,9 @@ class GraphManager:
 		storage: Dict[str, np.ndarray] = {}
 		setattr(self, "!storage", storage)
 
-		self._read_write_mode = False
 		if ds is not None:
-			self._read_write_mode = ds._mode == 'r+'
 			# Patch old files that use the old naming convention
-			if self._read_write_mode:
+			if ds.mode == 'r+':
 				if "row_graphs" not in ds._file:
 					ds._file.create_group('/row_graphs')
 				if "col_graphs" not in ds._file:
@@ -48,7 +46,7 @@ class GraphManager:
 			if a in ds._file:
 				for key in ds._file[a]:
 					self.__dict__["storage"][key] = None
-			elif self._read_write_mode:
+			elif ds.mode == 'r+':
 				ds._file.create_group(a)
 			else:
 				logging.warn("Missing graph group not added: cannot modify loom file when connected in read-only mode")
@@ -81,21 +79,22 @@ class GraphManager:
 		If a graph has no timestamp and the loom file is connected in read-only mode, "19700101T000000Z" (start of Unix Time) is returned.
 		"""
 		a = ["row_graphs", "col_graphs"][self.axis]
-
-		if name is None:
-			if "last_modified" in self.ds._file[a].attrs:
-				return self.ds._file[a].attrs["last_modified"]
-			elif self._read_write_mode:
-				self.ds._file[a].attrs["last_modified"] = timestamp()
-				self.ds._file.flush()
-				return self.ds._file[a].attrs["last_modified"]
-		if name is not None:
-			if "last_modified" in self.ds._file[a + name].attrs:
-				return self.ds._file[a][name].attrs["last_modified"]
-			elif self._read_write_mode:
-				self.ds._file[a][name].attrs["last_modified"] = timestamp()
-				self.ds._file.flush()
-				return self.ds._file[a][name].attrs["last_modified"]
+		ds = self.ds
+		if ds is not None:
+			if name is None:
+				if "last_modified" in ds._file[a].attrs:
+					return ds._file[a].attrs["last_modified"]
+				elif ds.mode == 'r+':
+					ds._file[a].attrs["last_modified"] = timestamp()
+					ds._file.flush()
+					return ds._file[a].attrs["last_modified"]
+			else:
+				if "last_modified" in ds._file[a + name].attrs:
+					return ds._file[a][name].attrs["last_modified"]
+				elif ds.mode == 'r+':
+					ds._file[a][name].attrs["last_modified"] = timestamp()
+					ds._file.flush()
+					return ds._file[a][name].attrs["last_modified"]
 		return "19700101T000000Z"
 
 	def __getitem__(self, thing: Any) -> sparse.coo_matrix:
@@ -133,67 +132,63 @@ class GraphManager:
 			raise AttributeError(f"'{type(self)}' object has no graph '{name}' on axis {self.axis}")
 
 	def __setitem__(self, name: str, g: sparse.coo_matrix) -> None:
-		if self._read_write_mode:
-			return self.__setattr__(name, g)
-		raise IOError("Cannot modify loom file when connected in read-only mode")
+		if self.ds.mode != 'r+':
+			raise IOError("Cannot modify loom file when connected in read-only mode")
+		return self.__setattr__(name, g)
 
 	def __setattr__(self, name: str, g: sparse.coo_matrix) -> None:
-		if not self._read_write_mode:
+		if name.startswith("!"):
+			super(GraphManager, self).__setattr__(name[1:], g)
+		elif self.ds is None or self.ds.mode != 'r+':
 			raise IOError("Cannot modify loom file when connected in read-only mode")
 		else:
-			if name.startswith("!"):
-				super(GraphManager, self).__setattr__(name[1:], g)
-			else:
-				g = sparse.coo_matrix(g)
-				if self.ds is not None:
-					a = ["row_edges", "col_edges"][self.axis]
-					if g.shape[0] != self.ds.shape[self.axis] or g.shape[1] != self.ds.shape[self.axis]:
-						raise ValueError(f"Adjacency matrix shape for axis {self.axis} must be ({self.ds.shape[self.axis]},{self.ds.shape[self.axis]}) but shape was {g.shape}")
-					if name in self.ds._file[a]:
-						del self.ds._file[a][name]["a"]
-						del self.ds._file[a][name]["b"]
-						del self.ds._file[a][name]["w"]
-						del self.ds._file[a][name]
-					self.ds._file[a].create_group(name)
-					self.ds._file[a][name]["a"] = g.row
-					self.ds._file[a][name]["b"] = g.col
-					self.ds._file[a][name]["w"] = g.data
-					self.ds._file[a][name].attrs["last_modified"] = timestamp()
-					self.ds._file[a].attrs["last_modified"] = timestamp()
-					self.ds._file.attrs["last_modified"] = timestamp()
-					self.ds._file.flush()
-					self.__dict__["storage"][name] = g
-				else:
-					self.__dict__["storage"][name] = g
+			g = sparse.coo_matrix(g)
+			a = ["row_edges", "col_edges"][self.axis]
+			ds = self.ds
+			if g.shape[0] != ds.shape[self.axis] or g.shape[1] != ds.shape[self.axis]:
+				raise ValueError(f"Adjacency matrix shape for axis {self.axis} must be ({ds.shape[self.axis]},{ds.shape[self.axis]}) but shape was {g.shape}")
+			if name in ds._file[a]:
+				del ds._file[a][name]["a"]
+				del ds._file[a][name]["b"]
+				del ds._file[a][name]["w"]
+				del ds._file[a][name]
+			ds._file[a].create_group(name)
+			ds._file[a][name]["a"] = g.row
+			ds._file[a][name]["b"] = g.col
+			ds._file[a][name]["w"] = g.data
+			ds._file[a][name].attrs["last_modified"] = timestamp()
+			ds._file[a].attrs["last_modified"] = timestamp()
+			ds._file.attrs["last_modified"] = timestamp()
+			ds._file.flush()
+			self.__dict__["storage"][name] = g
 
 	def __delitem__(self, name: str) -> None:
-		if self._read_write_mode:
-			return self.__delattr__(name)
-		else:
+		if self.ds.mode != 'r+':
 			raise IOError("Cannot modify loom file when connected in read-only mode")
+		return self.__delattr__(name)
 
 	def __delattr__(self, name: str) -> None:
-		if not self._read_write_mode:
+		if self.ds is None or self.ds.mode != 'r+':
 			raise IOError("Cannot modify loom file when connected in read-only mode")
 		else:
-			if self.ds is not None:
-				a = ["row_graphs", "col_graphs"][self.axis]
-				if self.ds._file[a].__contains__(name):
-					del self.ds._file[a][name]["a"]
-					del self.ds._file[a][name]["b"]
-					del self.ds._file[a][name]["w"]
-					del self.ds._file[a][name]
-					self.ds._file.flush()
+			a = ["row_graphs", "col_graphs"][self.axis]
+			ds = self.ds
+			if ds._file[a].__contains__(name):
+				del ds._file[a][name]["a"]
+				del ds._file[a][name]["b"]
+				del ds._file[a][name]["w"]
+				del ds._file[a][name]
+				ds._file.flush()
 			if name in self.__dict__["storage"]:
 				del self.__dict__["storage"][name]
 	
 	def permute(self, ordering: np.ndarray) -> None:
-		if self._read_write_mode:
-			for name in self.keys():
-				g = self[name]
-				(a, b, w) = (g.row, g.col, g.data)
-				a = _renumber(a, np.array(ordering), np.arange(g.shape[1]))
-				b = _renumber(b, np.array(ordering), np.arange(g.shape[1]))
-				g = sparse.coo_matrix((w, (a, b)), g.shape)
-				self[name] = g
-		raise IOError("Cannot modify loom file when connected in read-only mode")
+		if self.ds.mode != 'r+':
+			raise IOError("Cannot modify loom file when connected in read-only mode")
+		for name in self.keys():
+			g = self[name]
+			(a, b, w) = (g.row, g.col, g.data)
+			a = _renumber(a, np.array(ordering), np.arange(g.shape[1]))
+			b = _renumber(b, np.array(ordering), np.arange(g.shape[1]))
+			g = sparse.coo_matrix((w, (a, b)), g.shape)
+			self[name] = g

@@ -33,7 +33,6 @@ class LoomLayer():
 		self.ds = ds
 		self.name = name
 		self.shape = ds.shape
-		self._read_write_mode = ds._read_write_mode
 
 	def last_modified(self) -> str:
 		"""
@@ -46,7 +45,7 @@ class LoomLayer():
 		if self.name == "":
 			if "last_modified" in self.ds._file["/matrix"].attrs:
 				return self.ds._file["/matrix"].attrs["last_modified"]
-			elif self._read_write_mode:
+			elif self.ds.mode == 'r+':
 				self.ds._file["/matrix"].attrs["last_modified"] = timestamp()
 				self.ds._file.flush()
 				return self.ds._file["/matrix"].attrs["last_modified"]
@@ -54,7 +53,7 @@ class LoomLayer():
 		if self.name != "":
 			if "last_modified" in self.ds._file["/layers/" + self.name].attrs:
 				return self.ds._file["/layers/" + self.name].attrs["last_modified"]
-			elif self._read_write_mode:
+			elif self.ds.mode == 'r+':
 				self.ds._file["/layers/" + self.name].attrs["last_modified"] = timestamp()
 				self.ds._file.flush()
 				return self.ds._file["/layers/" + self.name].attrs["last_modified"]
@@ -67,7 +66,7 @@ class LoomLayer():
 		return self.ds._file['/layers/' + self.name].__getitem__(slice)
 
 	def __setitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]], data: np.ndarray) -> None:
-		if not self._read_write_mode:
+		if self.ds.mode != 'r+':
 			raise IOError("Cannot modify layer when connected in read-only mode")
 		else:
 			if self.name == "":
@@ -110,7 +109,7 @@ class LoomLayer():
 		The data is not "reshuffled" to fit in the new shape; each axis is grown or shrunk independently.
 		The coordinates of existing data are fixed.
 		"""
-		if not self._read_write_mode:
+		if self.ds.mode != 'r+':
 			raise IOError("Cannot modify layer when connected in read-only mode")
 		else:
 			if self.name == "":
@@ -172,7 +171,7 @@ class LoomLayer():
 		return result
 
 	def permute(self, ordering: np.ndarray, *, axis: int) -> None:
-		if not self._read_write_mode:
+		if self.ds.mode != 'r+':
 			raise IOError("Cannot modify layer when connected in read-only mode")
 		else:
 			if self.name == "":
