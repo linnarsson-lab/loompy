@@ -52,20 +52,26 @@ class FileAttributeManager(object):
 	def __setattr__(self, name: str, val: Any) -> None:
 		if name.startswith("!"):
 			super(FileAttributeManager, self).__setattr__(name[1:], val)
+		elif self.f is None:
+			raise IOError("HDF5 File attribute not set: h5py file object is None")
+		elif self.f.mode != 'r+':
+			raise IOError("HDF5 File attribute not set: cannot modify loom file when connected in read-only mode")
 		else:
-			if self.f is not None:
-				normalized = loompy.normalize_attr_values(val)
-				self.f.attrs[name] = normalized
-				self.f.flush()
-				val = self.f.attrs[name]
-				# Read it back in to ensure it's synced and normalized
-				normalized = loompy.materialize_attr_values(val)
-				self.__dict__["storage"][name] = normalized
+			normalized = loompy.normalize_attr_values(val)
+			self.f.attrs[name] = normalized
+			self.f.flush()
+			val = self.f.attrs[name]
+			# Read it back in to ensure it's synced and normalized
+			normalized = loompy.materialize_attr_values(val)
+			self.__dict__["storage"][name] = normalized
 
 	def __delattr__(self, name: str) -> None:
 		if name.startswith("!"):
 			super(FileAttributeManager, self).__delattr__(name[1:])
+		elif self.f is None:
+			raise IOError("HDF5 File attribute not deleted: H5PY file is None")
+		elif self.f.mode != 'r+':
+			raise IOError("HDF5 File attribute not deleted: cannot modify loom file when connected in read-only mode")
 		else:
-			if self.f is not None:
-				del self.f.attrs[name]
+			del self.f.attrs[name]
 			del self.__dict__["storage"][name]

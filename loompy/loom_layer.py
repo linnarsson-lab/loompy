@@ -38,13 +38,14 @@ class LoomLayer():
 		"""
 		Return a compact ISO8601 timestamp (UTC timezone) indicating when the file was last modified
 
-		Note: if the layer does not contain a timestamp, and the mode is 'r+', a new timestamp will be set and returned.
-		Otherwise, the current time in UTC will be returned.
+		If a layer has no timestamps and the loom file is connected in read-write mode, it will be initialised to current time.
+
+		If a layer has no timestamps and the loom file is connected in read-only mode, "19700101T000000Z" (start of Unix Time) is returned.
 		"""
 		if self.name == "":
 			if "last_modified" in self.ds._file["/matrix"].attrs:
 				return self.ds._file["/matrix"].attrs["last_modified"]
-			elif self.ds._file.mode == 'r+':
+			elif self.ds.mode == 'r+':
 				self.ds._file["/matrix"].attrs["last_modified"] = timestamp()
 				self.ds._file.flush()
 				return self.ds._file["/matrix"].attrs["last_modified"]
@@ -52,12 +53,12 @@ class LoomLayer():
 		if self.name != "":
 			if "last_modified" in self.ds._file["/layers/" + self.name].attrs:
 				return self.ds._file["/layers/" + self.name].attrs["last_modified"]
-			elif self.ds._file.mode == 'r+':
+			elif self.ds.mode == 'r+':
 				self.ds._file["/layers/" + self.name].attrs["last_modified"] = timestamp()
 				self.ds._file.flush()
 				return self.ds._file["/layers/" + self.name].attrs["last_modified"]
 
-		return timestamp()
+		return "19700101T000000Z"
 
 	def __getitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]]) -> np.ndarray:
 		if self.name == "":
@@ -65,16 +66,23 @@ class LoomLayer():
 		return self.ds._file['/layers/' + self.name].__getitem__(slice)
 
 	def __setitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]], data: np.ndarray) -> None:
-		if self.name == "":
-			self.ds._file['/matrix'][slice] = data
-			self.ds._file["/matrix"].attrs["last_modified"] = timestamp()
-			self.ds._file.attrs["last_modified"] = timestamp()
-			self.ds._file.flush()
+		if self.ds is None:
+			raise IOError("Layer not modified: LoomConnection is None")
+		elif self.ds.closed:
+			raise IOError("Layer not modified: cannot modify closed LoomConnection")
+		elif self.ds.mode != 'r+':
+			raise IOError("Layer not modified: cannot modify loom file when connected in read-only mode")
 		else:
-			self.ds._file['/layers/' + self.name][slice] = data
-			self.ds._file["/layers/" + self.name].attrs["last_modified"] = timestamp()
-			self.ds._file.attrs["last_modified"] = timestamp()
-			self.ds._file.flush()
+			if self.name == "":
+				self.ds._file['/matrix'][slice] = data
+				self.ds._file["/matrix"].attrs["last_modified"] = timestamp()
+				self.ds._file.attrs["last_modified"] = timestamp()
+				self.ds._file.flush()
+			else:
+				self.ds._file['/layers/' + self.name][slice] = data
+				self.ds._file["/layers/" + self.name].attrs["last_modified"] = timestamp()
+				self.ds._file.attrs["last_modified"] = timestamp()
+				self.ds._file.flush()
 
 	def sparse(self, rows: np.ndarray, cols: np.ndarray) -> scipy.sparse.coo_matrix:
 		n_genes = self.ds.shape[0] if rows is None else rows.shape[0]
@@ -105,10 +113,15 @@ class LoomLayer():
 		The data is not "reshuffled" to fit in the new shape; each axis is grown or shrunk independently.
 		The coordinates of existing data are fixed.
 		"""
-		if self.name == "":
-			self.ds._file['/matrix'].resize(size, axis)
+		if self.ds is None:
+			raise IOError("Dataset not resized: LoomConnection is None")
+		elif self.ds.mode != 'r+':
+			raise IOError("Dataset not resized: cannot modify loom file when connected in read-only mode")
 		else:
-			self.ds._file['/layers/' + self.name].resize(size, axis)
+			if self.name == "":
+				self.ds._file['/matrix'].resize(size, axis)
+			else:
+				self.ds._file['/layers/' + self.name].resize(size, axis)
 
 	def map(self, f_list: List[Callable[[np.ndarray], int]], axis: int = 0, chunksize: int = 1000, selection: np.ndarray = None) -> List[np.ndarray]:
 		"""
@@ -164,23 +177,30 @@ class LoomLayer():
 		return result
 
 	def permute(self, ordering: np.ndarray, *, axis: int) -> None:
-		if self.name == "":
-			obj = self.ds._file['/matrix']
+		if self.ds is None:
+			raise IOError("Layer not permuted: LoomConnection is None")
+		elif self.ds.closed:
+			raise IOError("Layer not permuted: cannot modify closed LoomConnection")
+		elif self.ds.mode != 'r+':
+			raise IOError("Layer not permuted: cannot modify loom file when connected in read-only mode")
 		else:
-			obj = self.ds._file['/layers/' + self.name]
-		if axis == 0:
-			chunksize = 5000
-			start = 0
-			while start < self.shape[1]:
-				submatrix = obj[:, start:start + chunksize]
-				obj[:, start:start + chunksize] = submatrix[ordering, :]
-				start = start + chunksize
-		elif axis == 1:
-			chunksize = 100000000 // self.shape[1]
-			start = 0
-			while start < self.shape[0]:
-				submatrix = obj[start:start + chunksize, :]
-				obj[start:start + chunksize, :] = submatrix[:, ordering]
-				start = start + chunksize
-		else:
-			raise ValueError("axis must be 0 or 1")
+			if self.name == "":
+				obj = self.ds._file['/matrix']
+			else:
+				obj = self.ds._file['/layers/' + self.name]
+			if axis == 0:
+				chunksize = 5000
+				start = 0
+				while start < self.shape[1]:
+					submatrix = obj[:, start:start + chunksize]
+					obj[:, start:start + chunksize] = submatrix[ordering, :]
+					start = start + chunksize
+			elif axis == 1:
+				chunksize = 100000000 // self.shape[1]
+				start = 0
+				while start < self.shape[0]:
+					submatrix = obj[start:start + chunksize, :]
+					obj[start:start + chunksize, :] = submatrix[:, ordering]
+					start = start + chunksize
+			else:
+				raise ValueError("axis must be 0 or 1")

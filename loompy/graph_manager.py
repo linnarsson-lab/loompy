@@ -1,5 +1,6 @@
 import scipy.sparse as sparse
 import numpy as np
+import logging
 from typing import *
 from loompy import timestamp
 
@@ -27,7 +28,7 @@ class GraphManager:
 
 		if ds is not None:
 			# Patch old files that use the old naming convention
-			if ds._file.mode == "r+":
+			if ds.mode == 'r+':
 				if "row_graphs" not in ds._file:
 					ds._file.create_group('/row_graphs')
 				if "col_graphs" not in ds._file:
@@ -45,8 +46,10 @@ class GraphManager:
 			if a in ds._file:
 				for key in ds._file[a]:
 					self.__dict__["storage"][key] = None
-			else:
+			elif ds.mode == 'r+':
 				ds._file.create_group(a)
+			else:
+				logging.warn("Missing graph group not added: cannot modify loom file when connected in read-only mode")
 
 	def keys(self) -> List[str]:
 		return list(self.__dict__["storage"].keys())
@@ -70,26 +73,29 @@ class GraphManager:
 		Return a compact ISO8601 timestamp (UTC timezone) indicating when a graph was last modified
 
 		Note: if no graph name is given (the default), the modification time of the most recently modified graph will be returned
-		Note: if the graphs do not contain a timestamp, and the mode is 'r+', a new timestamp is created and returned.
-		Otherwise, the current time in UTC will be returned.
+
+		If a graph has no timestamp and the loom file is connected in read-write mode, it will be initialised to current time.
+
+		If a graph has no timestamp and the loom file is connected in read-only mode, "19700101T000000Z" (start of Unix Time) is returned.
 		"""
 		a = ["row_graphs", "col_graphs"][self.axis]
-
-		if name is None:
-			if "last_modified" in self.ds._file[a].attrs:
-				return self.ds._file[a].attrs["last_modified"]
-			elif self.ds._file.mode == 'r+':
-				self.ds._file[a].attrs["last_modified"] = timestamp()
-				self.ds._file.flush()
-				return self.ds._file[a].attrs["last_modified"]
-		if name is not None:
-			if "last_modified" in self.ds._file[a + name].attrs:
-				return self.ds._file[a][name].attrs["last_modified"]
-			elif self.ds._file.mode == 'r+':
-				self.ds._file[a][name].attrs["last_modified"] = timestamp()
-				self.ds._file.flush()
-				return self.ds._file[a][name].attrs["last_modified"]
-		return timestamp()
+		ds = self.ds
+		if ds is not None:
+			if name is None:
+				if "last_modified" in ds._file[a].attrs:
+					return ds._file[a].attrs["last_modified"]
+				elif ds.mode == 'r+':
+					ds._file[a].attrs["last_modified"] = timestamp()
+					ds._file.flush()
+					return ds._file[a].attrs["last_modified"]
+			else:
+				if "last_modified" in ds._file[a + name].attrs:
+					return ds._file[a][name].attrs["last_modified"]
+				elif ds.mode == 'r+':
+					ds._file[a][name].attrs["last_modified"] = timestamp()
+					ds._file.flush()
+					return ds._file[a][name].attrs["last_modified"]
+		return "19700101T000000Z"
 
 	def __getitem__(self, thing: Any) -> sparse.coo_matrix:
 		if type(thing) is slice or type(thing) is np.ndarray or type(thing) is int:
@@ -131,45 +137,62 @@ class GraphManager:
 	def __setattr__(self, name: str, g: sparse.coo_matrix) -> None:
 		if name.startswith("!"):
 			super(GraphManager, self).__setattr__(name[1:], g)
+		elif self.ds is None:
+			raise IOError("Graph not set: LoomConnection is None")
+		elif self.ds.closed:
+			raise IOError("Graph not set: cannot modify closed LoomConnection")
+		elif self.ds.mode != 'r+':
+			raise IOError("Graph not set: cannot modify loom file when connected in read-only mode")
 		else:
 			g = sparse.coo_matrix(g)
-			if self.ds is not None:
-				a = ["row_graphs", "col_graphs"][self.axis]
-				if g.shape[0] != self.ds.shape[self.axis] or g.shape[1] != self.ds.shape[self.axis]:
-					raise ValueError(f"Adjacency matrix shape for axis {self.axis} must be ({self.ds.shape[self.axis]},{self.ds.shape[self.axis]}) but shape was {g.shape}")
-				if name in self.ds._file[a]:
-					del self.ds._file[a][name]["a"]
-					del self.ds._file[a][name]["b"]
-					del self.ds._file[a][name]["w"]
-					del self.ds._file[a][name]
-				self.ds._file[a].create_group(name)
-				self.ds._file[a][name]["a"] = g.row
-				self.ds._file[a][name]["b"] = g.col
-				self.ds._file[a][name]["w"] = g.data
-				self.ds._file[a][name].attrs["last_modified"] = timestamp()
-				self.ds._file[a].attrs["last_modified"] = timestamp()
-				self.ds._file.attrs["last_modified"] = timestamp()
-				self.ds._file.flush()
-				self.__dict__["storage"][name] = g
-			else:
-				self.__dict__["storage"][name] = g
+			a = ["row_edges", "col_edges"][self.axis]
+			ds = self.ds
+			if g.shape[0] != ds.shape[self.axis] or g.shape[1] != ds.shape[self.axis]:
+				raise ValueError(f"Adjacency matrix shape for axis {self.axis} must be ({ds.shape[self.axis]},{ds.shape[self.axis]}) but shape was {g.shape}")
+			if name in ds._file[a]:
+				del ds._file[a][name]["a"]
+				del ds._file[a][name]["b"]
+				del ds._file[a][name]["w"]
+				del ds._file[a][name]
+			ds._file[a].create_group(name)
+			ds._file[a][name]["a"] = g.row
+			ds._file[a][name]["b"] = g.col
+			ds._file[a][name]["w"] = g.data
+			ds._file[a][name].attrs["last_modified"] = timestamp()
+			ds._file[a].attrs["last_modified"] = timestamp()
+			ds._file.attrs["last_modified"] = timestamp()
+			ds._file.flush()
+			self.__dict__["storage"][name] = g
 
 	def __delitem__(self, name: str) -> None:
 		return self.__delattr__(name)
 
 	def __delattr__(self, name: str) -> None:
-		if self.ds is not None:
+		if self.ds is None:
+			raise IOError("Graph not deleted: LoomConnection is None")
+		elif self.ds.closed:
+			raise IOError("Graph not deleted: cannot modify closed LoomConnection")
+		elif self.ds.mode != 'r+':
+			raise IOError("Graph not deleted: cannot modify loom file when connected in read-only mode")
+		else:
 			a = ["row_graphs", "col_graphs"][self.axis]
-			if self.ds._file[a].__contains__(name):
-				del self.ds._file[a][name]["a"]
-				del self.ds._file[a][name]["b"]
-				del self.ds._file[a][name]["w"]
-				del self.ds._file[a][name]
-				self.ds._file.flush()
-		if name in self.__dict__["storage"]:
-			del self.__dict__["storage"][name]
+			ds = self.ds
+			if ds._file[a].__contains__(name):
+				del ds._file[a][name]["a"]
+				del ds._file[a][name]["b"]
+				del ds._file[a][name]["w"]
+				del ds._file[a][name]
+				ds._file.flush()
+			if name in self.__dict__["storage"]:
+				del self.__dict__["storage"][name]
 	
 	def permute(self, ordering: np.ndarray) -> None:
+		if self.ds is None:
+			raise IOError("Graph not permuted: LoomConnection is None")
+		elif self.ds.closed:
+			raise IOError("Graph not permuted: cannot modify closed LoomConnection")
+		elif self.ds.mode != 'r+':
+			raise IOError("Graph not permuted: cannot modify loom file when connected in read-only mode")
 		for name in self.keys():
 			g = self[name]
 			(a, b, w) = (g.row, g.col, g.data)

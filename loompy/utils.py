@@ -11,4 +11,7 @@ def deprecated(message: str) -> None:
 
 
 def timestamp() -> str:
+	"""
+	Returns current timestamp in compact ISO 8601 formatting
+	"""
 	return datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%S.%fZ")

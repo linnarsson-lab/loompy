@@ -36,9 +36,6 @@ from loompy import deprecated, timestamp
 
 
 class LoomConnection:
-	@property
-	def mode(self):
-		return self._file.mode
 
 	def __init__(self, filename: str, mode: str = 'r+') -> None:
 		"""
@@ -84,21 +81,29 @@ class LoomConnection:
 			self.close()
 			raise e
 
+	@property
+	def mode(self) -> str:
+		# closed files cannot be written to
+		if self.closed:
+			return 'r'
+		return self._file.mode
+
 	def last_modified(self) -> str:
 		"""
-		Return an ISO8601 timestamp when the file was last modified
+		Return an ISO8601 timestamp of when the file was last modified
 
 		Note: if the file has no timestamp, and mode is 'r+', a new timestamp is created and returned.
-		Otherwise, the current time in UTC is returned
+
+		Otherwise, `19700101T000000Z` (start of Unix Time) is returned.
 		"""
 		if "last_modified" in self._file.attrs:
 			return self._file.attrs["last_modified"]
-		elif self._file.mode == "r+":
+		elif self.mode == 'r+':
 			# Make sure the file has modification timestamps
 			self._file.attrs["last_modified"] = timestamp()
 			self._file.flush()
 			return self._file.attrs["last_modified"]
-		return timestamp()
+		return "19700101T000000Z"
 
 	def get_changes_since(self, timestamp: str) -> Dict[str, List]:
 		rg = []
@@ -179,7 +184,10 @@ class LoomConnection:
 		Returns:
 			Nothing.
 		"""
-		self.layers[""][slice] = data
+		if self.mode == 'r+':
+			self.layers[""][slice] = data
+		else:
+			raise IOError("Cannot modify loom file when connected in read-only mode")
 
 	def sparse(self, rows: np.ndarray = None, cols: np.ndarray = None, layer: str = None) -> scipy.sparse.coo_matrix:
 		"""
@@ -232,7 +240,10 @@ class LoomConnection:
 		**DEPRECATED** - Use `ds.layer.Name = matrix` or `ds.layer[`Name`] = matrix` instead
 		"""
 		deprecated("'set_layer' is deprecated. Use 'ds.layer.Name = matrix' or 'ds.layer['Name'] = matrix' instead")
-		self.layers[name] = matrix
+		if self.mode == 'r+':
+			self.layers[name] = matrix
+		else:
+			raise IOError("Cannot modify loom file when connected in read-only mode")
 
 	def add_columns(self, layers: Union[np.ndarray, Dict[str, np.ndarray], loompy.LayerManager], col_attrs: Dict[str, np.ndarray], *, fill_values: Dict[str, np.ndarray] = None) -> None:
 		"""
@@ -258,7 +269,9 @@ class LoomConnection:
 		- Array with Nan should not be provided
 
 		"""
-		if self._file.mode != "r+":
+		if self.closed:
+			raise IOError("Cannot add columns to closed LoomConnection")
+		elif self.mode != 'r+':
 			raise IOError("Cannot add columns when connected in read-only mode")
 
 		layers_dict: Dict[str, np.ndarray] = None
@@ -351,7 +364,9 @@ class LoomConnection:
 			number of rows, and must have exactly the same column attributes.
 			The all the contents including layers but ignores layers in `other_file` that are not already persent in self
 		"""
-		if self._file.mode != "r+":
+		if self.closed:
+			raise IOError("Cannot add data to close LoomConnection")
+		elif self.mode != 'r+':
 			raise IOError("Cannot add data when connected in read-only mode")
 		# Connect to the loom files
 		other = connect(other_file)
@@ -405,16 +420,23 @@ class LoomConnection:
 		**DEPRECATED** - Use `del ds.ra.key` or `del ds.ca.key` instead, where `key` is replaced with the attribute name
 		"""
 		deprecated("'delete_attr' is deprecated. Use 'del ds.ra.key' or 'del ds.ca.key' instead")
-		if axis == 0:
-			del self.ra[name]
+		if self.mode == 'r+':
+			if axis == 0:
+				del self.ra[name]
+			else:
+				del self.ca[name]
 		else:
-			del self.ca[name]
+			raise IOError("Cannot modify loom file when connected in read-only mode")
 
 	def set_attr(self, name: str, values: np.ndarray, axis: int = 0, dtype: str = None) -> None:
 		"""
 		**DEPRECATED** - Use `ds.ra.key = values` or `ds.ca.key = values` instead
 		"""
 		deprecated("'set_attr' is deprecated. Use 'ds.ra.key = values' or 'ds.ca.key = values' instead")
+		if self.closed:
+			raise IOError("Cannot modify closed LoomConnection")
+		elif self.mode != 'r+':
+			raise IOError("Cannot modify loom file when connected in read-only mode")
 		if axis == 0:
 			self.ra[name] = values
 		else:
@@ -450,6 +472,11 @@ class LoomConnection:
 		**DEPRECATED** - Use `ds.row_graphs[name] = g` or `ds.col_graphs[name] = g` instead
 		"""
 		deprecated("'set_edges' is deprecated. Use 'ds.row_graphs[name] = g' or 'ds.col_graphs[name] = g' instead")
+		if self.closed:
+			raise IOError("Cannot modify closed LoomConnection")
+		elif self.mode != 'r+':
+			raise IOError("Cannot modify loom file when connected in read-only mode")
+
 		try:
 			g = scipy.sparse.coo_matrix((w, (a, b)), (self.shape[axis], self.shape[axis]))
 		except Exception:
@@ -709,6 +736,10 @@ class LoomConnection:
 		Returns:
 			Nothing.
 		"""
+		if self.closed:
+			raise IOError("Cannot modify closed LoomConnection")
+		elif self.mode != 'r+':
+			raise IOError("Cannot modify loom file when connected in read-only mode")
 		if self._file.__contains__("tiles"):
 			del self._file['tiles']
 

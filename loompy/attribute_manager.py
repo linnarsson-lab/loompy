@@ -16,7 +16,7 @@ class AttributeManager:
 
 		if ds is not None:
 			a = ["/row_attrs/", "/col_attrs/"][self.axis]
-			for key in self.ds._file[a].keys():
+			for key in ds._file[a].keys():
 				self.__dict__["storage"][key] = None
 
 	def keys(self) -> List[str]:
@@ -45,27 +45,30 @@ class AttributeManager:
 		Return a compact ISO8601 timestamp (UTC timezone) indicating when an attribute was last modified
 
 		Note: if no attribute name is given (the default), the modification time of the most recently modified attribute will be returned
-		Note: if the attributes do not contain a timestamp, and the mode is 'r+', a new timestamp is created and returned.
-		Otherwise, the current time in UTC will be returned.
+
+		If an attribute has no timestamp and the loom file is connected in read-write mode, it will be initialised to current time.
+
+		If an attribute has no timestamp and the loom file is connected in read-only mode, "19700101T000000Z" (start of Unix Time) is returned.
 		"""
 		a = ["/row_attrs/", "/col_attrs/"][self.axis]
-
-		if self.ds is not None:
+		ds = self.ds
+		if ds is not None:
 			if name is None:
-				if "last_modified" in self.ds._file[a].attrs:
-					return self.ds._file[a].attrs["last_modified"]
-				elif self.ds._file.mode == 'r+':
-					self.ds._file[a].attrs["last_modified"] = timestamp()
-					self.ds._file.flush()
-					return self.ds._file[a].attrs["last_modified"]
-			if name is not None:
-				if "last_modified" in self.ds._file[a + name].attrs:
-					return self.ds._file[a + name].attrs["last_modified"]
-				elif self.ds._file.mode == 'r+':
-					self.ds._file[a + name].attrs["last_modified"] = timestamp()
-					self.ds._file.flush()
-					return self.ds._file[a + name].attrs["last_modified"]
-		return timestamp()
+				if "last_modified" in ds._file[a].attrs:
+					return ds._file[a].attrs["last_modified"]
+				elif ds.mode == "r+":
+					ds._file[a].attrs["last_modified"] = timestamp()
+					ds._file.flush()
+					return ds._file[a].attrs["last_modified"]
+			else:
+				if "last_modified" in ds._file[a + name].attrs:
+					return ds._file[a + name].attrs["last_modified"]
+				elif ds.mode == "r+":
+					ds._file[a + name].attrs["last_modified"] = timestamp()
+					ds._file.flush()
+					return ds._file[a + name].attrs["last_modified"]
+		# Fallback: start of Unix Time
+		return "19700101T000000Z"
 
 	def __getitem__(self, thing: Any) -> np.ndarray:
 		"""
@@ -124,22 +127,26 @@ class AttributeManager:
 		"""
 		if name.startswith("!"):
 			super(AttributeManager, self).__setattr__(name[1:], val)
+		elif self.ds is None:
+			raise IOError("Attribute not set: LoomConnection is None")
+		elif self.ds.closed:
+			raise IOError("Attribute not set: cannot modify closed LoomConnection")
+		elif self.ds.mode != 'r+':
+			raise IOError("Attribute not set: cannot modify loom file when connected in read-only mode")
 		else:
-			if self.ds is not None:
-				values = loompy.normalize_attr_values(val)
-				a = ["/row_attrs/", "/col_attrs/"][self.axis]
-				if self.ds.shape[self.axis] != 0 and values.shape[0] != self.ds.shape[self.axis]:
-					raise ValueError(f"Attribute must have exactly {self.ds.shape[self.axis]} values but {len(values)} were given")
-				if self.ds._file[a].__contains__(name):
-					del self.ds._file[a + name]
-				self.ds._file[a + name] = values  # TODO: for 2D arrays, use block compression along columns/rows
-				self.ds._file[a + name].attrs["last_modified"] = timestamp()
-				self.ds._file[a].attrs["last_modified"] = timestamp()
-				self.ds._file.attrs["last_modified"] = timestamp()
-				self.ds._file.flush()
-				self.__dict__["storage"][name] = loompy.materialize_attr_values(self.ds._file[a][name][:])
-			else:
-				self.__dict__["storage"][name] = val
+			ds = self.ds
+			values = loompy.normalize_attr_values(val)
+			a = ["/row_attrs/", "/col_attrs/"][self.axis]
+			if ds.shape[self.axis] != 0 and values.shape[0] != ds.shape[self.axis]:
+				raise ValueError(f"Attribute must have exactly {ds.shape[self.axis]} values but {len(values)} were given")
+			if ds._file[a].__contains__(name):
+				del ds._file[a + name]
+			ds._file[a + name] = values  # TODO: for 2D arrays, use block compression along columns/rows
+			ds._file[a + name].attrs["last_modified"] = timestamp()
+			ds._file[a].attrs["last_modified"] = timestamp()
+			ds._file.attrs["last_modified"] = timestamp()
+			ds._file.flush()
+			self.__dict__["storage"][name] = loompy.materialize_attr_values(ds._file[a][name][:])
 
 	def __delitem__(self, name: str) -> None:
 		"""
@@ -151,13 +158,19 @@ class AttributeManager:
 		"""
 		Remove a named attribute
 		"""
-		if self.ds is not None:
+		if self.ds is None:
+			raise IOError("Attribute not deleted: LoomConnection is None")
+		elif self.ds.closed:
+			raise IOError("Attribute not deleted: cannot modify closed LoomConnection")
+		elif self.ds.mode != 'r+':
+			raise IOError("Attribute not deleted: cannot modify loom file when connected in read-only mode")
+		else:
 			a = ["/row_attrs/", "/col_attrs/"][self.axis]
 			if self.ds._file[a].__contains__(name):
 				del self.ds._file[a + name]
 				self.ds._file.flush()
-		if name in self.__dict__["storage"]:
-			del self.__dict__["storage"][name]
+			if name in self.__dict__["storage"]:
+				del self.__dict__["storage"][name]
 
 	def permute(self, ordering: np.ndarray) -> None:
 		"""
@@ -166,5 +179,12 @@ class AttributeManager:
 		Remarks:
 			This permutes the order of the values for each attribute in the file
 		"""
-		for key in self.keys():
-			self[key] = self[key][ordering]
+		if self.ds is None:
+			raise IOError("Attribute order not permuted: LoomConnection is None")
+		elif self.ds.closed:
+			raise IOError("Attribute order not permuted: cannot modify closed LoomConnection")
+		elif self.ds.mode != 'r+':
+			raise IOError("Attribute order not permuted: cannot modify loom file when connected in read-only mode")
+		else:
+			for key in self.keys():
+				self[key] = self[key][ordering]

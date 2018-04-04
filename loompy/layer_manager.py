@@ -12,19 +12,26 @@ class LayerManager:
 		setattr(self, "!ds", ds)
 		storage: Dict[str, np.ndarray] = {}
 		setattr(self, "!storage", storage)
+
 		if ds is not None:
 			self.__dict__["storage"][""] = None
 			if "layers" in ds._file:
 				for key in self.ds._file["layers"].keys():
 					self.__dict__["storage"][key] = None
-			else:
+			elif self.ds.mode == 'r+':
 				ds._file.create_group('/layers')
+			else:
+				logging.warn("Missing layers group not added: cannot modify loom file when connected in read-only mode")
 
 	def last_modified(self, name: str = None) -> str:
 		"""
 		Return a compact ISO8601 timestamp (UTC timezone) indicating when the layer was last modified
 
 		Note: if name is None, the modification time of the most recently modified layer is returned
+
+		If a layer has no timestamps and the loom file is connected in read-write mode, it will be initialised to current time.
+
+		If a layer has no timestamps and the loom file is connected in read-only mode, "19700101T000000Z" (start of Unix Time) is returned.
 		"""
 		if name is not None:
 			return self[name].last_modified()
@@ -33,8 +40,9 @@ class LayerManager:
 			if ts is None:
 				ts = self[name].last_modified()
 			else:
-				if self[name].last_modified() > ts:
-					ts = self[name].last_modified()
+				_ts = self[name].last_modified()
+				if _ts > ts:
+					ts = _ts
 		return ts
 
 	def keys(self) -> List[str]:
@@ -87,11 +95,15 @@ class LayerManager:
 	def __setattr__(self, name: str, val: np.ndarray) -> None:
 		if name.startswith("!"):
 			super(LayerManager, self).__setattr__(name[1:], val)
+		elif self.ds is None:
+			raise IOError("Layer not set: LoomConnection is None")
+		elif self.ds.closed:
+			raise IOError("Layer not set: cannot modify closed LoomConnection")
+		elif self.ds.mode != 'r+':
+			raise IOError("Layer not set: cannot modify loom file when connected in read-only mode")
 		else:
 			if self.ds is not None:
 				matrix = val
-				if self.ds._file.mode != "r+":
-					raise IOError("Cannot save layers when connected in read-only mode")
 				if not np.isfinite(matrix).all():
 					raise ValueError("INF and NaN not allowed in loom matrix")
 				if not (np.issubdtype(matrix.dtype, np.integer) or np.issubdtype(matrix.dtype, np.floating)):
@@ -122,25 +134,32 @@ class LayerManager:
 					self.ds.shape = matrix.shape
 				self.ds._file.flush()
 				self.__dict__["storage"][name] = None
-			else:
-				self.__dict__["storage"][name] = val
 
 	def __delitem__(self, name: str) -> None:
 		return self.__delattr__(name)
 
 	def __delattr__(self, name: str) -> None:
-		if self.ds is not None:
-			if name == "":
-				raise ValueError("Cannot delete default layer")
-			else:
-				path = "/layers/" + name
-				if self.ds._file.__contains__(path):
-					del self.ds._file[path]
-				self.ds._file.flush()
-		else:
+		if self.ds is None:
 			if name in self.__dict__["storage"]:
 				del self.__dict__["storage"][name]
+		elif self.ds.closed:
+			raise IOError("Layer not deleted: cannot modify closed LoomConnection")
+		elif self.ds.mode != 'r+':
+			raise IOError("Layer not deleted: cannot modify loom file when connected in read-only mode")
+		if name == "":
+			raise ValueError("Layer not deleted: cannot delete default layer")
+		else:
+			path = "/layers/" + name
+			if self.ds._file.__contains__(path):
+				del self.ds._file[path]
+			self.ds._file.flush()
 
 	def permute(self, ordering: np.ndarray, *, axis: int) -> None:
+		if self.ds is None:
+			raise IOError("Layer not permuted: LoomConnection is None")
+		elif self.ds.closed:
+			raise IOError("Layer not permuted: cannot modify closed LoomConnection")
+		elif self.ds.mode != 'r+':
+			raise IOError("Layer not permuted: cannot modify loom file when connected in read-only mode")
 		for key in self.keys():
 			self[key].permute(ordering, axis=axis)
