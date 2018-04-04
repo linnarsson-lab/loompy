@@ -90,15 +90,17 @@ class LayerManager:
 			raise AttributeError(f"'{type(self)}' object has no attribute '{name}'")
 
 	def __setitem__(self, name: str, val: np.ndarray) -> None:
-		if self.ds.mode != 'r+':
-			raise IOError("Cannot modify loom file when connected in read-only mode")
 		return self.__setattr__(name, val)
 
 	def __setattr__(self, name: str, val: np.ndarray) -> None:
 		if name.startswith("!"):
 			super(LayerManager, self).__setattr__(name[1:], val)
-		elif self.ds is None or self.ds.mode != 'r+':
-			raise IOError("Cannot save layers when connected in read-only mode")
+		elif self.ds is None:
+			raise IOError("Layer not set: LoomConnection is None")
+		elif self.ds.closed:
+			raise IOError("Layer not set: cannot modify closed LoomConnection")
+		elif self.ds.mode != 'r+':
+			raise IOError("Layer not set: cannot modify loom file when connected in read-only mode")
 		else:
 			if self.ds is not None:
 				matrix = val
@@ -134,27 +136,30 @@ class LayerManager:
 				self.__dict__["storage"][name] = None
 
 	def __delitem__(self, name: str) -> None:
-		if self.ds.mode != 'r+':
-			raise IOError("Cannot modify loom file when connected in read-only mode")
 		return self.__delattr__(name)
 
 	def __delattr__(self, name: str) -> None:
-		if self.ds is None or self.ds.mode != 'r+':
-			raise IOError("Cannot delete layers when connected in read-only mode")
-		if self.ds is not None: # redundant now - bug?
-			if name == "":
-				raise ValueError("Cannot delete default layer")
-			else:
-				path = "/layers/" + name
-				if self.ds._file.__contains__(path):
-					del self.ds._file[path]
-				self.ds._file.flush()
-		else:
+		if self.ds is None:
 			if name in self.__dict__["storage"]:
 				del self.__dict__["storage"][name]
+		elif self.ds.closed:
+			raise IOError("Layer not deleted: cannot modify closed LoomConnection")
+		elif self.ds.mode != 'r+':
+			raise IOError("Layer not deleted: cannot modify loom file when connected in read-only mode")
+		if name == "":
+			raise ValueError("Layer not deleted: cannot delete default layer")
+		else:
+			path = "/layers/" + name
+			if self.ds._file.__contains__(path):
+				del self.ds._file[path]
+			self.ds._file.flush()
 
 	def permute(self, ordering: np.ndarray, *, axis: int) -> None:
-		if self.ds.mode != 'r+':
-			raise IOError("Cannot modify loom file when connected in read-only mode")
+		if self.ds is None:
+			raise IOError("Layer not permuted: LoomConnection is None")
+		elif self.ds.closed:
+			raise IOError("Layer not permuted: cannot modify closed LoomConnection")
+		elif self.ds.mode != 'r+':
+			raise IOError("Layer not permuted: cannot modify loom file when connected in read-only mode")
 		for key in self.keys():
 			self[key].permute(ordering, axis=axis)

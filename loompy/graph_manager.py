@@ -132,15 +132,17 @@ class GraphManager:
 			raise AttributeError(f"'{type(self)}' object has no graph '{name}' on axis {self.axis}")
 
 	def __setitem__(self, name: str, g: sparse.coo_matrix) -> None:
-		if self.ds.mode != 'r+':
-			raise IOError("Cannot modify loom file when connected in read-only mode")
 		return self.__setattr__(name, g)
 
 	def __setattr__(self, name: str, g: sparse.coo_matrix) -> None:
 		if name.startswith("!"):
 			super(GraphManager, self).__setattr__(name[1:], g)
-		elif self.ds is None or self.ds.mode != 'r+':
-			raise IOError("Cannot modify loom file when connected in read-only mode")
+		elif self.ds is None:
+			raise IOError("Graph not set: LoomConnection is None")
+		elif self.ds.closed:
+			raise IOError("Graph not set: cannot modify closed LoomConnection")
+		elif self.ds.mode != 'r+':
+			raise IOError("Graph not set: cannot modify loom file when connected in read-only mode")
 		else:
 			g = sparse.coo_matrix(g)
 			a = ["row_edges", "col_edges"][self.axis]
@@ -163,13 +165,15 @@ class GraphManager:
 			self.__dict__["storage"][name] = g
 
 	def __delitem__(self, name: str) -> None:
-		if self.ds.mode != 'r+':
-			raise IOError("Cannot modify loom file when connected in read-only mode")
 		return self.__delattr__(name)
 
 	def __delattr__(self, name: str) -> None:
-		if self.ds is None or self.ds.mode != 'r+':
-			raise IOError("Cannot modify loom file when connected in read-only mode")
+		if self.ds is None:
+			raise IOError("Graph not deleted: LoomConnection is None")
+		elif self.ds.closed:
+			raise IOError("Graph not deleted: cannot modify closed LoomConnection")
+		elif self.ds.mode != 'r+':
+			raise IOError("Graph not deleted: cannot modify loom file when connected in read-only mode")
 		else:
 			a = ["row_graphs", "col_graphs"][self.axis]
 			ds = self.ds
@@ -183,8 +187,12 @@ class GraphManager:
 				del self.__dict__["storage"][name]
 	
 	def permute(self, ordering: np.ndarray) -> None:
-		if self.ds.mode != 'r+':
-			raise IOError("Cannot modify loom file when connected in read-only mode")
+		if self.ds is None:
+			raise IOError("Graph not permuted: LoomConnection is None")
+		elif self.ds.closed:
+			raise IOError("Graph not permuted: cannot modify closed LoomConnection")
+		elif self.ds.mode != 'r+':
+			raise IOError("Graph not permuted: cannot modify loom file when connected in read-only mode")
 		for name in self.keys():
 			g = self[name]
 			(a, b, w) = (g.row, g.col, g.data)

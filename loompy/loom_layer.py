@@ -66,8 +66,12 @@ class LoomLayer():
 		return self.ds._file['/layers/' + self.name].__getitem__(slice)
 
 	def __setitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]], data: np.ndarray) -> None:
-		if self.ds.mode != 'r+':
-			raise IOError("Cannot modify layer when connected in read-only mode")
+		if self.ds is None:
+			raise IOError("Layer not modified: LoomConnection is None")
+		elif self.ds.closed:
+			raise IOError("Layer not modified: cannot modify closed LoomConnection")
+		elif self.ds.mode != 'r+':
+			raise IOError("Layer not modified: cannot modify loom file when connected in read-only mode")
 		else:
 			if self.name == "":
 				self.ds._file['/matrix'][slice] = data
@@ -109,8 +113,10 @@ class LoomLayer():
 		The data is not "reshuffled" to fit in the new shape; each axis is grown or shrunk independently.
 		The coordinates of existing data are fixed.
 		"""
-		if self.ds.mode != 'r+':
-			raise IOError("Cannot modify layer when connected in read-only mode")
+		if self.ds is None:
+			raise IOError("Dataset not resized: LoomConnection is None")
+		elif self.ds.mode != 'r+':
+			raise IOError("Dataset not resized: cannot modify loom file when connected in read-only mode")
 		else:
 			if self.name == "":
 				self.ds._file['/matrix'].resize(size, axis)
@@ -171,8 +177,12 @@ class LoomLayer():
 		return result
 
 	def permute(self, ordering: np.ndarray, *, axis: int) -> None:
-		if self.ds.mode != 'r+':
-			raise IOError("Cannot modify layer when connected in read-only mode")
+		if self.ds is None:
+			raise IOError("Layer not permuted: LoomConnection is None")
+		elif self.ds.closed:
+			raise IOError("Layer not permuted: cannot modify closed LoomConnection")
+		elif self.ds.mode != 'r+':
+			raise IOError("Layer not permuted: cannot modify loom file when connected in read-only mode")
 		else:
 			if self.name == "":
 				obj = self.ds._file['/matrix']

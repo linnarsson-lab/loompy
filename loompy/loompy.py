@@ -83,6 +83,9 @@ class LoomConnection:
 
 	@property
 	def mode(self) -> str:
+		# closed files cannot be written to
+		if self.closed:
+			return 'r'
 		return self._file.mode
 
 	def last_modified(self) -> str:
@@ -266,7 +269,9 @@ class LoomConnection:
 		- Array with Nan should not be provided
 
 		"""
-		if self.mode != 'r+':
+		if self.closed:
+			raise IOError("Cannot add columns to closed LoomConnection")
+		elif self.mode != 'r+':
 			raise IOError("Cannot add columns when connected in read-only mode")
 
 		layers_dict: Dict[str, np.ndarray] = None
@@ -359,7 +364,9 @@ class LoomConnection:
 			number of rows, and must have exactly the same column attributes.
 			The all the contents including layers but ignores layers in `other_file` that are not already persent in self
 		"""
-		if self.mode != 'r+':
+		if self.closed:
+			raise IOError("Cannot add data to close LoomConnection")
+		elif self.mode != 'r+':
 			raise IOError("Cannot add data when connected in read-only mode")
 		# Connect to the loom files
 		other = connect(other_file)
@@ -426,13 +433,14 @@ class LoomConnection:
 		**DEPRECATED** - Use `ds.ra.key = values` or `ds.ca.key = values` instead
 		"""
 		deprecated("'set_attr' is deprecated. Use 'ds.ra.key = values' or 'ds.ca.key = values' instead")
-		if self.mode == 'r+':
-			if axis == 0:
-				self.ra[name] = values
-			else:
-				self.ca[name] = values
-		else:
+		if self.closed:
+			raise IOError("Cannot modify closed LoomConnection")
+		elif self.mode != 'r+':
 			raise IOError("Cannot modify loom file when connected in read-only mode")
+		if axis == 0:
+			self.ra[name] = values
+		else:
+			self.ca[name] = values
 
 	def list_edges(self, *, axis: int) -> List[str]:
 		"""
@@ -464,19 +472,21 @@ class LoomConnection:
 		**DEPRECATED** - Use `ds.row_graphs[name] = g` or `ds.col_graphs[name] = g` instead
 		"""
 		deprecated("'set_edges' is deprecated. Use 'ds.row_graphs[name] = g' or 'ds.col_graphs[name] = g' instead")
-		if self.mode == 'r+':
-			try:
-				g = scipy.sparse.coo_matrix((w, (a, b)), (self.shape[axis], self.shape[axis]))
-			except Exception:
-				raise ValueError("Input arrays could not be converted to a sparse matrix")
-			if axis == 0:
-				self.row_graphs[name] = g
-			elif axis == 1:
-				self.col_graphs[name] = g
-			else:
-				raise ValueError("axis must be 0 (rows) or 1 (columns)")
-		else:
+		if self.closed:
+			raise IOError("Cannot modify closed LoomConnection")
+		elif self.mode != 'r+':
 			raise IOError("Cannot modify loom file when connected in read-only mode")
+
+		try:
+			g = scipy.sparse.coo_matrix((w, (a, b)), (self.shape[axis], self.shape[axis]))
+		except Exception:
+			raise ValueError("Input arrays could not be converted to a sparse matrix")
+		if axis == 0:
+			self.row_graphs[name] = g
+		elif axis == 1:
+			self.col_graphs[name] = g
+		else:
+			raise ValueError("axis must be 0 (rows) or 1 (columns)")
 
 	def scan(self, *, items: np.ndarray = None, axis: int = None, layers: Iterable = None, key: str = None, batch_size: int = 8*64) -> Iterable[Tuple[int, np.ndarray, loompy.LoomView]]:
 		"""
@@ -726,7 +736,9 @@ class LoomConnection:
 		Returns:
 			Nothing.
 		"""
-		if self.mode != 'r+':
+		if self.closed:
+			raise IOError("Cannot modify closed LoomConnection")
+		elif self.mode != 'r+':
 			raise IOError("Cannot modify loom file when connected in read-only mode")
 		if self._file.__contains__("tiles"):
 			del self._file['tiles']

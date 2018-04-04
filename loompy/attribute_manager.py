@@ -127,8 +127,12 @@ class AttributeManager:
 		"""
 		if name.startswith("!"):
 			super(AttributeManager, self).__setattr__(name[1:], val)
-		elif self.ds is None or self.ds.mode != 'r+':
-			raise IOError("Cannot modify loom file when connected in read-only mode")
+		elif self.ds is None:
+			raise IOError("Attribute not set: LoomConnection is None")
+		elif self.ds.closed:
+			raise IOError("Attribute not set: cannot modify closed LoomConnection")
+		elif self.ds.mode != 'r+':
+			raise IOError("Attribute not set: cannot modify loom file when connected in read-only mode")
 		else:
 			ds = self.ds
 			values = loompy.normalize_attr_values(val)
@@ -148,17 +152,18 @@ class AttributeManager:
 		"""
 		Remove a named attribute
 		"""
-		if self.ds is None or self.ds.mode != "r+":
-			raise IOError("Cannot modify loom file when connected in read-only mode")
-		else:
-			return self.__delattr__(name)
+		return self.__delattr__(name)
 
 	def __delattr__(self, name: str) -> None:
 		"""
 		Remove a named attribute
 		"""
-		if self.ds is None or self.ds.mode != 'r+':
-			raise IOError("Cannot modify loom file when connected in read-only mode")
+		if self.ds is None:
+			raise IOError("Attribute not deleted: LoomConnection is None")
+		elif self.ds.closed:
+			raise IOError("Attribute not deleted: cannot modify closed LoomConnection")
+		elif self.ds.mode != 'r+':
+			raise IOError("Attribute not deleted: cannot modify loom file when connected in read-only mode")
 		else:
 			a = ["/row_attrs/", "/col_attrs/"][self.axis]
 			if self.ds._file[a].__contains__(name):
@@ -174,8 +179,12 @@ class AttributeManager:
 		Remarks:
 			This permutes the order of the values for each attribute in the file
 		"""
-		if self.ds is None or self.ds.mode != "r+":
-			raise IOError("Cannot modify loom file when connected in read-only mode")
+		if self.ds is None:
+			raise IOError("Attribute order not permuted: LoomConnection is None")
+		elif self.ds.closed:
+			raise IOError("Attribute order not permuted: cannot modify closed LoomConnection")
+		elif self.ds.mode != 'r+':
+			raise IOError("Attribute order not permuted: cannot modify loom file when connected in read-only mode")
 		else:
 			for key in self.keys():
 				self[key] = self[key][ordering]
