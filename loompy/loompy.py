@@ -318,7 +318,7 @@ class LoomConnection:
 					did_remove = True
 					todel.append(key)
 		for key in todel:
-			del self.ca[key] # delete_attr(key, axis=1)
+			del self.ca[key]  # delete_attr(key, axis=1)
 		if did_remove:
 			logging.warn("Some column attributes were removed: " + ",".join(todel))
 
@@ -388,8 +388,8 @@ class LoomConnection:
 					self_value = self.attrs[globalkey] if globalkey in self.attrs else np.zeros(1, dtype=other.attrs[globalkey].dtype)[0]
 					self.col_attrs[globalkey] = np.array([self_value] * self.shape[1])
 				if globalkey not in other.col_attrs:
-					other_value = other.attrs[globalkey] if globalkey in other.attrs else  np.zeros(1, dtype=self.attrs[globalkey].dtype)[0]
-					other.col_attrs[globalkey] =  np.array([other_value] * other.shape[1])
+					other_value = other.attrs[globalkey] if globalkey in other.attrs else np.zeros(1, dtype=self.attrs[globalkey].dtype)[0]
+					other.col_attrs[globalkey] = np.array([other_value] * other.shape[1])
 				if globalkey in self.attrs:
 					delattr(self.attrs, globalkey)
 
@@ -461,7 +461,7 @@ class LoomConnection:
 		else:
 			raise ValueError("axis must be 0 (rows) or 1 (columns)")
 
-	def scan(self, *, items: np.ndarray = None, axis: int = None, layers: Iterable = None, key: str = None, batch_size: int = 8*64) -> Iterable[Tuple[int, np.ndarray, loompy.LoomView]]:
+	def scan(self, *, items: np.ndarray = None, axis: int = None, layers: Iterable = None, key: str = None, batch_size: int = 8 * 64) -> Iterable[Tuple[int, np.ndarray, loompy.LoomView]]:
 		"""
 		Scan across one axis and return batches of rows (columns) as LoomView objects
 
