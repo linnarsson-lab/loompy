@@ -769,7 +769,7 @@ def _create_sparse(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.nd
 		raise FileExistsError("Cannot overwrite existing file " + filename)
 	logging.info("Converting to csc format")
 	matrix = matrix.tocsc()
-	window = 64
+	window = 6400
 	ix = 0
 	while ix < matrix.shape[1]:
 		window = min(window, matrix.shape[1] - ix)
