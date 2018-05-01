@@ -152,7 +152,7 @@ class LoomConnection:
 		else:
 			return "This LoomConnection has been closed"
 
-	def __getitem__(self, slice_: Tuple[Union[int, np.ndarray, slice], Union[int, np.ndarray, slice]]) -> np.ndarray:
+	def __getitem__(self, slice_: Any) -> np.ndarray:
 		"""
 		Get a slice of the main matrix.
 
@@ -168,18 +168,21 @@ class LoomConnection:
 			raise ValueError("Slice must be a 2-tuple")
 		return self.layers[""][slice_]
 
-	def __setitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]], data: np.ndarray) -> None:
+	def __setitem__(self, slice_: Any, data: np.ndarray) -> None:
 		"""
 		Assign a slice of the main matrix.
 
 		Args:
-			slice:		A slice object (see http://docs.h5py.org/en/latest/high/dataset.html), or np.ndarray, or int
+			slice_:		A slice object (see http://docs.h5py.org/en/latest/high/dataset.html), or np.ndarray, or int
 			data:		A matrix corresponding to the slice, of the same datatype as the main matrix
 
 		Returns:
 			Nothing.
 		"""
-		self.layers[""][slice] = data
+		if type(slice_) is str:
+			self.layers[slice_] = data
+		else:
+			self.layers[""][slice_] = data
 
 	def sparse(self, rows: np.ndarray = None, cols: np.ndarray = None, layer: str = None) -> scipy.sparse.coo_matrix:
 		"""
