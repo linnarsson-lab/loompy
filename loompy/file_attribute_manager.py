@@ -1,8 +1,10 @@
 from typing import *
-import h5py
 import scipy.sparse as sparse
 import numpy as np
 import loompy
+with warnings.catch_warnings():
+	warnings.simplefilter("ignore")
+	import h5py
 
 
 class FileAttributeManager(object):

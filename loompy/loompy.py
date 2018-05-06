@@ -24,7 +24,7 @@
 
 import numpy as np
 from typing import *
-import h5py
+import warnings
 import os.path
 from scipy.io import mmread
 import scipy.sparse
@@ -33,11 +33,14 @@ import logging
 import time
 import loompy
 from loompy import deprecated, timestamp
+with warnings.catch_warnings():
+	warnings.simplefilter("ignore")
+	import h5py
 
 
 class LoomConnection:
 	@property
-	def mode(self):
+	def mode(self) -> str:
 		return self._file.mode
 
 	def __init__(self, filename: str, mode: str = 'r+') -> None:
