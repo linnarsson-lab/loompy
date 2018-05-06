@@ -33,6 +33,7 @@ import logging
 import time
 import loompy
 from loompy import deprecated, timestamp
+import warnings
 with warnings.catch_warnings():
 	warnings.simplefilter("ignore")
 	import h5py

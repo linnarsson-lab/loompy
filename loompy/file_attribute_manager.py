@@ -2,6 +2,7 @@ from typing import *
 import scipy.sparse as sparse
 import numpy as np
 import loompy
+import warnings
 with warnings.catch_warnings():
 	warnings.simplefilter("ignore")
 	import h5py
