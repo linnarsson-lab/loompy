@@ -168,3 +168,20 @@ class AttributeManager:
 		"""
 		for key in self.keys():
 			self[key] = self[key][ordering]
+
+	def get(self, name: str, default: np.ndarray):
+		"""
+		Return the value for a named attribute if it exists, else default.
+		Default has to be a numpy array of correct size.
+		"""
+
+		if name in self:
+			return self[name]
+		else:
+			if not isinstance(default, np.ndarray):
+				raise ValueError(f"Default must be an np.ndarray with exactly {self.ds.shape[self.axis]} values")
+
+			if default.shape[0] != self.ds.shape[self.axis]:
+				raise ValueError(f"Default must be an np.ndarray with exactly {self.ds.shape[self.axis]} values but {len(default)} were given")
+
+			return default
