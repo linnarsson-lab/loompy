@@ -46,7 +46,8 @@ class GraphManager:
 				for key in ds._file[a]:
 					self.__dict__["storage"][key] = None
 			else:
-				ds._file.create_group(a)
+				if ds.mode == "r+":
+					ds._file.create_group(a)
 
 	def keys(self) -> List[str]:
 		return list(self.__dict__["storage"].keys())

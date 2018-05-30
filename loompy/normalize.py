@@ -55,7 +55,7 @@ def normalize_attr_values(a: Any) -> np.ndarray:
 			Elements can be strings, numbers or bools
 	
 	Returns
-		a_normalized    An np.ndarray with elements either float64 or unicode string objects
+		a_normalized    An np.ndarray with elements conforming to one of the valid Loom attribute types
 	
 	Remarks:
 		This method should be used to prepare the values to be stored in the HDF5 file. You should not
