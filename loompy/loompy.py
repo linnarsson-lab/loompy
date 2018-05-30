@@ -887,7 +887,7 @@ def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loomp
 		raise ve
 
 
-def create_from_cellranger(indir: str, outdir: str = None, genome: str = None) -> None:
+def create_from_cellranger(indir: str, outdir: str = None, genome: str = None) -> str:
 	"""
 	Create a .loom file from 10X Genomics cellranger output
 
@@ -897,7 +897,7 @@ def create_from_cellranger(indir: str, outdir: str = None, genome: str = None) -
 		genome (str):	genome build to load (e.g. 'mm10'; if None, determine species from outs folder)
 
 	Returns:
-		LoomConnection to created loom file.
+		path (str):		Path to the created loom file.
 	"""
 	if outdir is None:
 		outdir = indir
@@ -933,7 +933,9 @@ def create_from_cellranger(indir: str, outdir: str = None, genome: str = None) -
 		labels = np.loadtxt(clusters_file, usecols=(1, ), delimiter=',', skiprows=1)
 		col_attrs["ClusterID"] = labels.astype('int') - 1
 
-	create(os.path.join(outdir, sampleid + ".loom"), matrix, row_attrs, col_attrs, file_attrs={"Genome": genome})
+	path = os.path.join(outdir, sampleid + ".loom")
+	create(path, matrix, row_attrs, col_attrs, file_attrs={"Genome": genome})
+	return path
 
 
 def combine(files: List[str], output_file: str, key: str = None, file_attrs: Dict[str, str]=None, batch_size: int=1000, convert_attrs: bool=False) -> None:
