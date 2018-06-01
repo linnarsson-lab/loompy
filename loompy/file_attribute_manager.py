@@ -72,3 +72,13 @@ class FileAttributeManager(object):
 			if self.f is not None:
 				del self.f.attrs[name]
 			del self.__dict__["storage"][name]
+
+	def get(self, name: str, default: Any = None):
+		"""
+		Return the value for a named attribute if it exists, else default.
+		If default is not given, it defaults to None, so that this method never raises a KeyError.
+		"""
+		if name in self:
+			return self[name]
+		else:
+			return default
