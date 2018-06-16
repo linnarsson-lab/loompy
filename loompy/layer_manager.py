@@ -89,18 +89,27 @@ class LayerManager:
 			super(LayerManager, self).__setattr__(name[1:], val)
 		else:
 			if self.ds is not None:
-				matrix = val
+				if type(val) is str:  # val specifies the dtype of an empty layer
+					matrix: np.ndarray = None
+					dtype = val
+					shape = self.ds.shape
+				else:  # val is a matrix that will be the layer
+					matrix = val
+					dtype = matrix.dtype
+					shape = matrix.shape
+					if not np.isfinite(matrix).all():
+						raise ValueError("INF and NaN not allowed in loom matrix")
+				if name != "" and shape != self.ds.shape:
+						raise ValueError(f"All layers must have same shape {self.ds.shape}")
 				if self.ds._file.mode != "r+":
 					raise IOError("Cannot save layers when connected in read-only mode")
-				if not np.isfinite(matrix).all():
-					raise ValueError("INF and NaN not allowed in loom matrix")
-				if not (np.issubdtype(matrix.dtype, np.integer) or np.issubdtype(matrix.dtype, np.floating)):
+				if not (np.issubdtype(dtype, np.integer) or np.issubdtype(dtype, np.floating)):
 					raise ValueError("Matrix elements must be integer or float")
 				if not self.ds._file.__contains__("/layers"):
 					self.ds._file.create_group("/layers")
 
 				# make sure chunk size is not bigger than actual matrix size
-				chunks = (min(64, matrix.shape[0]), min(64, matrix.shape[1]))
+				chunks = (min(64, shape[0]), min(64, shape[1]))
 				path = "/layers/" + name
 				if name == "":
 					path = "/matrix"
@@ -111,7 +120,9 @@ class LayerManager:
 				self.ds._file.create_dataset(
 					path,
 					data=matrix,
-					maxshape=(matrix.shape[0], None),
+					dtype=dtype,
+					shape=shape,
+					maxshape=(shape[0], None),
 					chunks=chunks,
 					fletcher32=False,
 					compression="gzip",

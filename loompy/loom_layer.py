@@ -76,7 +76,7 @@ class LoomLayer():
 			self.ds._file.attrs["last_modified"] = timestamp()
 			self.ds._file.flush()
 
-	def sparse(self, rows: np.ndarray, cols: np.ndarray) -> scipy.sparse.coo_matrix:
+	def sparse(self, rows: np.ndarray = None, cols: np.ndarray = None) -> scipy.sparse.coo_matrix:
 		n_genes = self.ds.shape[0] if rows is None else rows.shape[0]
 		n_cells = self.ds.shape[1] if cols is None else cols.shape[0]
 
