@@ -154,7 +154,19 @@ Row and column attributes are multidimensional arrays whose first dimension matc
 
 Global attributes are scalars or multidimensional arrays of any shape, whose elements are any of the numeric datatypes ``int8``, ``int16``, ``int32``, ``int64``, ``uint8``, ``uint16``, ``uint32``, ``uint64``, ``float16``, ``float32`` and ``float64`` or fixed-length ASCII strings.
 
-All strings in Loom files are stored as fixed-length 7-bit ASCII. Unicode characters outside 7-bit ASCII are stored using `XML entity encoding <https://en.wikipedia.org/wiki/List_of_XML_and_HTML_character_entity_references>`_, to ensure maximum compatibility. Strings SHOULD be decoded when read and encoded when written. A compatible implementation may choose to encode/decode or not, but MUST decode on reading if it encodes on writing.
+All strings in Loom files are stored as fixed-length null-padded 7-bit ASCII. ``h5dump`` should report something like this:
+
+.. code::
+
+  DATATYPE  H5T_STRING {
+    STRSIZE 24;
+    STRPAD H5T_STR_NULLPAD;
+    CSET H5T_CSET_ASCII;
+    CTYPE H5T_C_S1;
+  }
+
+
+Unicode characters outside 7-bit ASCII are stored using `XML entity encoding <https://en.wikipedia.org/wiki/List_of_XML_and_HTML_character_entity_references>`_, to ensure maximum compatibility. Strings SHOULD be decoded when read and encoded when written. A compatible implementation may choose to encode/decode or not, but MUST decode on reading if it encodes on writing.
 
 .. _loomexample:
 
