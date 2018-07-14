@@ -31,7 +31,10 @@ class LoomView:
 		Returns:
 			A numpy matrix
 		"""
-		return self.layers[""][slice]
+		if type(slice_) is str:
+			return self.layers[slice_]
+		else:
+			return self.layers[""][slice]
 
 	def _repr_html_(self) -> str:
 		"""
