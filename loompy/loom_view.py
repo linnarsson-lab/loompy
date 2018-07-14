@@ -23,7 +23,7 @@ class LoomView:
 		self.row_attrs = row_attrs
 		self.col_attrs = col_attrs
 
-	def __getitem__(self, slice: Tuple[Union[int, np.ndarray, slice], Union[int, np.ndarray, slice]]) -> np.ndarray:
+	def __getitem__(self, slice_: Union[str, Tuple[Union[int, np.ndarray, slice], Union[int, np.ndarray, slice]]]) -> np.ndarray:
 		"""
 		Get a slice of the main matrix.
 		Args:
@@ -34,7 +34,7 @@ class LoomView:
 		if type(slice_) is str:
 			return self.layers[slice_]
 		else:
-			return self.layers[""][slice]
+			return self.layers[""][slice_]
 
 	def _repr_html_(self) -> str:
 		"""
