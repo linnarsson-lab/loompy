@@ -840,7 +840,7 @@ def new(filename: str, *, file_attrs: Optional[Dict[str, str]] = None) -> LoomCo
 	return ds
 
 
-def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loompy.LayerManager], row_attrs: Dict[str, np.ndarray], col_attrs: Dict[str, np.ndarray], *, file_attrs: Dict[str, str] = None) -> None:
+def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loompy.LayerManager], row_attrs: Union[loompy.AttributeManager, Dict[str, np.ndarray]], col_attrs: Union[loompy.AttributeManager, Dict[str, np.ndarray]], *, file_attrs: Dict[str, str] = None) -> None:
 	"""
 	Create a new .loom file from the given data.
 
@@ -872,6 +872,11 @@ def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loomp
 		layers = {k: v[:, :] for k, v in layers.items()}
 	if "" not in layers:
 		raise ValueError("Data for default layer must be provided")
+
+	if isinstance(row_attrs, loompy.AttributeManager):
+		row_attrs = {k: v[:, :] for k, v in row_attrs.items()}
+	if isinstance(col_attrs, loompy.AttributeManager):
+		col_attrs = {k: v[:, :] for k, v in col_attrs.items()}
 
 	try:
 		with new(filename, file_attrs=file_attrs) as ds:
