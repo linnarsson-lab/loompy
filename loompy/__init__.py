@@ -8,6 +8,5 @@ from .loom_view import LoomView
 from .loom_layer import MemoryLoomLayer, LoomLayer
 from .to_html import to_html
 from .view_manager import ViewManager
-from .loompy import connect, create, create_append, combine, create_from_cellranger, LoomConnection
+from .loompy import connect, create, create_append, combine, create_from_cellranger, LoomConnection, new
 from ._version import __version__, loom_spec_version
-

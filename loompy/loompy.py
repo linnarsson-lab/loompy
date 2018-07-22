@@ -144,6 +144,8 @@ class LoomConnection:
 		"""
 		Context manager, to support "with loompy.connect(..)" construct
 		"""
+		if self.shape[0] == 0 or self.shape[1] == 0:
+			raise ValueError("Newly created loom file must be filled with data before leaving the 'with' statement")
 		if not self.closed:
 			self.close(True)
 
@@ -241,7 +243,7 @@ class LoomConnection:
 		deprecated("'set_layer' is deprecated. Use 'ds.layer.Name = matrix' or 'ds.layer['Name'] = matrix' instead")
 		self.layers[name] = matrix
 
-	def add_columns(self, layers: Union[np.ndarray, Dict[str, np.ndarray], loompy.LayerManager], col_attrs: Dict[str, np.ndarray], *, fill_values: Dict[str, np.ndarray] = None) -> None:
+	def add_columns(self, layers: Union[np.ndarray, Dict[str, np.ndarray], loompy.LayerManager], col_attrs: Dict[str, np.ndarray], *, row_attrs: Dict[str, np.ndarray] = None, fill_values: Dict[str, np.ndarray] = None) -> None:
 		"""
 		Add columns of data and attribute values to the dataset.
 
@@ -253,6 +255,8 @@ class LoomConnection:
 				3) A LayerManager object (such as what is returned by view.layers)
 			col_attrs (dict):
 				Column attributes, where keys are attribute names and values are numpy arrays (float or string) of length M
+			row_attrs (dict):
+				Optional row attributes, where keys are attribute names and values are numpy arrays (float or string) of length M
 			fill_values: dictionary of values to use if a column attribute is missing, or "auto" to fill with zeros or empty strings
 
 		Returns:
@@ -268,7 +272,16 @@ class LoomConnection:
 		if self._file.mode != "r+":
 			raise IOError("Cannot add columns when connected in read-only mode")
 
-		layers_dict: Dict[str, np.ndarray] = None
+		# If this is an empty loom file, just assign the provided row and column attributes, and set the shape
+		if row_attrs is not None:
+			for k, v in row_attrs.items():
+				self.ra[k] = v
+				self.shape = (self.ra[k].shape[0], self.shape[1])
+			if len(self.ca) == 0:
+				for k, v in col_attrs.items():
+					self.ca[k] = np.zeros(0, v.dtype)
+
+		layers_dict: Dict[str, np.ndarray] = {}
 		if isinstance(layers, np.ndarray):
 			layers_dict = {"": layers}
 		elif isinstance(layers, loompy.LayerManager):
@@ -287,10 +300,7 @@ class LoomConnection:
 				n_cols = matrix.shape[1]
 			elif matrix.shape[1] != n_cols:
 				raise ValueError(f"Layer {layer} has {matrix.shape[1]} columns but the first layer had {n_cols}")
-		for layer in self.layers.keys():
-			if layer not in layers_dict.keys():
-				raise ValueError(f"Layer {layer} does not exist in the target loom file")
-
+			
 		did_remove = False
 		todel = []  # type: List[str]
 		for key, vals in col_attrs.items():
@@ -329,17 +339,23 @@ class LoomConnection:
 		if did_remove:
 			logging.warn("Some column attributes were removed: " + ",".join(todel))
 
-		n_cols = n_cols + self.shape[1]
-		old_n_cols = self.shape[1]
-		# Must set new shape here, otherwise the attribute manager will complain
-		self.shape = (self.shape[0], n_cols)
-		for key, vals in col_attrs.items():
-			self.ca[key] = np.concatenate([self.ca[key], vals])
+		if self.shape[1] == 0:
+			for k, v in layers_dict.items():
+				self.layers[k] = v
+			for k, v in col_attrs.items():
+				self.ca[k] = v
+		else:
+			n_cols = n_cols + self.shape[1]
+			old_n_cols = self.shape[1]
+			# Must set new shape here, otherwise the attribute manager will complain
+			self.shape = (self.shape[0], n_cols)
+			for key, vals in col_attrs.items():
+				self.ca[key] = np.concatenate([self.ca[key], vals])
 
-		# Add the columns layerwise
-		for key in self.layers.keys():
-			self.layers[key].resize(n_cols, axis=1)
-			self.layers[key][:, old_n_cols:n_cols] = layers_dict[key]
+			# Add the columns layerwise
+			for key in self.layers.keys():
+				self.layers[key].resize(n_cols, axis=1)
+				self.layers[key][:, old_n_cols:n_cols] = layers_dict[key]
 		self._file.flush()
 
 	def add_loom(self, other_file: str, key: str = None, fill_values: Dict[str, np.ndarray]=None, batch_size: int=1000, convert_attrs: bool=False) -> None:
@@ -768,49 +784,60 @@ class LoomConnection:
 				f.write("\n")
 
 
-def _create_sparse(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], col_attrs: Dict[str, np.ndarray], *, layers: Dict[str, np.ndarray] = None, file_attrs: Dict[str, str] = None) -> None:
+def _create_sparse(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], col_attrs: Dict[str, np.ndarray], *, file_attrs: Dict[str, str] = None) -> None:
 	"""
 	Create a new loom file from a sparse matrix input
 	"""
-	if os.path.exists(filename):
-		raise FileExistsError("Cannot overwrite existing file " + filename)
-	logging.info("Converting to csc format")
 	matrix = matrix.tocsc()
 	window = 6400
-	ix = 0
-	while ix < matrix.shape[1]:
-		window = min(window, matrix.shape[1] - ix)
-		if window == 0:
-			break
-		ca = {key: val[ix:ix + window] for (key, val) in col_attrs.items()}
-		create_append(filename, matrix[:, ix:ix + window].toarray(), row_attrs, ca, file_attrs=file_attrs)
-		ix += window
+	with new(filename, file_attrs=file_attrs) as ds:
+		ix = 0
+		while ix < matrix.shape[1]:
+			window = min(window, matrix.shape[1] - ix)
+			if window == 0:
+				break
+			ca = {key: val[ix:ix + window] for (key, val) in col_attrs.items()}
+			ds.add_columns(matrix[:, ix:ix + window].toarray(), ca, row_attrs=row_attrs)
+			ix += window
 
 
 def create_append(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loompy.LayerManager], row_attrs: Dict[str, np.ndarray], col_attrs: Dict[str, np.ndarray], *, file_attrs: Dict[str, str] = None, fill_values: Dict[str, np.ndarray] = None) -> None:
 	"""
-	Append columns to a loom file, or create a new loom file if it doesn't exist
-
-	Args:
-		filename (str):         The filename (typically using a `.loom` file extension)
-		layers (np.ndarray or Dict[str, np.ndarray] or LayerManager):
-								Two-dimensional (N-by-M) numpy ndarray of float values
-								Or dictionary of named layers, each an N-by-M ndarray
-								or LayerManager, each layer an N-by-M ndarray
-		row_attrs (dict):       Row attributes, where keys are attribute names and values
-								are numpy arrays (float or string) of length N
-		col_attrs (dict):       Column attributes, where keys are attribute names and
-								values are numpy arrays (float or string) of length M
-		file_attrs (dict):      Global attributes, where keys are attribute names and
-								values are strings
-	Returns:
-		Nothing
+	**DEPRECATED** - Use `new` instead; see https://github.com/linnarsson-lab/loompy/issues/42
 	"""
+	deprecated("'create_append' is deprecated. See https://github.com/linnarsson-lab/loompy/issues/42")
 	if os.path.exists(filename):
 		with connect(filename) as ds:
 			ds.add_columns(layers, col_attrs, fill_values=fill_values)
 	else:
 		create(filename, layers, row_attrs, col_attrs, file_attrs=file_attrs)
+
+
+def new(filename: str, *, file_attrs: Optional[Dict[str, str]] = None) -> LoomConnection:
+	if filename.startswith("~/"):
+		filename = os.path.expanduser(filename)
+	if file_attrs is None:
+		file_attrs = {}
+
+	# Create the file (empty).
+	# Yes, this might cause an exception, which we prefer to send to the caller
+	f = h5py.File(name=filename, mode='w')
+	f.create_group('/layers')
+	f.create_group('/row_attrs')
+	f.create_group('/col_attrs')
+	f.create_group('/row_graphs')
+	f.create_group('/col_graphs')
+	f.flush()
+	f.close()
+
+	ds = connect(filename)
+	for vals in file_attrs:
+		ds.attrs[vals] = file_attrs[vals]
+	# store creation date
+	currentTime = time.localtime(time.time())
+	ds.attrs['CreationDate'] = timestamp()
+	ds.attrs["LOOM_SPEC_VERSION"] = loompy.loom_spec_version
+	return ds
 
 
 def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loompy.LayerManager], row_attrs: Dict[str, np.ndarray], col_attrs: Dict[str, np.ndarray], *, file_attrs: Dict[str, str] = None) -> None:
@@ -834,13 +861,8 @@ def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loomp
 		Nothing
 
 	Remarks:
-		If the file exists, it will be overwritten. See create_append for a function that will append to existing files.
+		If the file exists, it will be overwritten.
 	"""
-	if filename.startswith("~/"):
-		filename = os.path.expanduser(filename)
-	if file_attrs is None:
-		file_attrs = {}
-
 	if isinstance(layers, np.ndarray):
 		layers = {"": layers}
 	elif scipy.sparse.issparse(layers):
@@ -851,19 +873,8 @@ def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loomp
 	if "" not in layers:
 		raise ValueError("Data for default layer must be provided")
 
-	# Create the file (empty).
-	# Yes, this might cause an exception, which we prefer to send to the caller
-	f = h5py.File(name=filename, mode='w')
-	f.create_group('/layers')
-	f.create_group('/row_attrs')
-	f.create_group('/col_attrs')
-	f.create_group('/row_graphs')
-	f.create_group('/col_graphs')
-	f.flush()
-	f.close()
-
 	try:
-		with connect(filename) as ds:
+		with new(filename, file_attrs=file_attrs) as ds:
 			for key, vals in layers.items():
 				ds.layer[key] = vals
 
@@ -872,14 +883,6 @@ def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loomp
 
 			for key, vals in col_attrs.items():
 				ds.ca[key] = vals
-
-			for vals in file_attrs:
-				ds.attrs[vals] = file_attrs[vals]
-
-			# store creation date
-			currentTime = time.localtime(time.time())
-			ds.attrs['CreationDate'] = timestamp()
-			ds.attrs["LOOM_SPEC_VERSION"] = loompy.loom_spec_version
 
 	except ValueError as ve:
 		ds.close(suppress_warning=True)
