@@ -73,7 +73,7 @@ class FileAttributeManager(object):
 				del self.f.attrs[name]
 			del self.__dict__["storage"][name]
 
-	def get(self, name: str, default: Any = None):
+	def get(self, name: str, default: Any = None) -> np.ndarray:
 		"""
 		Return the value for a named attribute if it exists, else default.
 		If default is not given, it defaults to None, so that this method never raises a KeyError.

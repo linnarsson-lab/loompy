@@ -4,10 +4,10 @@ from loompy import AttributeManager
 
 
 class AttributeManagerTests(TestCase):
-	def setUp(self):
+	def setUp(self) -> None:
 		self.ds = self.DummyLoomConnection()
 
-	def test_get(self):
+	def test_get(self) -> None:
 		m = AttributeManager(self.ds, axis=0)
 		default = np.array([2., 3, 4, 5, 6, 7, 8])
 
@@ -21,7 +21,7 @@ class AttributeManagerTests(TestCase):
 		val = m.get("missing", default)
 		np.testing.assert_array_equal(val, default)
 
-	def test_get_raises_on_invalid_default_value(self):
+	def test_get_raises_on_invalid_default_value(self) -> None:
 		m = AttributeManager(self.ds, axis=0)
 
 		# wrong type

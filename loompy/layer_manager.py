@@ -28,7 +28,7 @@ class LayerManager:
 		"""
 		if name is not None:
 			return self[name].last_modified()
-		ts = None
+		ts = ""
 		for name in self.keys():
 			if ts is None:
 				ts = self[name].last_modified()

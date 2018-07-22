@@ -222,13 +222,13 @@ class LoomConnection:
 		else:
 			self._file.close()
 			self._file = None
-		self.layers = None
-		self.ra = None
-		self.row_attrs = None
-		self.ca = None
-		self.col_attrs = None
-		self.row_graphs = None
-		self.col_graphs = None
+		self.layers = None  # type: ignore
+		self.ra = None  # type: ignore
+		self.row_attrs = None  # type: ignore
+		self.ca = None  # type: ignore
+		self.col_attrs = None  # type: ignore
+		self.row_graphs = None  # type: ignore
+		self.col_graphs = None  # type: ignore
 		self.shape = (0, 0)
 		self._closed = True
 
@@ -863,6 +863,12 @@ def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loomp
 	Remarks:
 		If the file exists, it will be overwritten.
 	"""
+
+	if isinstance(row_attrs, loompy.AttributeManager):
+		row_attrs = {k: v[:, :] for k, v in row_attrs.items()}
+	if isinstance(col_attrs, loompy.AttributeManager):
+		col_attrs = {k: v[:, :] for k, v in col_attrs.items()}
+
 	if isinstance(layers, np.ndarray):
 		layers = {"": layers}
 	elif scipy.sparse.issparse(layers):
@@ -872,11 +878,6 @@ def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loomp
 		layers = {k: v[:, :] for k, v in layers.items()}
 	if "" not in layers:
 		raise ValueError("Data for default layer must be provided")
-
-	if isinstance(row_attrs, loompy.AttributeManager):
-		row_attrs = {k: v[:, :] for k, v in row_attrs.items()}
-	if isinstance(col_attrs, loompy.AttributeManager):
-		col_attrs = {k: v[:, :] for k, v in col_attrs.items()}
 
 	try:
 		with new(filename, file_attrs=file_attrs) as ds:

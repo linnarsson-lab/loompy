@@ -97,4 +97,3 @@ def materialize_attr_values(a: np.ndarray) -> np.ndarray:
 		return result[0]
 	else:
 		return result
-

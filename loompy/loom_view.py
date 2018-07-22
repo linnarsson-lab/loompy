@@ -50,9 +50,17 @@ class LoomView:
 			ordering (np.ndarray):	The desired ordering along the axis
 			axis (int):				0, permute rows; 1, permute columns
 		"""
-		for layer in self.layers:
+		if axis not in (0, 1):
+			raise ValueError("Axis must be 0 (rows) or 1 (columns)")
+		for layer in self.layers.values():
 			layer.permute(ordering, axis=axis)
-		for g in (self.row_graphs, self.col_graphs)[axis]:
-			g.permute(ordering)
-		for a in (self.row_attrs, self.col_attrs)[axis]:
-			a.permute(ordering)
+		if axis == 0:
+			for g in self.row_graphs.values():
+				g.permute(ordering)
+			for a in self.row_attrs.values():
+				a.permute(ordering)
+		elif axis == 1:
+			for g in self.col_graphs.values():
+				g.permute(ordering)
+			for a in self.col_attrs.values():
+				a.permute(ordering)

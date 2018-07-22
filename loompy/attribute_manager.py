@@ -169,7 +169,7 @@ class AttributeManager:
 		for key in self.keys():
 			self[key] = self[key][ordering]
 
-	def get(self, name: str, default: np.ndarray):
+	def get(self, name: str, default: np.ndarray) -> np.ndarray:
 		"""
 		Return the value for a named attribute if it exists, else default.
 		Default has to be a numpy array of correct size.
