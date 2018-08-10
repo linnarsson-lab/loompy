@@ -23,5 +23,5 @@ setup(
 	license="BSD",
 	keywords="loom omics transcriptomics bioinformatics",
 	url="https://github.com/linnarsson-lab/loompy",
-	download_url=f"https://github.com/linnarsson-lab/loompy/archive/{__version__}.tar.gz",
+	download_url="https://github.com/linnarsson-lab/loompy/archive/{__version__}.tar.gz",
 )
