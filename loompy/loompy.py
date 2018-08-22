@@ -33,6 +33,7 @@ import logging
 import time
 import loompy
 from loompy import deprecated, timestamp
+import pandas as pd
 import warnings
 with warnings.catch_warnings():
 	warnings.simplefilter("ignore")
@@ -743,6 +744,39 @@ class LoomConnection:
 		if axis == 1:
 			self.col_attrs.permute(ordering)
 			self.col_graphs.permute(ordering)
+
+	def pandas(self, row_attr: str = None, selector: Union[List, Tuple, np.ndarray, slice] = None, columns: List[str] = None) -> pd.DataFrame:		
+		if columns is None:
+			columns = [x for x in self.ca.keys()]
+
+		data: Dict[str, np.ndarray] = {}
+		for col in columns:
+			vals = self.ca[col]
+			if vals.ndim >= 2:
+				for i in range(vals.ndim):
+					data[col + f".{i+1}"] = vals[:, 0]
+			else:
+				data[col] = self.ca[col]
+		if row_attr is not None:  # Pick out some rows (genes)
+			if selector is None:  # Actually, pick all the rows
+				names = self.ra[row_attr]
+				vals = self[:, :]
+				for ix, name in enumerate(names):
+					data[name] = vals[ix, :][0]
+			else:  # Pick some specific rows
+				if type(selector) is slice:  # Based on a slice
+					names = self.ra[row_attr][selector]
+					vals = self[selector, :]
+					for ix, name in enumerate(names):
+						data[name] = vals[ix, :][0]
+				elif all([type(s) is str for s in selector]):  # Based on specific string values
+					names = self.ra[row_attr][np.in1d(self.ra[row_attr], selector)]
+					for name in names:
+						vals = self[self.ra[row_attr] == name, :][0]
+						data[name] = vals
+				else:  # Give up
+					raise ValueError("Invalid selector")
+		return pd.DataFrame(data)
 
 	def export(self, out_file: str, layer: str = None, format: str = "tab") -> None:
 		"""
