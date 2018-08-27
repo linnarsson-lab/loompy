@@ -191,6 +191,27 @@ class LoomConnection:
 		else:
 			self.layers[""][slice_] = data
 
+	def embeddings(self, axis: int = 1) -> List[str]:
+		"""
+		Return a (possibly empty) list of attributes that have more than one dimension
+		"""
+		result = []
+		a = ["/row_attrs/", "/col_attrs/"][axis]
+		for attr in self._file[a]:
+			if len(self._file[a][attr].shape) > 1:
+				result.append(attr)
+		return result
+	
+	def embedding(self, axis: int = 1) -> Optional[str]:
+		"""
+		Return the first attribute that has more than one dimension, or None if no such attributes exist
+		"""
+		result = self.embeddings(axis)
+		if len(result) >= 1:
+			return result[0]
+		else:
+			return None
+
 	def sparse(self, rows: np.ndarray = None, cols: np.ndarray = None, layer: str = None) -> scipy.sparse.coo_matrix:
 		"""
 		Return the main matrix as a scipy.sparse.coo_matrix, without loading dense matrix in RAM
@@ -818,23 +839,6 @@ class LoomConnection:
 				f.write("\n")
 
 
-def _create_sparse(filename: str, matrix: np.ndarray, row_attrs: Dict[str, np.ndarray], col_attrs: Dict[str, np.ndarray], *, file_attrs: Dict[str, str] = None) -> None:
-	"""
-	Create a new loom file from a sparse matrix input
-	"""
-	matrix = matrix.tocsc()
-	window = 6400
-	with new(filename, file_attrs=file_attrs) as ds:
-		ix = 0
-		while ix < matrix.shape[1]:
-			window = min(window, matrix.shape[1] - ix)
-			if window == 0:
-				break
-			ca = {key: val[ix:ix + window] for (key, val) in col_attrs.items()}
-			ds.add_columns(matrix[:, ix:ix + window].toarray(), ca, row_attrs=row_attrs)
-			ix += window
-
-
 def create_append(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loompy.LayerManager], row_attrs: Dict[str, np.ndarray], col_attrs: Dict[str, np.ndarray], *, file_attrs: Dict[str, str] = None, fill_values: Dict[str, np.ndarray] = None) -> None:
 	"""
 	**DEPRECATED** - Use `new` instead; see https://github.com/linnarsson-lab/loompy/issues/42
@@ -903,11 +907,11 @@ def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loomp
 	if isinstance(col_attrs, loompy.AttributeManager):
 		col_attrs = {k: v[:, :] for k, v in col_attrs.items()}
 
-	if isinstance(layers, np.ndarray):
+	if isinstance(layers, np.ndarray) or scipy.sparse.issparse(layers):
 		layers = {"": layers}
-	elif scipy.sparse.issparse(layers):
-		_create_sparse(filename, layers, row_attrs, col_attrs, file_attrs=file_attrs)
-		return
+#	elif scipy.sparse.issparse(layers):
+#		_create_sparse(filename, layers, row_attrs, col_attrs, file_attrs=file_attrs)
+#		return
 	elif isinstance(layers, loompy.LayerManager):
 		layers = {k: v[:, :] for k, v in layers.items()}
 	if "" not in layers:

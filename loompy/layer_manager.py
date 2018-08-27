@@ -2,6 +2,7 @@ from typing import *
 import numpy as np
 import loompy
 import logging
+import scipy.sparse as sparse
 
 
 class LayerManager:
@@ -93,6 +94,10 @@ class LayerManager:
 					matrix: np.ndarray = None
 					dtype = val
 					shape = self.ds.shape
+				elif sparse.issparse(val):  # val is a sparse matrix
+					matrix = None
+					dtype = val.dtype
+					shape = val.shape
 				else:  # val is a matrix that will be the layer
 					matrix = val
 					dtype = matrix.dtype
@@ -130,9 +135,22 @@ class LayerManager:
 					compression_opts=2
 				)
 				if name == "":
-					self.ds.shape = matrix.shape
-				self.ds._file.flush()
+					self.ds.shape = shape
 				self.__dict__["storage"][name] = None
+
+				# Fill the matrix with sparse data
+				if sparse.issparse(val):
+					m = val.tocsr()
+					window = 6400
+					ix = 0
+					while ix < val.shape[1]:
+						window = min(window, m.shape[1] - ix)
+						if window == 0:
+							break
+						self.ds._file[path][:, ix:ix + window] = m[:, ix: ix + window].toarray()
+						ix += window
+					
+				self.ds._file.flush()
 			else:
 				self.__dict__["storage"][name] = val
 

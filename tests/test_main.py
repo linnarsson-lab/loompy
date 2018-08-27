@@ -22,5 +22,8 @@ def test_sparse() -> None:
 
 	loompy.create('test.loom', S, {'g_id': np.arange(G)}, {'c_id': np.arange(C)})
 	with loompy.connect("test.loom") as ds:
+		ds["layer"] = S
 		assert(np.all(ds[:, :] == S.toarray()))
 		assert(np.all(ds.sparse().data == S.tocoo().data))
+		assert(np.all(ds.layers["layer"][:, :] == S.toarray()))
+		assert(np.all(ds.layers["layer"].sparse().data == S.tocoo().data))
