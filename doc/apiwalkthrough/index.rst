@@ -39,6 +39,19 @@ For example, the following creates a loom file with a 100x100 main matrix, one r
   col_attrs = { "SomeColAttr": np.arange(100) }
   loompy.create(filename, matrix, row_attrs, col_attrs)
 
+Note that ``loompy.create()`` does not return anything. To work with the newly created file, you must ``loompy.connect()`` to it.
+
+You can also create an empty file using `loompy.new()`, which returns a connection to the newly created file. The file can then be populated with data. 
+This is especially useful when you're building a dataset incrementally, e.g. by pooling subsets of other datasets:
+
+.. code:: python
+
+  with loompy.new("outfile.loom") as dsout:
+      for sample in samples:
+          with loompy.connect(sample) as dsin:
+              logging.info(f"Appending {sample}.")
+              dsout.add_columns(ds.layers, col_attrs=dsin.col_attrs, row_attrs=dsin.row_attrs)
+
 You can also create a file by combining existing loom files. The files will be concatenated along the column
 axis, and therefore must have the same number of rows. If the rows are potentially not in the same order, 
 you can supply a ``key`` argument; the row attribute corresponding to the key will be used to sort the files. 
@@ -155,8 +168,13 @@ You can load the main matrix or any layer as sparse:
 .. code:: python
 
   ds.layers["exons"].sparse()  # Returns a scipy.sparse.coo_matrix()
-  ds.layers["unspliced"].sparse(rows, cols)  # Returns only the indicated rows and columns (ndarrays of integers)
+  ds.layers["unspliced"].sparse(rows, cols)  # Returns only the indicated rows and columns (ndarrays of integers or bools)
 
+You can assign layers from sparse matrices:
+
+.. code:: python
+
+  ds.layers["exons"] = my_sparse_matrix
 
 
 Global attributes
@@ -259,7 +277,14 @@ delete any part of the matrix.
  ds.add_columns(submatrix, col_attrs)
 
 You need to provide a submatrix corresponding to the new columns, as well as
-a dictionary of column attributes with values for all the new columns.
+a dictionary of column attributes with values for all the new columns. 
+
+Note that if you are adding columns to an empty file, you must also provide row attributes:
+
+.. code:: python
+
+ ds.add_columns(submatrix, col_attrs, row_attrs={"Gene": genes})
+
 
 You can also add the contents of another .loom file:
 
@@ -279,27 +304,6 @@ with conflicting values, you can automatically convert such attributes into colu
 by passing ``convert_attrs=True`` to the method.
 
 
-There is also a convenient function to create or append to a loom file:
-
-.. code:: python
-
-  loompy.create_append(filename, layers, row_attrs, col_attrs)
-
-This will create the file if it doesn't exist, and append to it if it does. This function
-is commonly used when combining several loom files while performing a selection on the columns:
-
-.. code:: python
-
-  for f in input_files:
-    with loompy.connect(f) as ds:
-      cells = # select the desired columns in ds
-      for (_, _, view) in ds.scan(items=cells):
-        loompy.create_append(outout_file, view.layers, view.ra, view.ca)
-
-The code above loops over a number of input files, then scans across each file to select
-a desired subset of the columns (cells) and writes them to the output file. Since it uses
-``scan()``, it will never load entire datasets in RAM and will work no matter how big the 
-input datasets are.
 
 .. _loomlayers:
 
@@ -334,6 +338,12 @@ expressions are equivalent to the following:
   a = ds["spliced"][:, 10] # Assign the 10th column of layer "spliced" to the variable a
   del ds["spliced"]     # Delete the "spliced" layer
 
+Sometimes you may need to create an empty layer (all zeros), to be filled later. Empty layers
+are created by assigning a type to a layer name. For example:
+
+.. code:: python
+  ds["empty_floats"] = "float32"
+  ds["empty_ints"] = "int64"
 
 
 .. _loomoperations:
@@ -401,7 +411,13 @@ should return a single float or integer value. Internally, ``map()`` uses ``scan
 loop across the file.
 
 Note that you must always provide a list of functions, even if it has only one element, and
-that the result is a list of vectors, one per function that was supplied.
+that the result is a list of vectors, one per function that was supplied. Hence the correct 
+way to map a single function across the matrix is:
+
+.. code:: python
+
+  (means,) = ds.map([np.mean], axis=1)
+
 
 Permutation
 ^^^^^^^^^^^
