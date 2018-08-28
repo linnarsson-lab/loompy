@@ -7,6 +7,10 @@ from setuptools import setup, find_packages
 # python setup.py sdist
 # twine upload dist/*
 
+# NOTE: Don't forget to update the release version at loompy.github.io (index.html)!
+
+
+
 # pylint: disable=exec-used
 __version__ = '0.0.0'
 exec(open('loompy/_version.py').read())

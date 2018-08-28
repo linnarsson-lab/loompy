@@ -3,49 +3,18 @@
 Installation
 ============
 
-Using conda
------------
-
-A conda recipe for ``loompy`` is hosted on ``bioconda``, if ``bioconda`` is present in your channel list (check by ``cat ~/.condarc``) you can simply run:
+Install the loompy package from PyPi with:
 
 ::
 
-    conda install loompy
-
-If you don't have ``bioconda`` in your channel list you might want to add it with the following command
-
-::
-    conda config --append channels bioconda
-
-Otherwise if you are not fond of using community channels you can simply install the recipe we built (or using pip): 
-
-::
-
-    conda install -c gioelelm loompy 
+    pip install -U loompy
 
 
 .. tip::
     The package is updated often (don't worry, the format is stable;
     even in the rare occasion that you need to update your code, your old
-    loom files won't break). To ensure that you have the latest version, do
-    ``conda update loompy``
-
-
-Using pip
----------
-
-You can install the loompy package from PyPi with:
-
-::
-
-    pip install loompy
-
-
-.. tip::
-    The package is updated often (don't worry, the format is stable;
-    even in the rare occasion that you need to update your code, your old
-    loom files won't break). To ensure that you have the latest version, do
-    ``pip install -U loompy``
+    loom files won't break). To ensure that you have the latest version, run
+    ``pip install -U loompy`` again.
 
 
 From source
@@ -70,8 +39,6 @@ Getting Started
 ===============
 
 Go to http://loom.linnarssonlab.org and download one of the datasets. We will use ``cortex.loom`` below.
-
-**Note:** The Loom web site is currently broken in Safari. Use Chrome instead for now.
 
 Run the following in a Jupyter notebook:
 
