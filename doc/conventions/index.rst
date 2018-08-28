@@ -55,7 +55,7 @@ Column attributes
 
 ``Outliers`` an integer label 1 or 0, indicating cells that are outliers relative to the clusters.
 
-``Embedding`` an M-by-Y matrix where M is the number of columns and Y is the dimensionality of the embedding. This can be used
+Any attribute that is an M-by-Y matrix (where M is the number of columns and Y is the dimensionality of the embedding) can be used
 to store e.g. a PCA or t-SNE dimensionality reduction.
 
 Row attributes

@@ -19,7 +19,12 @@ column annotations contain metadata for genes and cells, such as
 graphs used for graph-based clustering.
 
 .. raw:: html
-  <img src="Loom_components.png" width="694" height="345">
+    <img src="Loom_components.png" width="694" height="345">
+
+.. image:: picture.jpg
+   :width: 694px
+   :height: 345px
+   :scale: 50 %
 
 Loom files (``.loom``) are created in the
 `HDF5 <https://en.wikipedia.org/wiki/Hierarchical_Data_Format>`__ file
