@@ -18,9 +18,8 @@ column annotations contain metadata for genes and cells, such as
 ``Sex``, ``Age`` (for cells). Graph objects are used to store nearest-neighbor
 graphs used for graph-based clustering.
 
-.. image:: Loom-images.png
-   :alt: An illustration of the structure of the Loom format
-   :align: center
+.. raw:: html
+  <img src="Loom_components.png" width="694" height="345">
 
 Loom files (``.loom``) are created in the
 `HDF5 <https://en.wikipedia.org/wiki/Hierarchical_Data_Format>`__ file
