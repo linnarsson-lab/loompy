@@ -19,7 +19,7 @@ setup(
 	name="loompy",
 	version=__version__,
 	packages=find_packages(),
-	install_requires=['h5py', 'numpy', 'scipy', "typing", "setuptools"],
+	install_requires=['h5py', 'numpy', 'scipy', "typing", "setuptools", "matplotlib"],
 	# metadata for upload to PyPI
 	author="Linnarsson Lab",
 	author_email="sten.linnarsson@ki.se",
