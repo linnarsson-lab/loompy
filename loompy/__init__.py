@@ -10,4 +10,11 @@ from .to_html import to_html
 from .view_manager import ViewManager
 from .loompy import connect, create, create_append, combine, create_from_cellranger, LoomConnection, new
 from ._version import __version__, loom_spec_version
-from .color import zviridis, cat_colors
+
+try:
+    import matplotlib
+    del matplotlib
+except ImportError:
+    pass
+else:
+    from .color import zviridis, cat_colors
