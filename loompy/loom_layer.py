@@ -30,9 +30,14 @@ class MemoryLoomLayer():
 
 class LoomLayer():
 	def __init__(self, name: str, ds: Any) -> None:
-		self.ds = ds
-		self.name = name
-		self.shape = ds.shape
+		self.ds = ds  #: The :class:`LoomConnection` object this layer belongs to
+		self.name = name  #: Name of the layer
+		self.shape = ds.shape  #: Shape of the layer, tuple of (n_rows, n_cols)
+		self.dtype = ""  #: Datatype of the layer
+		if name == "":
+			self.dtype = self.ds._file["/matrix"].dtype
+		else:
+			self.dtype = self.ds._file["/layers/" + self.name].dtype
 
 	def last_modified(self) -> str:
 		"""

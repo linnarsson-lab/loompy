@@ -10,6 +10,9 @@ class LayerManager:
 	Manage a set of layers with a backing HDF5 file store
 	"""
 	def __init__(self, ds: Any) -> None:  # Note: can't give type for ds because it will be circular and mypy doesn't support it
+		"""
+		Create a LayerManager object.
+		"""
 		setattr(self, "!ds", ds)
 		storage: Dict[str, np.ndarray] = {}
 		setattr(self, "!storage", storage)
@@ -18,7 +21,7 @@ class LayerManager:
 			if "layers" in ds._file:
 				for key in self.ds._file["layers"].keys():
 					self.__dict__["storage"][key] = None
-			else:
+			elif ds.mode == "r+":
 				ds._file.create_group('/layers')
 
 	def last_modified(self, name: str = None) -> str:

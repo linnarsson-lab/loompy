@@ -342,6 +342,7 @@ Sometimes you may need to create an empty layer (all zeros), to be filled later.
 are created by assigning a type to a layer name. For example:
 
 .. code:: python
+
   ds["empty_floats"] = "float32"
   ds["empty_ints"] = "int64"
 

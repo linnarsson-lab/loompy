@@ -19,6 +19,7 @@
 #
 import os
 import sys
+import sphinx_bootstrap_theme
 sys.path.insert(0, os.path.abspath('..'))
 sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('_ext'))
@@ -37,8 +38,17 @@ extensions = ['sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
     'sphinx.ext.napoleon',
-    'sphinx_click.ext',
+    'sphinx.ext.intersphinx',
     'edit_on_github']
+
+intersphinx_mapping = {
+    'urllib3': ('http://urllib3.readthedocs.org/en/latest', None),
+    'python': ('http://docs.python.org/3', None),
+    'numpy': ('http://docs.scipy.org/doc/numpy/', None),
+    'scipy': ('http://docs.scipy.org/doc/scipy/reference', None),
+    'matplotlib': ('http://matplotlib.org', None),
+    'h5py': ('http://docs.h5py.org/en/latest/', None)
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -55,7 +65,7 @@ master_doc = 'index'
 # General information about the project.
 project = 'loompy'
 copyright = '2017, LinnarssonLab'
-author = 'LinnarssonLab'
+author = 'Linnarsson lab members'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -93,7 +103,9 @@ todo_include_todos = False
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_rtd_theme'
+# html_theme = 'sphinx_rtd_theme'
+html_theme = 'bootstrap'
+html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -111,15 +123,15 @@ html_static_path = ['_static']
 #
 # This is required for the alabaster theme
 # refs: http://alabaster.readthedocs.io/en/latest/installation.html#sidebars
-html_sidebars = {
-    '**': [
-        'about.html',
-        'navigation.html',
-        'relations.html',  # needs 'show_related': True theme option to display
-        'searchbox.html',
-        'donate.html',
-    ]
-}
+# html_sidebars = {
+#     '**': [
+#         'about.html',
+#         'navigation.html',
+#         'relations.html',  # needs 'show_related': True theme option to display
+#         'searchbox.html',
+#         'donate.html',
+#     ]
+# }
 
 
 # -- Options for HTMLHelp output ------------------------------------------

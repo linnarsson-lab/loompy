@@ -1,22 +1,10 @@
-loompy package
-==============
+LoomConnection (class)
+======================
 
-Submodules
-----------
+.. currentmodule:: loompy.loompy
 
-loompy\.loompy module
----------------------
-
-.. automodule:: loompy.loompy
+.. autoclass:: loompy.loompy.LoomConnection
+    :special-members: __init__ 
     :members:
     :undoc-members:
-    :show-inheritance:
-
-
-Module contents
----------------
-
-.. automodule:: loompy
-    :members:
-    :undoc-members:
-    :show-inheritance:
+    :exclude-members: set_layer, delete_attr, set_attr, list_edges, get_edges, set_edges, batch_scan, batch_scan_layers

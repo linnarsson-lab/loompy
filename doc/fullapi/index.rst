@@ -1,7 +1,7 @@
 .. _fullapi:
 
 Complete API Reference
-=====================
+======================
 
 This is a complete API reference to loompy |version| generated using the docstrings of every loompy class/function.
 
@@ -9,3 +9,4 @@ This is a complete API reference to loompy |version| generated using the docstri
 
 .. toctree::
    loompy
+   layer_manager

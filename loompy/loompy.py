@@ -41,10 +41,21 @@ with warnings.catch_warnings():
 
 
 class LoomConnection:
-	@property
-	def mode(self) -> str:
-		return self._file.mode
+	'''
+	A connection to a Loom file on disk. Typically LoomConnection objects are created using one of the 
+	functions on the loompy module. LoomConnection objects are context managers and should normally be 
+	wrapped in a ``with`` block:
 
+	.. highlight:: python
+	.. code-block:: python
+
+		import loompy
+		with loompy.connect("mydata.loom") as ds:
+		     print(ds.ca.keys())
+	
+	Inside the ``with`` block, you can access the dataset (here using the variable ``ds``). When execution
+	leaves the ``with`` block, the connection is automatically closed, freeing up resources.
+	'''
 	def __init__(self, filename: str, mode: str = 'r+') -> None:
 		"""
 		Establish a connection to a .loom file.
@@ -63,15 +74,15 @@ class LoomConnection:
 		# because you probably are doing something that you don't want to
 		if mode != 'r+' and mode != 'r':
 			raise ValueError("Mode must be either 'r' or 'r+'")
-		self.filename = filename
+		self.filename = filename  #: Path to the file (as given when the LoomConnection was created)
 		self._file = h5py.File(filename, mode)
 		self._closed = False
 		try:
 			if "matrix" in self._file:
-				self.shape = self._file["/matrix"].shape
+				self.shape = self._file["/matrix"].shape  #: Shape of the dataset (n_rows, n_cols)
 			else:
 				self.shape = (0, 0)
-			self.layers = loompy.LayerManager(self)
+			self.layers = loompy.LayerManager(self)  #: layers, dict-like (:class:`loompy.LayerManager`)
 			self.view = loompy.ViewManager(self)
 			self.ra = loompy.AttributeManager(self, axis=0)
 			self.ca = loompy.AttributeManager(self, axis=1)
@@ -89,12 +100,23 @@ class LoomConnection:
 			self.close()
 			raise e
 
+	@property
+	def mode(self) -> str:
+		"""
+		The access mode of the connection ('r' or 'r+')
+		"""
+		return self._file.mode
+
 	def last_modified(self) -> str:
 		"""
-		Return an ISO8601 timestamp when the file was last modified
+		Return an ISO8601 timestamp indicating when the file was last modified
 
-		Note: if the file has no timestamp, and mode is 'r+', a new timestamp is created and returned.
-		Otherwise, the current time in UTC is returned
+		Returns:
+			An ISO8601 timestamp indicating when the file was last modified
+
+		Remarks:
+			If the file has no timestamp, and mode is 'r+', a new timestamp is created and returned.
+			Otherwise, the current time in UTC is returned
 		"""
 		if "last_modified" in self._file.attrs:
 			return self._file.attrs["last_modified"]
@@ -106,6 +128,15 @@ class LoomConnection:
 		return timestamp()
 
 	def get_changes_since(self, timestamp: str) -> Dict[str, List]:
+		"""
+		Get a summary of the parts of the file that changed since the given time
+
+		Args:
+			timestamp:	ISO8601 timestamp
+		
+		Return:
+			dict:	Dictionary like ``{"row_graphs": rg, "col_graphs": cg, "row_attrs": ra, "col_attrs": ca, "layers": layers}`` listing the names of objects that were modified since the given time
+		"""
 		rg = []
 		cg = []
 		ra = []
@@ -191,30 +222,9 @@ class LoomConnection:
 		else:
 			self.layers[""][slice_] = data
 
-	def embeddings(self, axis: int = 1) -> List[str]:
-		"""
-		Return a (possibly empty) list of attributes that have more than one dimension
-		"""
-		result = []
-		a = ["/row_attrs/", "/col_attrs/"][axis]
-		for attr in self._file[a]:
-			if len(self._file[a][attr].shape) > 1:
-				result.append(attr)
-		return result
-	
-	def embedding(self, axis: int = 1) -> Optional[str]:
-		"""
-		Return the first attribute that has more than one dimension, or None if no such attributes exist
-		"""
-		result = self.embeddings(axis)
-		if len(result) >= 1:
-			return result[0]
-		else:
-			return None
-
 	def sparse(self, rows: np.ndarray = None, cols: np.ndarray = None, layer: str = None) -> scipy.sparse.coo_matrix:
 		"""
-		Return the main matrix as a scipy.sparse.coo_matrix, without loading dense matrix in RAM
+		Return the main matrix or specified layer as a scipy.sparse.coo_matrix, without loading dense matrix in RAM
 
 		Args:
 			rows:		Rows to include, or None to include all
@@ -222,7 +232,7 @@ class LoomConnection:
 			layer:		Layer to return, or None to return the default layer
 
 		Returns:
-			scipy.sparse.coo_matrix
+			Sparse matrix (:class:`scipy.sparse.coo_matrix`)
 		"""
 		if layer is None:
 			return self.layers[""].sparse(rows=rows, cols=cols)
@@ -256,6 +266,9 @@ class LoomConnection:
 
 	@property
 	def closed(self) -> bool:
+		"""
+		True if the connection is closed.
+		"""
 		return self._closed
 
 	def set_layer(self, name: str, matrix: np.ndarray, chunks: Tuple[int, int] = (64, 64), chunk_cache: int = 512, dtype: str = "float32", compression_opts: int = 2) -> None:
@@ -385,11 +398,11 @@ class LoomConnection:
 		Add the content of another loom file
 
 		Args:
-			other_file (str):       filename of the loom file to append
+			other_file:       filename of the loom file to append
 			key:                    Primary key to use to align rows in the other file with this file
-			fill_values (dict):     default values to use for missing attributes (or None to drop missing attrs, or 'auto' to fill with sensible defaults)
-			batch_size (int):       the batch size used by batchscan (limits the number of rows/columns read in memory)
-			convert_attrs (bool):   convert file attributes that differ between files into column attributes
+			fill_values:     default values to use for missing attributes (or None to drop missing attrs, or 'auto' to fill with sensible defaults)
+			batch_size:       the batch size used by batchscan (limits the number of rows/columns read in memory)
+			convert_attrs:   convert file attributes that differ between files into column attributes
 
 		Returns:
 			Nothing, but adds the loom file. Note that the other loom file must have exactly the same
@@ -528,14 +541,13 @@ class LoomConnection:
 
 		Returns
 		------
-		Iterable that yields triplets
-		(ix, indexes, view)
+		Iterable that yields triplets of (ix, indexes, view) where
 
 		ix: int
 			first position / how many rows/cols have been yielded alredy
 		indexes: np.ndarray[int]
-			the indexes with the same numbering of the input args cells / genes (i.e. np.arange(len(ds.shape[axis])))
-			this is ix + selection
+			the indexes with the same numbering of the input args cells / genes (i.e. ``np.arange(len(ds.shape[axis]))``)
+			this is ``ix + selection``
 		view: LoomView
 			a view corresponding to the current chunk
 		"""
@@ -727,13 +739,13 @@ class LoomConnection:
 		Apply a function along an axis without loading the entire dataset in memory.
 
 		Args:
-			f (list of func):		Function(s) that takes a numpy ndarray as argument
+			f:		Function(s) that takes a numpy ndarray as argument
 
-			axis (int):		Axis along which to apply the function (0 = rows, 1 = columns)
+			axis:		Axis along which to apply the function (0 = rows, 1 = columns)
 
-			chunksize (int): Number of rows (columns) to load per chunk
+			chunksize: Number of rows (columns) to load per chunk
 
-			selection (array of bool): Columns (rows) to include
+			selection: Columns (rows) to include
 
 		Returns:
 			numpy.ndarray result of function application
@@ -766,7 +778,38 @@ class LoomConnection:
 			self.col_attrs.permute(ordering)
 			self.col_graphs.permute(ordering)
 
-	def pandas(self, row_attr: str = None, selector: Union[List, Tuple, np.ndarray, slice] = None, columns: List[str] = None) -> pd.DataFrame:		
+	def pandas(self, row_attr: str = None, selector: Union[List, Tuple, np.ndarray, slice] = None, columns: List[str] = None) -> pd.DataFrame:
+		"""
+		Create a Pandas DataFrame corresponding to (selected parts of) the Loom file.
+
+		Args:
+			row_attr:	Name of the row attribute to use for selecting rows to include (or None to omit row data)
+			selector:	A list, a tuple, a numpy.ndarray or a slice; used to select rows (or None to include all rows)
+			columns:	A list of column attributes to include, or None to include all
+		
+		Returns:
+			Pandas DataFrame
+		
+		Remarks:
+			The method returns a Pandas DataFrame with one column per row of the Loom file (i.e. transposed), which is usually
+			what is required for plotting and statistical analysis. By default, all column attributes and no rows are included. 
+			To include row data, provide a ``row_attr`` and a ``selector``. The selector is matched against values of the given 
+			row attribute, and matching rows are included.
+		
+		Examples:
+			.. highlight:: python
+			.. code-block:: python
+
+				import loompy
+				with loompy.connect("mydata.loom") as ds:
+					# Include all column attributes, and rows where attribute "Gene" matches one of the given genes
+					df1 = ds.pandas("Gene", ["Actb", "Npy", "Vip", "Pvalb"])
+					# Include the top 100 rows and name them after values of the "Gene" attribute
+					df2 = ds.pandas("Gene", :100)
+					# Include the entire dataset, and name the rows after values of the "Accession" attribute
+					df3 = ds.pandas("Accession")
+
+		"""
 		if columns is None:
 			columns = [x for x in self.ca.keys()]
 
@@ -801,7 +844,12 @@ class LoomConnection:
 
 	def export(self, out_file: str, layer: str = None, format: str = "tab") -> None:
 		"""
-		Export the specified layer and row/col attributes as tab-delimited file
+		Export the specified layer and row/col attributes as tab-delimited file.
+
+		Args:
+			out_file:	Path to the output file
+			layer:	Name of the layer to export, or None to export the main matrix
+			format: Desired file format (only 'tab' is supported)
 		"""
 		if format != "tab":
 			raise NotImplementedError("Only 'tab' is supported")
