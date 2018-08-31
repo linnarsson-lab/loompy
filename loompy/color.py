@@ -1,13 +1,14 @@
+import colorsys
+import json
+import os
+import random
+import sys
 from typing import *
-import numpy as np
+
 import matplotlib.colors as colors
 import matplotlib.pyplot as plt
+import numpy as np
 from sklearn.preprocessing import LabelEncoder
-import os
-import colorsys
-import random
-import json
-import sys
 
 # See https://graphicdesign.stackexchange.com/questions/3682/where-can-i-find-a-large-palette-set-of-contrasting-colors-for-coloring-many-d
 
