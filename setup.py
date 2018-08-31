@@ -20,6 +20,7 @@ setup(
 	version=__version__,
 	packages=find_packages(),
 	install_requires=['h5py', 'numpy', 'scipy', "typing", "setuptools"],
+	python_requires='>=3.6',
 	# metadata for upload to PyPI
 	author="Linnarsson Lab",
 	author_email="sten.linnarsson@ki.se",
