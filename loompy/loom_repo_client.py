@@ -20,8 +20,18 @@ class LoomRepo:
 
 
 class LoomRepoClient:
-	def __init__(self, endpoint: str = "http://loom.linnarssonlab.org") -> None:
+	def __init__(self, endpoint: str) -> None:
 		self.endpoint = endpoint
 	
-	def list_repos_for_group(self, group: str) -> Dict[str, LoomRepo]:
-		return [LoomRepo(group, )
+	def search(self, group: str) -> Dict[str, LoomRepo]:
+		return {
+			"repos": [
+				("slinnarsson", "Lab of Sten Linnarsson at Karolinska Institute"),
+				("amitlab", "Ido Amit, Weizmann"),
+				("aerts", "Stein Aerts"),
+				("niryosef", "Nir Yosef at Berkeley"]
+			],
+			""
+		}
+	
+	def 

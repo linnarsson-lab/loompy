@@ -10,3 +10,5 @@ This is a complete API reference to loompy |version| generated using the docstri
 .. toctree::
    loompy
    layer_manager
+   memory_loom_layer
+   loom_layer

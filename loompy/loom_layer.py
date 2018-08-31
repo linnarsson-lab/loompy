@@ -5,9 +5,14 @@ from loompy import timestamp
 
 
 class MemoryLoomLayer():
+	"""
+	A layer residing in memory (without a corresponding layer on disk), typically
+	as part of a :class:`loompy.LoomView`. MemoryLoomLayer supports a subset of 
+	the operations suported for regular layers.
+	"""
 	def __init__(self, name: str, matrix: np.ndarray) -> None:
-		self.name = name
-		self.shape = matrix.shape
+		self.name = name  #: Name of the layer
+		self.shape = matrix.shape  #: Shape of the layer
 		self.values = matrix
 
 	def __getitem__(self, slice: Tuple[Union[int, slice], Union[int, slice]]) -> np.ndarray:
@@ -17,9 +22,19 @@ class MemoryLoomLayer():
 		self.values[slice] = data
 
 	def sparse(self, rows: np.ndarray, cols: np.ndarray) -> scipy.sparse.coo_matrix:
+		"""
+		Return the layer as :class:`scipy.sparse.coo_matrix`
+		"""
 		return scipy.sparse.coo_matrix(self.values[rows, :][:, cols])
 
 	def permute(self, ordering: np.ndarray, *, axis: int) -> None:
+		"""
+		Permute the layer along an axis
+
+		Args:
+			axis: The axis to permut (0, permute the rows; 1, permute the columns)
+			ordering: The permutation vector
+		"""
 		if axis == 0:
 			self.values = self.values[ordering, :]
 		elif axis == 1:
@@ -29,6 +44,9 @@ class MemoryLoomLayer():
 
 
 class LoomLayer():
+	"""
+	Represents a layer (matrix) of values in the loom file, which can be accessed by slicing.
+	"""
 	def __init__(self, name: str, ds: Any) -> None:
 		self.ds = ds  #: The :class:`LoomConnection` object this layer belongs to
 		self.name = name  #: Name of the layer
