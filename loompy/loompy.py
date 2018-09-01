@@ -100,8 +100,8 @@ class LoomConnection:
 		self.ra = loompy.AttributeManager(self, axis=0)  #: Row attributes, dict-like with np.ndarray values
 		self.ca = loompy.AttributeManager(self, axis=1)  #: Column attributes, dict-like with np.ndarray values
 		self.attrs = loompy.FileAttributeManager(self._file)  #: Global attributes
-		self.row_graphs = loompy.GraphManager(self, axis=0)  #: Row graphs, dict-like with values that are scipy.sparse.coom_matrix objects
-		self.col_graphs = loompy.GraphManager(self, axis=1)  #: Column graphs, dict-like with values that are scipy.sparse.coom_matrix objects
+		self.row_graphs = loompy.GraphManager(self, axis=0)  #: Row graphs, dict-like with values that are :class:`scipy.sparse.coo_matrix` objects
+		self.col_graphs = loompy.GraphManager(self, axis=1)  #: Column graphs, dict-like with values that are :class:`scipy.sparse.coo_matrix` objects
 
 		# Compatibility
 		self.layer = self.layers
