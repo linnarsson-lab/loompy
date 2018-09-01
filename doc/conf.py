@@ -284,3 +284,5 @@ edit_on_github_branch = 'master/doc'
 
 # --- Sort the autodocs by source (currently not workin not sure why)
 autodoc_member_order = 'bysource'
+
+html_scaled_image_link = False
