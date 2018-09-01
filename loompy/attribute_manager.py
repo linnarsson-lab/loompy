@@ -159,7 +159,7 @@ class AttributeManager:
 		if name in self.__dict__["storage"]:
 			del self.__dict__["storage"][name]
 
-	def permute(self, ordering: np.ndarray) -> None:
+	def _permute(self, ordering: np.ndarray) -> None:
 		"""
 		Permute all the attributes in the collection
 

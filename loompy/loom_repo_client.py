@@ -29,9 +29,7 @@ class LoomRepoClient:
 				("slinnarsson", "Lab of Sten Linnarsson at Karolinska Institute"),
 				("amitlab", "Ido Amit, Weizmann"),
 				("aerts", "Stein Aerts"),
-				("niryosef", "Nir Yosef at Berkeley"]
+				("niryosef", "Nir Yosef at Berkeley")
 			],
 			""
 		}
-	
-	def 

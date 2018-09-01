@@ -8,8 +8,8 @@ API Walkthrough
 Creating and connecting
 -----------------------
 
-Creating ``.loom`` files
-~~~~~~~~~~~~~~~~~~~~~~~~
+Creating Loom files
+~~~~~~~~~~~~~~~~~~~
 
 To create a loom file from data, you need to supply a main matrix (numpy ndarray or scipy sparse matrix) and two dictionaries of row and column attributes (with attribute names as keys, and numpy ndarrays as values). If the main matrix is N×M, then the row attributes must have N elements, and the column attributes must have M elements. 
 
@@ -25,8 +25,8 @@ For example, the following creates a loom file with a 100x100 main matrix, one r
   col_attrs = { "SomeColAttr": np.arange(100) }
   loompy.create(filename, matrix, row_attrs, col_attrs)
 
-``loompy.create`` accepts numpy dense matrices (``np.ndarray``) as well as scipy sparse matrices (``scipy.coo_matrix``, ``scipy.csc_matrix``,
- or ``scipy.csr_matrix``). For example:
+:func:`loompy.create` accepts numpy dense matrices (:class:`numpy.ndarray`) as well as scipy sparse matrices (:class:`scipy.sparse.coo_matrix`, 
+:class:`scipy.sparse.csc_matrix`, or :class:`scipy.sparse.csr_matrix`). For example:
 
 .. code:: python
 
@@ -39,9 +39,9 @@ For example, the following creates a loom file with a 100x100 main matrix, one r
   col_attrs = { "SomeColAttr": np.arange(100) }
   loompy.create(filename, matrix, row_attrs, col_attrs)
 
-Note that ``loompy.create()`` does not return anything. To work with the newly created file, you must ``loompy.connect()`` to it.
+Note that :func:`loompy.create` does not return anything. To work with the newly created file, you must :func:`loompy.connect` to it.
 
-You can also create an empty file using `loompy.new()`, which returns a connection to the newly created file. The file can then be populated with data. 
+You can also create an empty file using :func:`loompy.new`, which returns a connection to the newly created file. The file can then be populated with data. 
 This is especially useful when you're building a dataset incrementally, e.g. by pooling subsets of other datasets:
 
 .. code:: python
@@ -52,7 +52,7 @@ This is especially useful when you're building a dataset incrementally, e.g. by 
               logging.info(f"Appending {sample}.")
               dsout.add_columns(ds.layers, col_attrs=dsin.col_attrs, row_attrs=dsin.row_attrs)
 
-You can also create a file by combining existing loom files. The files will be concatenated along the column
+You can also create a file by combining existing loom files (:func:`loompy.combine`). The files will be concatenated along the column
 axis, and therefore must have the same number of rows. If the rows are potentially not in the same order, 
 you can supply a ``key`` argument; the row attribute corresponding to the key will be used to sort the files. 
 For example, the following code will combine files and use the "Accession" row attribute as the key: 
@@ -63,20 +63,20 @@ For example, the following code will combine files and use the "Accession" row a
 
 You can import a 10X Genomics
 `cellranger <http://support.10xgenomics.com/single-cell/software/pipelines/latest/what-is-cell-ranger>`__
-output folder:
+output folder using :func:`loompy.create_from_cellranger`:
 
 .. code:: python
 
   loompy.create_from_cellranger(folder, output_filename)
 
 
-Connecting to ``.loom`` files
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Connecting to Loom files
+~~~~~~~~~~~~~~~~~~~~~~~~
 
-In order to work with a loom file, you must first connect to it. This does not load the data
+In order to work with a loom file, you must first :func:`loompy.connect` to it. This does not load the data
 or attributes, so is very quick regardless of the size of the file. It's more like connecting to a 
-database than reading a file. Loom supports
-Python context management, so normally you should use a ``with`` statement to take care of the connection:
+database than reading a file. Loom supports Python context management, so normally you should use 
+a ``with`` statement to take care of the connection:
 
 .. code:: python
 
@@ -102,7 +102,7 @@ In most cases, forgetting to close the file will do no harm, but may (for exampl
 prevent concurrent processes from accessing the file, and will leak file handles.
 
 In the rest of the documentation below, ``ds`` is assumed to be an
-instance of ``LoomConnection`` obtained by connecting to a ``.loom``
+instance of :class:`.LoomConnection` obtained by connecting to a Loom
 file.
 
 .. _loommanipulate:
@@ -113,7 +113,7 @@ Manipulate data
 Shape, indexing and slicing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The ``shape`` property returns the row and column count as a tuple:
+The :attr:`.LoomConnection.shape` attribute returns the row and column count as a tuple:
 
 .. code:: python
 
@@ -150,9 +150,9 @@ This slowdown is caused by a `performance bug <https://github.com/h5py/h5py/issu
 in h5py.
 
 If the whole dataset fits in RAM, loading it in full and then selecting the row/columns you want
-will be faster. If it doesn't, consider using the ``scan()`` method (see below), which in this example took
+will be faster. If it doesn't, consider using the :func:`.LoomConnection.scan` method (see below), which in this example took
 1 minute and 12 seconds regardless of how many columns were selected. As a rule of thumb,
-``scan()`` will be faster whenever you are loading more than about 1% of the rows
+:func:`.LoomConnection.scan` will be faster whenever you are loading more than about 1% of the rows
 or columns (randomly selected). 
 
   
@@ -161,13 +161,13 @@ Sparse data
 
 On disk, every layer is stored chunked and block-compressed, for efficient storage and access along both axes.
 
-The main matrix and additional layers can be assigned from dense or sparse matrices (any scipy.sparse format).
+The main matrix and additional layers can be assigned from dense or sparse matrices.
 
 You can load the main matrix or any layer as sparse:
 
 .. code:: python
 
-  ds.layers["exons"].sparse()  # Returns a scipy.sparse.coo_matrix()
+  ds.layers["exons"].sparse()  # Returns a scipy.sparse.coo_matrix
   ds.layers["unspliced"].sparse(rows, cols)  # Returns only the indicated rows and columns (ndarrays of integers or bools)
 
 You can assign layers from sparse matrices:
@@ -175,6 +175,20 @@ You can assign layers from sparse matrices:
 .. code:: python
 
   ds.layers["exons"] = my_sparse_matrix
+
+
+Modifying layers
+~~~~~~~~~~~~~~~~
+
+You can modify the data in any layer by assigning to a slice. For example:
+
+
+.. code:: python
+
+    ds[:, :] = newdata         # Assign a full matrix
+    ds[3, 500] = 31            # Set the element at (3, 500) to the value 31
+    ds[99, :] = rowdata        # Assign new values to row with index 99
+    ds[:, 99] = coldata        # Assign new values to column with index 99
 
 
 Global attributes
@@ -265,6 +279,23 @@ expressions to ensure proper operator precedence. For example:
 .. code:: python
 
   (a == b) & (a > c) | ~(c <= b)
+
+
+Modifying attributes
+~~~~~~~~~~~~~~~~~~~~
+
+Unlike layers, attributes are always only read and written in their entirety. Thus, assigning to a slice 
+does not modify the attribute on disk. To write new values for an attribute, you must assign a 
+full list or ndarray to the attribute:
+
+.. code:: python
+
+  with loompy.connect("filename.loom") as ds:
+    ds.ca.ClusterNames = values  # where values is a list or ndarray with one element per column
+    # This does not change the attribute on disk:
+    ds.ca.ClusterNames[10] = "banana"
+
+
 
 Adding columns
 ~~~~~~~~~~~~~~

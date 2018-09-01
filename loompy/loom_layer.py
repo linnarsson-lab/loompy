@@ -47,11 +47,12 @@ class LoomLayer():
 	"""
 	Represents a layer (matrix) of values in the loom file, which can be accessed by slicing.
 	"""
+	
 	def __init__(self, name: str, ds: Any) -> None:
-		self.ds = ds  #: The :class:`LoomConnection` object this layer belongs to
-		self.name = name  #: Name of the layer
+		self.ds = ds  #: The :class:`.LoomConnection` object this layer belongs to
+		self.name = name  #: Name of the layer (str)
 		self.shape = ds.shape  #: Shape of the layer, tuple of (n_rows, n_cols)
-		self.dtype = ""  #: Datatype of the layer
+		self.dtype = ""  #: Datatype of the layer (str)
 		if name == "":
 			self.dtype = self.ds._file["/matrix"].dtype
 		else:
@@ -117,7 +118,7 @@ class LoomLayer():
 			col.append(nonzeros[1] + ix)
 		return scipy.sparse.coo_matrix((np.concatenate(data), (np.concatenate(row), np.concatenate(col))), shape=(n_genes, n_cells))
 
-	def resize(self, size: Tuple[int, int], axis: int = None) -> None:
+	def _resize(self, size: Tuple[int, int], axis: int = None) -> None:
 		"""Resize the dataset, or the specified axis.
 
 		The dataset must be stored in chunked format; it can be resized up to the "maximum shape" (keyword maxshape) specified at creation time.
@@ -186,7 +187,7 @@ class LoomLayer():
 				ix = ix + cols_per_chunk
 		return result
 
-	def permute(self, ordering: np.ndarray, *, axis: int) -> None:
+	def _permute(self, ordering: np.ndarray, *, axis: int) -> None:
 		if self.name == "":
 			obj = self.ds._file['/matrix']
 		else:

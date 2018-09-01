@@ -77,28 +77,36 @@ class LoomConnection:
 		self.filename = filename  #: Path to the file (as given when the LoomConnection was created)
 		self._file = h5py.File(filename, mode)
 		self._closed = False
-		try:
-			if "matrix" in self._file:
-				self.shape = self._file["/matrix"].shape  #: Shape of the dataset (n_rows, n_cols)
-			else:
-				self.shape = (0, 0)
-			self.layers = loompy.LayerManager(self)  #: layers, dict-like (:class:`loompy.LayerManager`)
-			self.view = loompy.ViewManager(self)
-			self.ra = loompy.AttributeManager(self, axis=0)
-			self.ca = loompy.AttributeManager(self, axis=1)
-			self.attrs = loompy.FileAttributeManager(self._file)
-			self.row_graphs = loompy.GraphManager(self, axis=0)
-			self.col_graphs = loompy.GraphManager(self, axis=1)
+		if "matrix" in self._file:
+			self.shape = self._file["/matrix"].shape  #: Shape of the dataset (n_rows, n_cols)
+		else:
+			self.shape = (0, 0)
+		#:A dict-like interface to named layers. Keys are strings (the main matrix is named "") and
+		#:values are sliceable :class:`.LoomLayer` objects that support fancy indexing like numpy.ndarray objects.
+		#:
+		#:To read an entire layer into memory, use ``ds.layers[name][:, :]`` (i.e. select all rows and all columns).
+		#:Layers can also be loaded as sparse matrices by ``ds.layers[name].sparse()``.
+		#:
+		#:.. highlight:: python
+		#:.. code-block:: python
+		#:
+		#:    with loompy.connect("mydataset.loom") as ds:
+		#:       print(ds.layers.keys())
+		#:       print(f"There are {len(ds.layers)} layers")
+		#:       for name, layer in ds.layers.items():
+		#:           print(name, layer.shape, layer.dtype)
+		self.layers = loompy.LayerManager(self)
+		self.view = loompy.ViewManager(self)  #: Create a view of the file by slicing this attribute, like ``ds.view[:100, :100]``
+		self.ra = loompy.AttributeManager(self, axis=0)  #: Row attributes, dict-like with np.ndarray values
+		self.ca = loompy.AttributeManager(self, axis=1)  #: Column attributes, dict-like with np.ndarray values
+		self.attrs = loompy.FileAttributeManager(self._file)  #: Global attributes
+		self.row_graphs = loompy.GraphManager(self, axis=0)  #: Row graphs, dict-like with values that are scipy.sparse.coom_matrix objects
+		self.col_graphs = loompy.GraphManager(self, axis=1)  #: Column graphs, dict-like with values that are scipy.sparse.coom_matrix objects
 
-			# Compatibility
-			self.layer = self.layers
-			self.row_attrs = self.ra
-			self.col_attrs = self.ca
-
-		except Exception as e:
-			logging.warn("initialising LoomConnection to %s failed, closing file connection", filename)
-			self.close()
-			raise e
+		# Compatibility
+		self.layer = self.layers
+		self.row_attrs = self.ra
+		self.col_attrs = self.ca
 
 	@property
 	def mode(self) -> str:
@@ -389,7 +397,7 @@ class LoomConnection:
 
 			# Add the columns layerwise
 			for key in self.layers.keys():
-				self.layers[key].resize(n_cols, axis=1)
+				self.layers[key]._resize(n_cols, axis=1)
 				self.layers[key][:, old_n_cols:n_cols] = layers_dict[key]
 		self._file.flush()
 
@@ -407,7 +415,7 @@ class LoomConnection:
 		Returns:
 			Nothing, but adds the loom file. Note that the other loom file must have exactly the same
 			number of rows, and must have exactly the same column attributes.
-			The all the contents including layers but ignores layers in `other_file` that are not already persent in self
+			The all the contents including layers but ignores layers in `other_file` that are not already present in self
 		"""
 		if self._file.mode != "r+":
 			raise IOError("Cannot add data when connected in read-only mode")
@@ -770,13 +778,13 @@ class LoomConnection:
 			del self._file['tiles']
 
 		ordering = list(np.array(ordering).flatten())  # Flatten the ordering, in case we got a column vector
-		self.layers.permute(ordering, axis=axis)
+		self.layers._permute(ordering, axis=axis)
 		if axis == 0:
-			self.row_attrs.permute(ordering)
-			self.row_graphs.permute(ordering)
+			self.row_attrs._permute(ordering)
+			self.row_graphs._permute(ordering)
 		if axis == 1:
-			self.col_attrs.permute(ordering)
-			self.col_graphs.permute(ordering)
+			self.col_attrs._permute(ordering)
+			self.col_graphs._permute(ordering)
 
 	def pandas(self, row_attr: str = None, selector: Union[List, Tuple, np.ndarray, slice] = None, columns: List[str] = None) -> pd.DataFrame:
 		"""
@@ -900,6 +908,9 @@ def create_append(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray]
 
 
 def new(filename: str, *, file_attrs: Optional[Dict[str, str]] = None) -> LoomConnection:
+	"""
+	Create an empty Loom file, and return it as a context manager.
+	"""
 	if filename.startswith("~/"):
 		filename = os.path.expanduser(filename)
 	if file_attrs is None:
@@ -928,15 +939,16 @@ def new(filename: str, *, file_attrs: Optional[Dict[str, str]] = None) -> LoomCo
 
 def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loompy.LayerManager], row_attrs: Union[loompy.AttributeManager, Dict[str, np.ndarray]], col_attrs: Union[loompy.AttributeManager, Dict[str, np.ndarray]], *, file_attrs: Dict[str, str] = None) -> None:
 	"""
-	Create a new .loom file from the given data.
+	Create a new Loom file from the given data.
 
 	Args:
-		filename (str):         The filename (typically using a `.loom` file extension)
-		layers (np.ndarray or scipy.sparse or Dict[str, np.ndarray] or LayerManager):
-								Two-dimensional (N-by-M) numpy ndarray of float values
-								Or sparse matrix
-								Or dictionary of named layers, each an N-by-M ndarray
-								or LayerManager, each layer an N-by-M ndarray
+		filename (str):         The filename (typically using a ``.loom`` file extension)
+		layers:					One of the following:
+
+								* Two-dimensional (N-by-M) numpy ndarray of float values
+								* Sparse matrix (e.g. :class:`scipy.sparse.csr_matrix`)
+								* Dictionary of named layers, each an N-by-M ndarray or sparse matrix
+								* A :class:`.LayerManager`, with each layer an N-by-M ndarray
 		row_attrs (dict):       Row attributes, where keys are attribute names and values
 								are numpy arrays (float or string) of length N
 		col_attrs (dict):       Column attributes, where keys are attribute names and
@@ -957,9 +969,6 @@ def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loomp
 
 	if isinstance(layers, np.ndarray) or scipy.sparse.issparse(layers):
 		layers = {"": layers}
-#	elif scipy.sparse.issparse(layers):
-#		_create_sparse(filename, layers, row_attrs, col_attrs, file_attrs=file_attrs)
-#		return
 	elif isinstance(layers, loompy.LayerManager):
 		layers = {k: v[:, :] for k, v in layers.items()}
 	if "" not in layers:
@@ -992,7 +1001,10 @@ def create_from_cellranger(indir: str, outdir: str = None, genome: str = None) -
 		genome (str):	genome build to load (e.g. 'mm10'; if None, determine species from outs folder)
 
 	Returns:
-		path (str):		Path to the created loom file.
+		path (str):		Full path to the created loom file.
+	
+	Remarks:
+		The resulting file will be named ``{sampleID}.loom``, where the sampleID is the one given by cellranger. 
 	"""
 	if outdir is None:
 		outdir = indir
@@ -1048,8 +1060,27 @@ def combine(files: List[str], output_file: str, key: str = None, file_attrs: Dic
 	Returns:
 		Nothing, but creates a new loom file combining the input files.
 
-	The input files must (1) have exactly the same number of rows, (2) have
-	exactly the same sets of row and column attributes.
+		Note that the loom files must have exactly the same
+		number of rows, and must have exactly the same column attributes.
+		Named layers not present in the first file are discarded.
+
+
+		.. warning::
+			If you don't give a ``key`` argument, the files will be combined without changing 
+			the ordering of rows or columns. Row attributes will be taken from the first file.
+			Hence, if rows are not in the same order in all files, the result may be meaningless.
+		
+		To guard against this issue, you are strongly advised to provide a ``key`` argument,
+		which is used to sort files while merging. The ``key`` should be the name of a row 
+		atrribute that contains a unique value for each row. For example, to order rows by
+		the attribute ``Accession``:
+
+		.. highlight:: python
+		.. code-block:: python
+
+			import loompy
+			loompy.combine(files, key="Accession")
+
 	"""
 	if file_attrs is None:
 		file_attrs = {}
@@ -1082,10 +1113,14 @@ def connect(filename: str, mode: str = 'r+') -> LoomConnection:
 		A LoomConnection instance.
 
 	Remarks:
-		This function should typically be called as a context manager:
+		This function should typically be used as a context manager (i.e. inside a ``with``-block):
 
-			with loompy.connect(filename) as ds:
-				...do something...
+		.. highlight:: python
+		.. code-block:: python
+
+			import loompy
+			with loompy.connect("mydata.loom") as ds:
+				print(ds.ca.keys())
 
 		This ensures that the file will be closed automatically when the context block ends
 	"""

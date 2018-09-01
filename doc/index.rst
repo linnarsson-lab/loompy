@@ -3,12 +3,11 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to loompy!
-==================
 
-``loompy`` is a python library for working with the ``.loom`` file format.
+Loompy documentation
+====================
 
-``.loom`` is an efficient file format for very large omics datasets,
+Loom is an efficient file format for very large omics datasets,
 consisting of a main matrix, optional additional layers, a variable
 number of row and column annotations, and sparse graph objects. We use loom files to store
 single-cell gene expression data: the main matrix contains the actual
@@ -18,12 +17,17 @@ column annotations contain metadata for genes and cells, such as
 ``Sex``, ``Age`` (for cells). Graph objects are used to store nearest-neighbor
 graphs used for graph-based clustering.
 
+The Loom logo illustrates how all the parts fit together:
+
+|
+
 .. image:: Loom_components.png
-   :width: 694px
+   :width: 976px
    :height: 345px
    :scale: 50 %
    :align: center
 
+|
 
 Loom files (``.loom``) are created in the
 `HDF5 <https://en.wikipedia.org/wiki/Hierarchical_Data_Format>`__ file
@@ -33,30 +37,14 @@ including Java, MATLAB, Mathematica, Python, R, and Julia. ``.loom``
 files are accessible from any language that supports HDF5.
 
 
-Content
--------
-
-* :ref:`genindex`
-
 .. toctree::
    :hidden:
 
    self
-
-.. toctree::
-
    installation/index
-
-.. toctree::
-
    semantics/index
-
-.. toctree::
-
    apiwalkthrough/index
    cookbook/index
    conventions/index
-   fullapi/index
-
-.. toctree::
    format/index
+   fullapi/index

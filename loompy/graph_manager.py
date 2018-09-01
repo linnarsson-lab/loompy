@@ -170,7 +170,7 @@ class GraphManager:
 		if name in self.__dict__["storage"]:
 			del self.__dict__["storage"][name]
 	
-	def permute(self, ordering: np.ndarray) -> None:
+	def _permute(self, ordering: np.ndarray) -> None:
 		for name in self.keys():
 			g = self[name]
 			(a, b, w) = (g.row, g.col, g.data)

@@ -53,14 +53,14 @@ class LoomView:
 		if axis not in (0, 1):
 			raise ValueError("Axis must be 0 (rows) or 1 (columns)")
 		for layer in self.layers.values():
-			layer.permute(ordering, axis=axis)
+			layer._permute(ordering, axis=axis)
 		if axis == 0:
 			for g in self.row_graphs.values():
-				g.permute(ordering)
+				g._permute(ordering)
 			for a in self.row_attrs.values():
-				a.permute(ordering)
+				a._permute(ordering)
 		elif axis == 1:
 			for g in self.col_graphs.values():
-				g.permute(ordering)
+				g._permute(ordering)
 			for a in self.col_attrs.values():
-				a.permute(ordering)
+				a._permute(ordering)

@@ -1,7 +1,22 @@
 .. _installation:
 
+
 Installation
 ============
+
+Requirements
+------------
+
+Loompy requires Python 3.6 or later. We recommend using `Anaconda Python <https://www.anaconda.com/download/>`_,
+which can be installed in minutes, comes with all packages needed for scientific computing, and installs locally
+in your home directory so you don't have to mess with your system's Python.
+
+.. tip::
+    On Linux, many distributions already come with Python 3.6 or later. To find out which version you have,
+    and how to upgrade if necessary, please use `this guide <https://docs.python-guide.org/starting/install3/linux/>`_. 
+
+Easy installation
+-----------------
 
 Install the loompy package from PyPi with:
 
@@ -30,13 +45,13 @@ Alternatively, you can install the latest version from source:
 If you just want to work with loom files within Python code, you should
 be all set! We also made a web-app to make it easier to browse the data,
 which you can install for local viewing, or set up for sharing loom
-files from your own website. See the loom-viewer`<https://github.com/linnarsson-lab/loom-viewer/>`__repository for more information.
+files from your own website. See the loom-viewer `repository <https://github.com/linnarsson-lab/loom-viewer/>`_ for more information.
 
 
 .. _gettingstarted:
 
 Getting Started
-===============
+---------------
 
 Go to http://loom.linnarssonlab.org and download one of the datasets. We will use ``cortex.loom`` below.
 

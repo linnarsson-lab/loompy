@@ -173,6 +173,6 @@ class LayerManager:
 			if name in self.__dict__["storage"]:
 				del self.__dict__["storage"][name]
 
-	def permute(self, ordering: np.ndarray, *, axis: int) -> None:
+	def _permute(self, ordering: np.ndarray, *, axis: int) -> None:
 		for key in self.keys():
 			self[key].permute(ordering, axis=axis)

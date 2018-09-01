@@ -8,7 +8,14 @@ This is a complete API reference to loompy |version| generated using the docstri
 .. _autoapi:
 
 .. toctree::
+   create
+   new
+   create_from_cellranger
+   connect
+   combine
    loompy
    layer_manager
    memory_loom_layer
    loom_layer
+   view_manager
+   loom_view

@@ -28,11 +28,13 @@ A LoomLayer represents a layer of data and provides a numpy ndarray-like interfa
         # Create a new empty layer of `ìnt32`` elements
         ds["empty_layer"] = "int32"
 
-Layers can also be accessed using numpy fancy indexing, e.g. with a vector of bools or a list of element indices. Note that 
-using fancy indexing to slice more than ~1% of the rows (or columns) is inefficient. If you want to extract a larger subset 
-of rows or columns, you're better of using :meth:`.LoomConnection.scan`.
+Layers can also be accessed using numpy fancy indexing, e.g. with a vector of bools or a list of element indices. 
+
+.. tip::
+    Note that 
+    using fancy indexing to slice more than ~1% of the rows (or columns) is inefficient. If you want to extract a larger subset 
+    of rows or columns, you're better of using :meth:`.LoomConnection.scan`.
 
 .. autoclass:: loompy.LoomLayer
-    :special-members: __init__ 
-    :members:
+    :members: 
     :undoc-members:
