@@ -15,6 +15,9 @@ in your home directory so you don't have to mess with your system's Python.
     On Linux, many distributions already come with Python 3.6 or later. To find out which version you have,
     and how to upgrade if necessary, please use `this guide <https://docs.python-guide.org/starting/install3/linux/>`_. 
 
+    If you absolutely need to use an older Python, see below for how to install from source.
+    
+
 Easy installation
 -----------------
 
@@ -46,6 +49,19 @@ If you just want to work with loom files within Python code, you should
 be all set! We also made a web-app to make it easier to browse the data,
 which you can install for local viewing, or set up for sharing loom
 files from your own website. See the loom-viewer `repository <https://github.com/linnarsson-lab/loom-viewer/>`_ for more information.
+
+If you need to use an older Python, `py-backwards <https://github.com/nvbn/py-backwards>`_ can be used 
+to backport loompy to at least Python 3.5. The following works, and creates a Python 3.5-compatible loompy:
+
+.. code:: bash
+
+    pip install py-backwards
+    cd ~/code  # (the directory where loompy resides)
+    cp -R loompy loompy-3.5  # Make a copy of the repo
+    cd loompy-3.5/loompy
+    for f in *.py; do py-backwards -i $f -o $f -t 3.5; done  # backport to Python 3.5
+    cd ..
+    python setup.py install
 
 
 .. _gettingstarted:
