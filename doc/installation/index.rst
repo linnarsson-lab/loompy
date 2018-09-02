@@ -105,5 +105,5 @@ out the single row corresponding to *Actb*, and ``:`` is used to select
 all columns. Hence, the expression returns the expression values for
 *Actb* in every cell in the dataset.
 
-Refer to the `API Walktrough <apiwalkthrough>`_ and the `API Documentation <fullapi>`_  to learn more about creating and
+Refer to the :ref:`API Walktrough <apiwalkthrough>` and the :ref:`API Documentation <fullapi>`  to learn more about creating and
 manipulating loom files.

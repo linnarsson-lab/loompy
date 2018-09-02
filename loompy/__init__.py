@@ -9,4 +9,5 @@ from .loom_layer import MemoryLoomLayer, LoomLayer
 from .to_html import to_html
 from .view_manager import ViewManager
 from .loompy import connect, create, create_append, combine, create_from_cellranger, LoomConnection, new
+from .loom_validator import LoomValidator
 from ._version import __version__, loom_spec_version

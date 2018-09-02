@@ -32,7 +32,7 @@ from shutil import copyfile
 import logging
 import time
 import loompy
-from loompy import deprecated, timestamp
+from loompy import deprecated, timestamp, LoomValidator
 import pandas as pd
 import warnings
 with warnings.catch_warnings():
@@ -43,7 +43,8 @@ with warnings.catch_warnings():
 class LoomConnection:
 	'''
 	A connection to a Loom file on disk. Typically LoomConnection objects are created using one of the 
-	functions on the loompy module. LoomConnection objects are context managers and should normally be 
+	functions on the loompy module, such as :func:`loompy.connect` or :func:`loompy.new`. LoomConnection 
+	objects are context managers and should normally be 
 	wrapped in a ``with`` block:
 
 	.. highlight:: python
@@ -56,9 +57,9 @@ class LoomConnection:
 	Inside the ``with`` block, you can access the dataset (here using the variable ``ds``). When execution
 	leaves the ``with`` block, the connection is automatically closed, freeing up resources.
 	'''
-	def __init__(self, filename: str, mode: str = 'r+') -> None:
+	def __init__(self, filename: str, mode: str = 'r+', *, validate: bool = True) -> None:
 		"""
-		Establish a connection to a .loom file.
+		Establish a connection to a Loom file.
 
 		Args:
 			filename:			Name of the .loom file to open
@@ -70,12 +71,16 @@ class LoomConnection:
 			Nothing.
 		"""
 
-		# make sure a valid mode was passed, if not default to read-only
-		# because you probably are doing something that you don't want to
+		# make sure a valid mode was passed
 		if mode != 'r+' and mode != 'r':
 			raise ValueError("Mode must be either 'r' or 'r+'")
 		self.filename = filename  #: Path to the file (as given when the LoomConnection was created)
 		self._file = h5py.File(filename, mode)
+
+		# Validate the file
+		if validate:
+			LoomValidator().validate_spec(self._file, False)
+
 		self._closed = False
 		if "matrix" in self._file:
 			self.shape = self._file["/matrix"].shape  #: Shape of the dataset (n_rows, n_cols)
@@ -927,7 +932,7 @@ def new(filename: str, *, file_attrs: Optional[Dict[str, str]] = None) -> LoomCo
 	f.flush()
 	f.close()
 
-	ds = connect(filename)
+	ds = connect(filename, validate=False)
 	for vals in file_attrs:
 		ds.attrs[vals] = file_attrs[vals]
 	# store creation date
@@ -1100,14 +1105,14 @@ def combine(files: List[str], output_file: str, key: str = None, file_attrs: Dic
 	ds.close()
 
 
-def connect(filename: str, mode: str = 'r+') -> LoomConnection:
+def connect(filename: str, mode: str = 'r+', *, validate: bool = True) -> LoomConnection:
 	"""
 	Establish a connection to a .loom file.
 
 	Args:
-		filename (str):     Name of the .loom file to open
-		mode (str):         read/write mode, accepts 'r+' (read/write) or
-							'r' (read-only), defaults to 'r+'
+		filename:		Path to the Loom file to open
+		mode:			Read/write mode, 'r+' (read/write) or 'r' (read-only), defaults to 'r+'
+		validate:		Validate the file structure against the Loom file format specification
 
 	Returns:
 		A LoomConnection instance.
@@ -1123,5 +1128,7 @@ def connect(filename: str, mode: str = 'r+') -> LoomConnection:
 				print(ds.ca.keys())
 
 		This ensures that the file will be closed automatically when the context block ends
+
+		Note: if validation is requested, an exception is raised if validation fails.
 	"""
-	return LoomConnection(filename, mode)
+	return LoomConnection(filename, mode, validate)

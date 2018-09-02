@@ -14,7 +14,7 @@ This specification defines the Loom file format version ``2.0.1``.
 Introduction
 ------------
 
-The ``.loom`` file format is designed to efficiently hold large omics
+The Loom file format is designed to efficiently hold large omics
 datasets. Typically, such data takes the form of a large matrix of
 numbers, along with metadata for the rows and columns. For example,
 single-cell RNA-seq data consists of expression measurements for all
@@ -22,17 +22,17 @@ genes (rows) in a large number of cells (columns), along with metadata
 for genes (e.g. ``Chromosome``, ``Strand``, ``Location``, ``Name``), and
 for cells (e.g. ``Species``, ``Sex``, ``Strain``, ``GFP positive``).
 
-We designed ``.loom`` files to represent such datasets in a way that
+We designed Loom files to represent such datasets in a way that
 treats rows and columns the same. You may want to cluster both genes and
 cells, you may want to perform PCA on both of them, and filter based on
 quality controls. SQL databases and other data storage solutions almost
 always treat data as a *table*, not a matrix, and makes it very hard to
-add arbitrary metadata to rows and columns. In contrast, ``.loom`` makes
+add arbitrary metadata to rows and columns. In contrast, Loom makes
 this very easy.
 
 Furthermore, current and future datasets can have tens of thousands of
 rows (genes) and hundreds of thousands of columns (cells). We designed
-``.loom`` for efficient access to arbitrary rows and columns.
+Loom for efficient access to arbitrary rows and columns.
 
 The annotated matrix format lends itself to very natural representation
 of common analysis tasks. For example, the result of a clustering
@@ -50,7 +50,7 @@ columns (e.g. cells), and multiple graphs can be stored each file.
 HDF5 concepts
 -------------
 
-The ``.loom`` format is based on
+The Loom format is based on
 `HDF5 <https://en.wikipedia.org/wiki/Hierarchical_Data_Format>`__, a
 standard for storing large numerical datasets. Quoting from h5py.org:
 
@@ -60,9 +60,9 @@ standard for storing large numerical datasets. Quoting from h5py.org:
     fundamental thing to remember when using h5py is: *Groups work like
     dictionaries, and datasets work like NumPy arrays*.
 
-A valid ``.loom`` file is simply an HDF5 file that contains specific
+A valid Loom file is simply an HDF5 file that contains specific
 *groups* representing the main matrix as well as row and column
-attributes. Because of this, ``.loom`` files can be created and read by
+attributes. Because of this, Loom files can be created and read by
 any language that supports HDF5, including `Python <http://h5py.org>`__,
 `R <http://bioconductor.org/packages/release/bioc/html/rhdf5.html>`__,
 `MATLAB <http://se.mathworks.com/help/matlab/low-level-functions.html>`__,
@@ -77,7 +77,7 @@ any language that supports HDF5, including `Python <http://h5py.org>`__,
 Specification
 -------------
 
-A valid ``.loom`` file conforms to the following:
+A valid Loom file conforms to the following:
 
 Main matrix and layers
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -94,7 +94,7 @@ Global attributes
 -  There can OPTIONALLY be at least one `HDF5
    attribute <https://www.hdfgroup.org/HDF5/Tutor/crtatt.html>`__ on the
    root ``/`` group, which can be any valid scalar or multidimensional datatype and should be
-   interpreted as attributes of the whole ``.loom`` file. 
+   interpreted as attributes of the whole Loom file. 
 -  There can OPTIONALLY be an `HDF5
    attribute <https://www.hdfgroup.org/HDF5/Tutor/crtatt.html>`__ on the
    root ``/`` group named ``LOOM_SPEC_VERSION``, a string value giving the
@@ -173,7 +173,7 @@ Unicode characters outside 7-bit ASCII are stored using `XML entity encoding <ht
 Example
 -------
 
-Here's an example of the structure of a valid ``.loom`` file:
+Here's an example of the structure of a valid Loom file:
 
 +----------------------+-------------------------------+---------------------------------------------+
 | Group                | Type                          | Description                                 |

@@ -33,8 +33,14 @@ Loom files (``.loom``) are created in the
 `HDF5 <https://en.wikipedia.org/wiki/Hierarchical_Data_Format>`__ file
 format, which supports an internal collection of numerical
 multidimensional datasets. HDF5 is supported by many computer languages,
-including Java, MATLAB, Mathematica, Python, R, and Julia. ``.loom``
-files are accessible from any language that supports HDF5.
+including `Python <http://h5py.org>`__,
+`R <http://bioconductor.org/packages/release/bioc/html/rhdf5.html>`__,
+`MATLAB <http://se.mathworks.com/help/matlab/low-level-functions.html>`__,
+`Mathematica <https://reference.wolfram.com/language/ref/format/HDF5.html>`__,
+`C <https://www.hdfgroup.org/HDF5/doc/index.html>`__,
+`C++ <https://www.hdfgroup.org/HDF5/doc/cpplus_RM/>`__,
+`Java <https://www.hdfgroup.org/products/java/>`__, and
+`Ruby <https://rubygems.org/gems/hdf5/versions/0.3.5>`__.
 
 
 .. toctree::
