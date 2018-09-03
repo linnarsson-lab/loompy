@@ -15,6 +15,7 @@ class LoomValidator:
 		if version != "2.0.1":
 			raise ValueError("This validator can only validate against Loom spec 2.0.1")
 		self.errors: List[str] = []
+		self.warnings: List[str] = []
 		self.summary: List[str] = []
 
 	def _check(self, condition: bool, message: str) -> bool:
@@ -22,6 +23,11 @@ class LoomValidator:
 			self.errors.append(message)
 		return condition
 	
+	def _warn(self, condition: bool, message: str) -> bool:
+		if not condition:
+			self.warnings.append(message)
+		return condition
+
 	def validate(self, path: str, strictness: str = "speconly") -> bool:
 		valid1 = True
 		with h5py.File(path) as f:
@@ -43,6 +49,14 @@ class LoomValidator:
 		Validate the LoomConnection object against the attribute name/dtype conventions.
 		"""
 		(n_genes, n_cells) = ds.shape
+
+		self._warn("Description" in ds.attrs, "Optional global attribute 'Description' is missing")
+		self._warn("Journal" in ds.attrs, "Optional global attribute 'Journal' is missing")
+		self._warn("Authors" in ds.attrs, "Optional global attribute 'Authors' is missing")
+		self._warn("Title" in ds.attrs, "Optional global attribute 'Title' is missing")
+		self._warn("Year" in ds.attrs, "Optional global attribute 'Year' is missing")
+		self._warn("CreationDate" in ds.attrs, "Optional global attribute 'CreationDate' is missing")
+
 		if self._check("ClusterID" in ds.ca, "Column attribute 'ClusterID' is missing"):
 			self._check(np.issubdtype(ds.ca.ClusterID.dtype, np.int_), "Column attribute 'ClusterID' must be integer dtype")
 			self._check(len(np.unique(ds.ca.ClusterID)) == np.max(ds.ca.ClusterID) and np.min(ds.ca.ClusterID) == 0, "Column attribute 'ClusterID' must be integers 0, 1, 2, ... with no missing values")
@@ -62,7 +76,9 @@ class LoomValidator:
 					break
 			if not one_to_one:
 				self._check(False, "ClusterName must correspond 1:1 with ClusterID")
-				
+		else:
+			self.warnings.append("Optional column attribute 'ClusterName' is missing")
+
 		if self._check("CellID" in ds.ca, "Column attribute 'CellID' is missing"):
 			self._check(ds.ca.CellID.dtype == object and np.issubdtype(ds.ca.CellID[0].dtype, np.str_), f"Column attribute 'CellID' must be an array of strings, not '{ds.ca.CellID[0].dtype}'")
 			self._check(ds.ca.CellID.shape == (n_cells,), f"Column attribute 'CellID' must be 1-dimensional array of {n_cells} elements")
@@ -73,12 +89,16 @@ class LoomValidator:
 			valids = np.unique(ds.ca.Valid)
 			self._check(np.all(np.isin(ds.ca.Valid, [0, 1])), "Column attribute 'Valid' must be integers 0 or 1 only")
 			self._check(ds.ca.Valid.shape == (n_cells,), f"Column attribute 'Valid' must be 1-dimensional array of {n_cells} elements")
+		else:
+			self.warnings.append("Optional column attribute 'Valid' is missing")
 
 		if "Outliers" in ds.ca:
 			self._check(np.issubdtype(ds.ca.Outliers.dtype, np.int_), f"Column attribute 'Outliers' must be integer dtype, not '{ds.ca.Outliers.dtype}'")
 			self._check(np.all(np.isin(ds.ca.Outliers, [0, 1])), "Column attribute 'Outliers' must be integers 0 or 1 only")
 			self._check(ds.ca.Outliers.shape == (n_cells,), f"Column attribute 'Outliers' must be 1-dimensional array of {n_cells} elements")
-			
+		else:
+			self.warnings.append("Optional column attribute 'Outliers' is missing")
+
 		if self._check("Accession" in ds.ra, "Row attribute 'Accession' is missing"):
 			self._check(ds.ra.Accession.dtype == object and np.issubdtype(ds.ra.Accession[0].dtype, np.str_), f"Row attribute 'Accession' must be an array of strings, not '{ds.ra.Accession[0].dtype}'")
 			self._check(ds.ra.Accession.shape == (n_genes,), f"Row attribute 'Accession' must be 1-dimensional array of {n_genes} elements")
@@ -93,12 +113,16 @@ class LoomValidator:
 			valids = np.unique(ds.ra.Valid)
 			self._check(np.all(np.isin(ds.ra.Valid, [0, 1])), "Row attribute 'Valid' must be integers 0 or 1 only")
 			self._check(ds.ra.Valid.shape == (n_cells,), f"Row attribute 'Valid' must be 1-dimensional array of {n_cells} elements")
+		else:
+			self.warnings.append("Optional row attribute 'Valid' is missing")
 
 		if "Selected" in ds.ra:
 			self._check(np.issubdtype(ds.ra.Selected.dtype, np.int_), f"Row attribute 'Selected' must be integer dtype, not '{ds.ra.Selected.dtype}'")
 			valids = np.unique(ds.ra.Selected)
 			self._check(np.all(np.isin(ds.ra.Selected, [0, 1])), "Row attribute 'Selected' must be integers 0 or 1 only")
 			self._check(ds.ra.Selected.shape == (n_cells,), f"Row attribute 'Selected' must be 1-dimensional array of {n_cells} elements")
+		else:
+			self.warnings.append("Optional row attribute 'Selected' is missing")
 
 		return len(self.errors) == 0
 		
@@ -126,7 +150,7 @@ class LoomValidator:
 
 		delay_print("Global attributes:")
 		for key, value in file.attrs.items():
-			delay_print(f"{key: >{width}}: {value} {str(type(value))}")
+			delay_print(f"{key: >{width}} {dt(file.attrs[key].dtype)}")
 
 		if self._check("matrix" in file, "Main matrix missing"):
 			self._check(file["matrix"].dtype in matrix_types, f"Main matrix dtype={file['matrix'].dtype} is not allowed")

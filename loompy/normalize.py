@@ -92,7 +92,7 @@ def materialize_attr_values(a: np.ndarray) -> np.ndarray:
 	elif np.issubdtype(a.dtype, np.str_) or np.issubdtype(a.dtype, np.unicode_):
 		result = np.array(a.astype(str), dtype=object)
 	else:
-		result = a.astype(object)
+		result = a
 	if scalar:
 		return result[0]
 	else:
