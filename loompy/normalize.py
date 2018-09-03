@@ -88,11 +88,11 @@ def materialize_attr_values(a: np.ndarray) -> np.ndarray:
 		# First ensure that what we load is valid ascii (i.e. ignore anything outside 7-bit range)
 		temp = np.array([x.decode('ascii', 'ignore') for x in a])
 		# Then unescape XML entities and convert to unicode
-		result = np.array([html.unescape(x) for x in temp.astype(str)], dtype=np.str_)
+		result = np.array([html.unescape(x) for x in temp.astype(str)], dtype=object)
 	elif np.issubdtype(a.dtype, np.str_) or np.issubdtype(a.dtype, np.unicode_):
-		result = np.array(a.astype(str), dtype=np.str_)
+		result = np.array(a.astype(str), dtype=object)
 	else:
-		result = a
+		result = a.astype(object)
 	if scalar:
 		return result[0]
 	else:
