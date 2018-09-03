@@ -186,8 +186,12 @@ class LoomValidator:
 
 		delay_print("Global attributes:")
 		for key, value in file.attrs.items():
-			delay_print(f"{key: >{width}} {dt(file.attrs[key].dtype)}")
-
+			if type(value) is str:
+				self.warnings.append(f"Global attribute '{key}' has dtype string, which will be deprecated in future Loom versions")
+				delay_print(f"{key: >{width}} string")
+			else:
+				delay_print(f"{key: >{width}} {dt(file.attrs[key].dtype)}")
+				
 		if self._check("matrix" in file, "Main matrix missing"):
 			self._check(file["matrix"].dtype in matrix_types, f"Main matrix dtype={file['matrix'].dtype} is not allowed")
 			shape = file["matrix"].shape

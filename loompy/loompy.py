@@ -135,13 +135,12 @@ class LoomConnection:
 			If the file has no timestamp, and mode is 'r+', a new timestamp is created and returned.
 			Otherwise, the current time in UTC is returned
 		"""
-		if "last_modified" in self._file.attrs:
-			return self._file.attrs["last_modified"]
-		elif self._file.mode == "r+":
+		if "last_modified" in self.attrs:
+			return self.attrs["last_modified"]
+		elif self.mode == "r+":
 			# Make sure the file has modification timestamps
-			self._file.attrs["last_modified"] = timestamp()
-			self._file.flush()
-			return self._file.attrs["last_modified"]
+			self.attrs["last_modified"] = timestamp()
+			return self.attrs["last_modified"]
 		return timestamp()
 
 	def get_changes_since(self, timestamp: str) -> Dict[str, List]:
