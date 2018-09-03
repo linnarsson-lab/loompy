@@ -32,7 +32,7 @@ from shutil import copyfile
 import logging
 import time
 import loompy
-from loompy import deprecated, timestamp, LoomValidator
+from loompy import deprecated, timestamp
 import pandas as pd
 import warnings
 with warnings.catch_warnings():
@@ -79,7 +79,7 @@ class LoomConnection:
 
 		# Validate the file
 		if validate:
-			LoomValidator().validate_spec(self._file, False)
+			loompy.LoomValidator().validate_spec(self._file, False)
 
 		self._closed = False
 		if "matrix" in self._file:
@@ -1131,4 +1131,4 @@ def connect(filename: str, mode: str = 'r+', *, validate: bool = True) -> LoomCo
 
 		Note: if validation is requested, an exception is raised if validation fails.
 	"""
-	return LoomConnection(filename, mode, validate)
+	return LoomConnection(filename, mode, validate=validate)
