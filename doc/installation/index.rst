@@ -55,14 +55,22 @@ to backport loompy to at least Python 3.5. The following works, and creates a Py
 
 .. code:: bash
 
+    cd ~/code/loompy  # the loompy repository
+    git checkout 0f5c934679822c7babb020928516b9c7e01c3f7e  # Checkout loompy that will work with 3.5
     pip install py-backwards
     cd ~/code  # (the directory where loompy resides)
     cp -R loompy loompy-3.5  # Make a copy of the repo
     cd loompy-3.5/loompy
     for f in *.py; do py-backwards -i $f -o $f -t 3.5; done  # backport to Python 3.5
     cd ..
+    py-backwards -i setup.py -o setup.py -t 3.5  # backport the setup script too
     python setup.py install
 
+.. warning::
+
+    Currently, a bug in py-backwards prevents the above from working properly for the
+    most recent versions of loompy. For that reason, the above script will check out an
+    older version that will convert to 3.5 without error. See https://github.com/nvbn/py-backwards/issues/48
 
 .. _gettingstarted:
 
