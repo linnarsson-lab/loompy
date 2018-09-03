@@ -66,7 +66,7 @@ class LoomConnection:
 			mode:				read/write mode, accepts 'r+' (read/write) or
 								'r' (read-only), defaults to 'r+' without arguments,
 								and to 'r' with incorrect arguments
-
+			validate:			Validate that the file conforms with the Loom specification
 		Returns:
 			Nothing.
 		"""
@@ -75,12 +75,16 @@ class LoomConnection:
 		if mode != 'r+' and mode != 'r':
 			raise ValueError("Mode must be either 'r' or 'r+'")
 		self.filename = filename  #: Path to the file (as given when the LoomConnection was created)
-		self._file = h5py.File(filename, mode)
 
 		# Validate the file
 		if validate:
-			loompy.LoomValidator().validate_spec(self._file, False)
+			lv = loompy.LoomValidator()
+			if not lv.validate(filename):
+				for err in lv.errors:
+					logging.error(err)
+				raise ValueError(f"{filename} does not appead to be a valid Loom file")
 
+		self._file = h5py.File(filename, mode)
 		self._closed = False
 		if "matrix" in self._file:
 			self.shape = self._file["/matrix"].shape  #: Shape of the dataset (n_rows, n_cols)
