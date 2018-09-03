@@ -11,12 +11,12 @@ class LoomValidator:
 		Args:
 			version: 		The Loom file format version to validate against
 		"""
-		self.version = version
+		self.version = version  #: Version of the spec to validate against
 		if version != "2.0.1":
 			raise ValueError("This validator can only validate against Loom spec 2.0.1")
-		self.errors: List[str] = []
-		self.warnings: List[str] = []
-		self.summary: List[str] = []
+		self.errors: List[str] = []  #: Errors found during validation
+		self.warnings: List[str] = []  #: Warnings triggered during validation
+		self.summary: List[str] = []  #: Summary of the file structure
 
 	def _check(self, condition: bool, message: str) -> bool:
 		if not condition:
@@ -29,6 +29,18 @@ class LoomValidator:
 		return condition
 
 	def validate(self, path: str, strictness: str = "speconly") -> bool:
+		"""
+		Validate a file for conformance to the Loom specification
+
+		Args:
+			path: 			Full path to the file to be validated
+			strictness:		"speconly" or "conventions"
+
+		Remarks:
+			In "speconly" mode, conformance is assessed relative to the file format specification
+			at http://linnarssonlab.org/loompy/format/. In "conventions" mode, conformance is additionally
+			assessed relative to attribute name and data type conventions given at http://linnarssonlab.org/loompy/conventions/.
+		"""
 		valid1 = True
 		with h5py.File(path) as f:
 			valid1 = self.validate_spec(f)
@@ -47,6 +59,16 @@ class LoomValidator:
 	def validate_conventions(self, ds: loompy.LoomConnection) -> bool:
 		"""
 		Validate the LoomConnection object against the attribute name/dtype conventions.
+
+		Args:
+			ds:			LoomConnection object
+		
+		Returns:
+			True if the file conforms to the conventions, else False
+		
+		Remarks:
+			Upon return, the instance attributes 'self.errors' and 'self.warnings' contain
+			lists of errors and warnings.
 		"""
 		(n_genes, n_cells) = ds.shape
 
@@ -127,6 +149,20 @@ class LoomValidator:
 		return len(self.errors) == 0
 		
 	def validate_spec(self, file: h5py.File) -> bool:
+		"""
+		Validate the LoomConnection object against the format specification.
+
+		Args:
+			file:			h5py File object
+		
+		Returns:
+			True if the file conforms to the specs, else False
+		
+		Remarks:
+			Upon return, the instance attributes 'self.errors' and 'self.warnings' contain
+			lists of errors and warnings, and the 'self.summary' attribute contains a summary
+			of the file contents.
+		"""
 		matrix_types = ["float16", "float32", "float64", "int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64"]
 		vertex_types = ["int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64"]
 		weight_types = ["float16", "float32", "float64"]

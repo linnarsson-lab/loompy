@@ -19,3 +19,4 @@ This is a complete API reference to loompy |version| generated using the docstri
    loom_layer
    view_manager
    loom_view
+   loom_validator
