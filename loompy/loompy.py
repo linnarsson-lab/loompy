@@ -971,9 +971,9 @@ def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loomp
 	"""
 
 	if isinstance(row_attrs, loompy.AttributeManager):
-		row_attrs = {k: v[:, :] for k, v in row_attrs.items()}
+		row_attrs = {k: v[:] for k, v in row_attrs.items()}
 	if isinstance(col_attrs, loompy.AttributeManager):
-		col_attrs = {k: v[:, :] for k, v in col_attrs.items()}
+		col_attrs = {k: v[:] for k, v in col_attrs.items()}
 
 	if isinstance(layers, np.ndarray) or scipy.sparse.issparse(layers):
 		layers = {"": layers}

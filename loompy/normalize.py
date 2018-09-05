@@ -10,7 +10,8 @@ def normalize_attr_strings(a: np.ndarray) -> np.ndarray:
 	Take an np.ndarray of all kinds of string-like elements, and return an array of ascii (np.string_) objects
 	"""
 	if np.issubdtype(a.dtype, np.object_):
-		if np.all([type(x) is str for x in a]) or np.all([type(x) is np.str_ for x in a]) or np.all([type(x) is np.unicode_ for x in a]):
+		# if np.all([type(x) is str for x in a]) or np.all([type(x) is np.str_ for x in a]) or np.all([type(x) is np.unicode_ for x in a]):
+		if np.all([(type(x) is str or type(x) is np.str_ or type(x) is np.unicode_) for x in a]):
 			return np.array([x.encode('ascii', 'xmlcharrefreplace') for x in a])
 		elif np.all([type(x) is np.string_ for x in a]) or np.all([type(x) is np.bytes_ for x in a]):
 			return a.astype("string_")

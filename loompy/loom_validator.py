@@ -9,11 +9,14 @@ class LoomValidator:
 	def __init__(self, version: str = "2.0.1") -> None:
 		"""
 		Args:
-			version: 		The Loom file format version to validate against
+			version: 		The Loom file format version to validate against ("2.0.1" or "old")
+		
+		Remarks:
+			"old" version will accept files that lack the "row_graphs" and "col_graphs" groups
 		"""
 		self.version = version  #: Version of the spec to validate against
-		if version != "2.0.1":
-			raise ValueError("This validator can only validate against Loom spec 2.0.1")
+		if version != "2.0.1" and version != '1.0.0':
+			raise ValueError("This validator can only validate against Loom specs '2.0.1' or 'old'")
 		self.errors: List[str] = []  #: Errors found during validation
 		self.warnings: List[str] = []  #: Warnings triggered during validation
 		self.summary: List[str] = []  #: Summary of the file structure
@@ -225,7 +228,9 @@ class LoomValidator:
 				delay_print("    (none)")
 
 		delay_print("Row graphs:")
-		if self._check("row_graphs" in file, "'row_graphs' group is missing"):
+		if "row_graphs" in file:
+			if self.version == "2.0.1":
+				self._check("row_graphs" in file, "'row_graphs' group is missing")
 			for g in file["row_graphs"]:
 				self._check("a" in file["row_graphs"][g], f"Row graph '{g}' is missing vector 'a', denoting start vertices")
 				self._check(file["row_graphs"][g]['a'].dtype in vertex_types, f"/row_graphs/{g}/a.dtype {file['row_graphs'][g]['a'].dtype} must be integer")
@@ -239,7 +244,9 @@ class LoomValidator:
 				delay_print("    (none)")
 
 		delay_print("Column graphs:")
-		if self._check("col_graphs" in file, "'col_graphs' group is missing"):
+		if "#col_graphs" in file:
+			if self.version == "2.0.1":
+				self._check("col_graphs" in file, "'col_graphs' group is missing")
 			for g in file["col_graphs"]:
 				self._check("a" in file["col_graphs"][g], f"Column graph '{g}' is missing vector 'a', denoting start vertices")
 				self._check(file["col_graphs"][g]['a'].dtype in vertex_types, f"/col_graphs/{g}/a.dtype {file['col_graphs'][g]['a'].dtype} must be integer")
