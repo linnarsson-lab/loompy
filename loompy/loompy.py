@@ -324,7 +324,10 @@ class LoomConnection:
 			raise IOError("Cannot add columns when connected in read-only mode")
 
 		# If this is an empty loom file, just assign the provided row and column attributes, and set the shape
-		if row_attrs is not None:
+		is_new = self.shape == (0, 0)
+		if is_new:
+			if row_attrs is None:
+				raise ValueError("row_attrs must be provided when adding to an empty (new) Loom file")
 			for k, v in row_attrs.items():
 				self.ra[k] = v
 				self.shape = (self.ra[k].shape[0], self.shape[1])
@@ -343,7 +346,7 @@ class LoomConnection:
 			raise ValueError("Invalid type for layers argument")
 		n_cols = 0
 		for layer, matrix in layers_dict.items():
-			if layer not in self.layers.keys():
+			if not is_new and layer not in self.layers.keys():
 				raise ValueError(f"Layer {layer} does not exist in the target loom file")
 			if matrix.shape[0] != self.shape[0]:
 				raise ValueError(f"Layer {layer} has {matrix.shape[0]} rows but file has {self.shape[0]}")
@@ -390,7 +393,7 @@ class LoomConnection:
 		if did_remove:
 			logging.warn("Some column attributes were removed: " + ",".join(todel))
 
-		if self.shape[1] == 0:
+		if is_new:
 			for k, v in layers_dict.items():
 				self.layers[k] = v
 			for k, v in col_attrs.items():
