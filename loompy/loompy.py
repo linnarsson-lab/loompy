@@ -57,7 +57,7 @@ class LoomConnection:
 	Inside the ``with`` block, you can access the dataset (here using the variable ``ds``). When execution
 	leaves the ``with`` block, the connection is automatically closed, freeing up resources.
 	'''
-	def __init__(self, filename: str, mode: str = 'r+', *, validate: bool = True) -> None:
+	def __init__(self, filename: str, mode: str = 'r+', *, validate: bool = True, spec_version: str = "2.0.1") -> None:
 		"""
 		Establish a connection to a Loom file.
 
@@ -78,7 +78,7 @@ class LoomConnection:
 
 		# Validate the file
 		if validate:
-			lv = loompy.LoomValidator()
+			lv = loompy.LoomValidator(version=spec_version)
 			if not lv.validate(filename):
 				for err in lv.errors:
 					logging.error(err)
@@ -1108,7 +1108,7 @@ def combine(files: List[str], output_file: str, key: str = None, file_attrs: Dic
 	ds.close()
 
 
-def connect(filename: str, mode: str = 'r+', *, validate: bool = True) -> LoomConnection:
+def connect(filename: str, mode: str = 'r+', *, validate: bool = True, spec_version:str = "2.0.1") -> LoomConnection:
 	"""
 	Establish a connection to a .loom file.
 
@@ -1116,7 +1116,7 @@ def connect(filename: str, mode: str = 'r+', *, validate: bool = True) -> LoomCo
 		filename:		Path to the Loom file to open
 		mode:			Read/write mode, 'r+' (read/write) or 'r' (read-only), defaults to 'r+'
 		validate:		Validate the file structure against the Loom file format specification
-
+		spec_version:	The loom file spec version to validate against (e.g. "2.0.1" or "old")
 	Returns:
 		A LoomConnection instance.
 
@@ -1134,4 +1134,4 @@ def connect(filename: str, mode: str = 'r+', *, validate: bool = True) -> LoomCo
 
 		Note: if validation is requested, an exception is raised if validation fails.
 	"""
-	return LoomConnection(filename, mode, validate=validate)
+	return LoomConnection(filename, mode, validate=validate, spec_version=spec_version)
