@@ -230,7 +230,7 @@ class LoomValidator:
 		delay_print("Row graphs:")
 		if "row_graphs" in file:
 			if self.version == "2.0.1":
-				self._check("row_graphs" in file, "'row_graphs' group is missing")
+				self._check("row_graphs" in file, "'row_graphs' group is missing (try spec_version='old')")
 			for g in file["row_graphs"]:
 				self._check("a" in file["row_graphs"][g], f"Row graph '{g}' is missing vector 'a', denoting start vertices")
 				self._check(file["row_graphs"][g]['a'].dtype in vertex_types, f"/row_graphs/{g}/a.dtype {file['row_graphs'][g]['a'].dtype} must be integer")
@@ -246,7 +246,7 @@ class LoomValidator:
 		delay_print("Column graphs:")
 		if "#col_graphs" in file:
 			if self.version == "2.0.1":
-				self._check("col_graphs" in file, "'col_graphs' group is missing")
+				self._check("col_graphs" in file, "'col_graphs' group is missing (try spec_version='old')")
 			for g in file["col_graphs"]:
 				self._check("a" in file["col_graphs"][g], f"Column graph '{g}' is missing vector 'a', denoting start vertices")
 				self._check(file["col_graphs"][g]['a'].dtype in vertex_types, f"/col_graphs/{g}/a.dtype {file['col_graphs'][g]['a'].dtype} must be integer")
