@@ -15,7 +15,7 @@ class LoomValidator:
 			"old" version will accept files that lack the "row_graphs" and "col_graphs" groups
 		"""
 		self.version = version  #: Version of the spec to validate against
-		if version != "2.0.1" and version != '1.0.0':
+		if version != "2.0.1" and version != 'old':
 			raise ValueError("This validator can only validate against Loom specs '2.0.1' or 'old'")
 		self.errors: List[str] = []  #: Errors found during validation
 		self.warnings: List[str] = []  #: Warnings triggered during validation

@@ -1108,7 +1108,7 @@ def combine(files: List[str], output_file: str, key: str = None, file_attrs: Dic
 	ds.close()
 
 
-def connect(filename: str, mode: str = 'r+', *, validate: bool = True, spec_version:str = "2.0.1") -> LoomConnection:
+def connect(filename: str, mode: str = 'r+', *, validate: bool = True, spec_version: str = "2.0.1") -> LoomConnection:
 	"""
 	Establish a connection to a .loom file.
 
