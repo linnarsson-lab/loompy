@@ -175,4 +175,4 @@ class LayerManager:
 
 	def _permute(self, ordering: np.ndarray, *, axis: int) -> None:
 		for key in self.keys():
-			self[key].permute(ordering, axis=axis)
+			self[key]._permute(ordering, axis=axis)
