@@ -108,6 +108,12 @@ class GraphManager:
 				b = np.array([d[x] for x in b])
 				gm[key] = sparse.coo_matrix((w, (a, b)), shape=(len(indices), len(indices)))
 			return gm
+		elif type(thing) is tuple:
+			# A tuple of strings giving alternative names for graphs
+			for t in thing:
+				if t in self.__dict__["storage"]:
+					return self.__getattr__(t)
+			raise AttributeError(f"'{type(self)}' object has no attribute {thing}")
 		else:
 			return self.__getattr__(thing)
 

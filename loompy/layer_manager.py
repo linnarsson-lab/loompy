@@ -68,6 +68,12 @@ class LayerManager:
 		"""
 		if type(thing) is str:
 			return self.__getattr__(thing)
+		elif type(thing) is tuple:
+			# A tuple of strings giving alternative names for attributes
+			for t in thing:
+				if t in self.__dict__["storage"]:
+					return self.__getattr__(t)
+			raise AttributeError(f"'{type(self)}' object has no attribute {thing}")
 		else:
 			# Assume some kind of slice
 			lm = LayerManager(None)
