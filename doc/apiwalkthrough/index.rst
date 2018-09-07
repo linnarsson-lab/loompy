@@ -239,6 +239,31 @@ attributes. For example:
   a = ds.ra.Gene     # Assign the array of gene names (assuming the attribute exists)
   del ds.ra.Gene     # Delete the Gene row attribute
 
+Attributes can also be accessed by indexing:
+
+.. code:: python
+
+  a = ds.ra["Gene"]     # Assign the array of gene names (assuming the attribute exists)
+  del ds.ra["Gene"]     # Delete the Gene row attribute
+
+You can pick out multiple attributes into a single numpy array, as long as they have the same type:
+
+.. code:: python
+
+  a = ds.ra["Gene", "Attribute"]     # Returns a 2D array of shape (n_genes, 2)
+  b = ds.ca["PCA1", "PCA2"]          # Returns a 2D array of shape (n_cells, 2)
+
+Note that when you ask for multiple attributes, missing attributes are silently ignored. This can be
+exploited to access attributes that may have different names:
+
+.. code:: python
+
+  a = ds.ra["Gene", "GeneName"]     # Return one or the other (if only one exists)
+  b = ds.ca["TSNE", "PCA", "UMAP"]  # Return the one that exists (if only one exists)
+
+(of course, if two or more attributes exists, they will be stacked as above)
+
+
 Attributes can be any of the following:
 
 * One-dimensional arrays of integers, floats or strings. The number of elements in the array must match the corresponding matrix dimension.
