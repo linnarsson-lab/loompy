@@ -82,10 +82,20 @@ class AttributeManager:
 			return am
 		elif type(thing) is tuple:
 			# A tuple of strings giving alternative names for attributes
+			result: np.ndarray = None
 			for t in thing:
 				if t in self.__dict__["storage"]:
-					return self.__getattr__(t)
-			raise AttributeError(f"'{type(self)}' object has no attribute {thing}")
+					if result is None:
+						result = self.__getattr__(t)
+					else:
+						vals = self.__getattr__(t)
+						if vals.dtype != result.dtype:
+							raise AttributeError(f"Cannot stack attributes of different types ({vals.dtype} and {result.dtype})")
+						result = np.vstack((result, vals)).transpose()
+			if result is None:
+				raise AttributeError(f"'{type(self)}' object has no attribute {thing}")
+			else:
+				return result
 		else:
 			return self.__getattr__(thing)
 
