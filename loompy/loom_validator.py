@@ -180,11 +180,13 @@ class LoomValidator:
 
 		width_ra = 0
 		width_ca = 0
+		width_globals = 0
 		if self._check("row_attrs" in file, "'row_attrs' group is missing"):
 			width_ra = max([len(x) for x in (file["row_attrs"].keys())])
 		if self._check("col_attrs" in file, "'col_attrs' group is missing"):
 			width_ca = max([len(x) for x in (file["col_attrs"].keys())])
-		width_globals = max([len(x) for x in file.attrs.keys()])
+		if len(file.attrs) > 0:
+			width_globals = max([len(x) for x in file.attrs.keys()])
 		width_layers = 0
 		if "layers" in file and len(file["layers"]) > 0:
 			width_layers = max([len(x) for x in file["layers"].keys()])
