@@ -16,7 +16,7 @@ def normalize_attr_strings(a: np.ndarray) -> np.ndarray:
 		elif np.all([type(x) is np.string_ for x in a]) or np.all([type(x) is np.bytes_ for x in a]):
 			return a.astype("string_")
 		else:
-			print(type(a[0]))
+			logging.info(np.unique([type(x) for x in a]))
 			raise ValueError("Arbitrary numpy object arrays not supported (all elements must be string objects).")
 	elif np.issubdtype(a.dtype, np.string_) or np.issubdtype(a.dtype, np.object_):
 		return a
