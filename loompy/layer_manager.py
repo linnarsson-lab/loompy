@@ -97,6 +97,8 @@ class LayerManager:
 	def __setattr__(self, name: str, val: np.ndarray) -> None:
 		if name.startswith("!"):
 			super(LayerManager, self).__setattr__(name[1:], val)
+		elif "/" in name:
+			raise KeyError("Layer name cannot contain slash (/)")
 		else:
 			if self.ds is not None:
 				if type(val) is str:  # val specifies the dtype of an empty layer

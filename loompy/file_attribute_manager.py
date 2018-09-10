@@ -55,6 +55,8 @@ class FileAttributeManager(object):
 	def __setattr__(self, name: str, val: Any) -> None:
 		if name.startswith("!"):
 			super(FileAttributeManager, self).__setattr__(name[1:], val)
+		elif "/" in name:
+			raise KeyError("Attribute name cannot contain slash (/)")
 		else:
 			if self.f is not None:
 				normalized = loompy.normalize_attr_values(val)

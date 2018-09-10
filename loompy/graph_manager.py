@@ -138,6 +138,8 @@ class GraphManager:
 	def __setattr__(self, name: str, g: sparse.coo_matrix) -> None:
 		if name.startswith("!"):
 			super(GraphManager, self).__setattr__(name[1:], g)
+		elif "/" in name:
+			raise KeyError("Graph name cannot contain slash (/)")
 		else:
 			g = sparse.coo_matrix(g)
 			if self.ds is not None:

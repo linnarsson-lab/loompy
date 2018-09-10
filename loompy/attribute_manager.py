@@ -140,6 +140,8 @@ class AttributeManager:
 		"""
 		if name.startswith("!"):
 			super(AttributeManager, self).__setattr__(name[1:], val)
+		elif "/" in name:
+			raise KeyError("Attribute name cannot contain slash (/)")
 		else:
 			if self.ds is not None:
 				values = loompy.normalize_attr_values(val)
