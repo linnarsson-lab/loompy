@@ -103,10 +103,10 @@ Next, try this:
 
 .. code:: python
 
-    ds[ds.ca.Gene == "Actb", :]
+    ds[ds.ra.Gene == "Actb", :]
 
 This returns an array of the expression values for *Actb*. Note the use
-of ``ds.ca.Gene == ...`` to pick out rows that match some
+of ``ds.ra.Gene == ...`` to pick out rows that match some
 criterion, and the use of ds[..., ...] to select subsets of the data. In
 this example, ``ds.ca.Gene == "Actb"`` is used as the row selector to pick
 out the single row corresponding to *Actb*, and ``:`` is used to select
