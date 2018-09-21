@@ -198,6 +198,9 @@ class LoomValidator:
 			if type(value) is str:
 				self.warnings.append(f"Global attribute '{key}' has dtype string, which will be deprecated in future Loom versions")
 				delay_print(f"{key: >{width}} string")
+			elif type(value) is bytes:
+				self.warnings.append(f"Global attribute '{key}' has dtype bytes, which will be deprecated in future Loom versions")
+				delay_print(f"{key: >{width}} bytes")
 			else:
 				delay_print(f"{key: >{width}} {dt(file.attrs[key].dtype)}")
 				
