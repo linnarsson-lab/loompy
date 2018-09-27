@@ -32,7 +32,7 @@ class MemoryLoomLayer():
 		Permute the layer along an axis
 
 		Args:
-			axis: The axis to permut (0, permute the rows; 1, permute the columns)
+			axis: The axis to permute (0, permute the rows; 1, permute the columns)
 			ordering: The permutation vector
 		"""
 		if axis == 0:
