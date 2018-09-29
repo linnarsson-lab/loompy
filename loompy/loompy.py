@@ -70,7 +70,8 @@ class LoomConnection:
 		Returns:
 			Nothing.
 		"""
-
+		if not os.path.exists(filename):
+			raise IOError(f"File '{filename}' not found")
 		# make sure a valid mode was passed
 		if mode != 'r+' and mode != 'r':
 			raise ValueError("Mode must be either 'r' or 'r+'")
