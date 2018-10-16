@@ -42,9 +42,9 @@ with warnings.catch_warnings():
 
 class LoomConnection:
 	'''
-	A connection to a Loom file on disk. Typically LoomConnection objects are created using one of the 
-	functions on the loompy module, such as :func:`loompy.connect` or :func:`loompy.new`. LoomConnection 
-	objects are context managers and should normally be 
+	A connection to a Loom file on disk. Typically LoomConnection objects are created using one of the
+	functions on the loompy module, such as :func:`loompy.connect` or :func:`loompy.new`. LoomConnection
+	objects are context managers and should normally be
 	wrapped in a ``with`` block:
 
 	.. highlight:: python
@@ -52,8 +52,8 @@ class LoomConnection:
 
 		import loompy
 		with loompy.connect("mydata.loom") as ds:
-		     print(ds.ca.keys())
-	
+			print(ds.ca.keys())
+
 	Inside the ``with`` block, you can access the dataset (here using the variable ``ds``). When execution
 	leaves the ``with`` block, the connection is automatically closed, freeing up resources.
 	'''
@@ -89,20 +89,6 @@ class LoomConnection:
 			self.shape = self._file["/matrix"].shape  #: Shape of the dataset (n_rows, n_cols)
 		else:
 			self.shape = (0, 0)
-		#:A dict-like interface to named layers. Keys are strings (the main matrix is named "") and
-		#:values are sliceable :class:`.LoomLayer` objects that support fancy indexing like numpy.ndarray objects.
-		#:
-		#:To read an entire layer into memory, use ``ds.layers[name][:, :]`` (i.e. select all rows and all columns).
-		#:Layers can also be loaded as sparse matrices by ``ds.layers[name].sparse()``.
-		#:
-		#:.. highlight:: python
-		#:.. code-block:: python
-		#:
-		#:    with loompy.connect("mydataset.loom") as ds:
-		#:       print(ds.layers.keys())
-		#:       print(f"There are {len(ds.layers)} layers")
-		#:       for name, layer in ds.layers.items():
-		#:           print(name, layer.shape, layer.dtype)
 		self.layers = loompy.LayerManager(self)
 		self.view = loompy.ViewManager(self)  #: Create a view of the file by slicing this attribute, like ``ds.view[:100, :100]``
 		self.ra = loompy.AttributeManager(self, axis=0)  #: Row attributes, dict-like with np.ndarray values
@@ -148,7 +134,7 @@ class LoomConnection:
 
 		Args:
 			timestamp:	ISO8601 timestamp
-		
+
 		Return:
 			dict:	Dictionary like ``{"row_graphs": rg, "col_graphs": cg, "row_attrs": ra, "col_attrs": ca, "layers": layers}`` listing the names of objects that were modified since the given time
 		"""
@@ -353,7 +339,7 @@ class LoomConnection:
 				n_cols = matrix.shape[1]
 			elif matrix.shape[1] != n_cols:
 				raise ValueError(f"Layer {layer} has {matrix.shape[1]} columns but the first layer had {n_cols}")
-			
+
 		did_remove = False
 		todel = []  # type: List[str]
 		for key, vals in col_attrs.items():
@@ -411,7 +397,7 @@ class LoomConnection:
 				self.layers[key][:, old_n_cols:n_cols] = layers_dict[key]
 		self._file.flush()
 
-	def add_loom(self, other_file: str, key: str = None, fill_values: Dict[str, np.ndarray]=None, batch_size: int=1000, convert_attrs: bool=False) -> None:
+	def add_loom(self, other_file: str, key: str = None, fill_values: Dict[str, np.ndarray] = None, batch_size: int = 1000, convert_attrs: bool = False) -> None:
 		"""
 		Add the content of another loom file
 
@@ -437,7 +423,7 @@ class LoomConnection:
 			# This was original Sten's version but it creates a 400M entries array in memory
 			# ordering = np.where(other.row_attrs[key][None, :] == self.row_attrs[key][:, None])[1]
 
-			def ixs_thatsort_a2b(a: np.ndarray, b: np.ndarray, check_content: bool=True) -> np.ndarray:
+			def ixs_thatsort_a2b(a: np.ndarray, b: np.ndarray, check_content: bool = True) -> np.ndarray:
 				"This is super duper magic sauce to make the order of one list to be like another"
 				if check_content:
 					assert len(np.intersect1d(a, b)) == len(a), "The two arrays are not matching"
@@ -804,16 +790,16 @@ class LoomConnection:
 			row_attr:	Name of the row attribute to use for selecting rows to include (or None to omit row data)
 			selector:	A list, a tuple, a numpy.ndarray or a slice; used to select rows (or None to include all rows)
 			columns:	A list of column attributes to include, or None to include all
-		
+
 		Returns:
 			Pandas DataFrame
-		
+
 		Remarks:
 			The method returns a Pandas DataFrame with one column per row of the Loom file (i.e. transposed), which is usually
-			what is required for plotting and statistical analysis. By default, all column attributes and no rows are included. 
-			To include row data, provide a ``row_attr`` and a ``selector``. The selector is matched against values of the given 
+			what is required for plotting and statistical analysis. By default, all column attributes and no rows are included.
+			To include row data, provide a ``row_attr`` and a ``selector``. The selector is matched against values of the given
 			row attribute, and matching rows are included.
-		
+
 		Examples:
 			.. highlight:: python
 			.. code-block:: python
@@ -851,7 +837,8 @@ class LoomConnection:
 					vals = self[selector, :]
 					for ix, name in enumerate(names):
 						data[name] = vals[ix, :][0]
-				elif all([type(s) is str for s in selector]):  # Based on specific string values
+				# Based on specific string values
+				elif all([type(s) is str for s in selector]):  # type: ignore
 					names = self.ra[row_attr][np.in1d(self.ra[row_attr], selector)]
 					for name in names:
 						vals = self[self.ra[row_attr] == name, :][0]
@@ -985,11 +972,11 @@ def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loomp
 		raise ValueError("Data for default layer must be provided")
 
 	# Sanity checks
-	shape = layers[""].shape
+	shape = layers[""].shape  # type: ignore
 	if shape[0] == 0 or shape[1] == 0:
 		raise ValueError("Main matrix cannot be empty")
 	for name, layer in layers.items():
-		if layer.shape != shape:
+		if layer.shape != shape:  # type: ignore
 			raise ValueError(f"Layer '{name}' is not the same shape as the main matrix")
 	for name, ra in row_attrs.items():
 		if ra.shape[0] != shape[0]:
@@ -1026,9 +1013,9 @@ def create_from_cellranger(indir: str, outdir: str = None, genome: str = None) -
 
 	Returns:
 		path (str):		Full path to the created loom file.
-	
+
 	Remarks:
-		The resulting file will be named ``{sampleID}.loom``, where the sampleID is the one given by cellranger. 
+		The resulting file will be named ``{sampleID}.loom``, where the sampleID is the one given by cellranger.
 	"""
 	if outdir is None:
 		outdir = indir
@@ -1069,7 +1056,7 @@ def create_from_cellranger(indir: str, outdir: str = None, genome: str = None) -
 	return path
 
 
-def combine(files: List[str], output_file: str, key: str = None, file_attrs: Dict[str, str]=None, batch_size: int=1000, convert_attrs: bool=False) -> None:
+def combine(files: List[str], output_file: str, key: str = None, file_attrs: Dict[str, str] = None, batch_size: int = 1000, convert_attrs: bool = False) -> None:
 	"""
 	Combine two or more loom files and save as a new loom file
 
@@ -1090,12 +1077,12 @@ def combine(files: List[str], output_file: str, key: str = None, file_attrs: Dic
 
 
 		.. warning::
-			If you don't give a ``key`` argument, the files will be combined without changing 
+			If you don't give a ``key`` argument, the files will be combined without changing
 			the ordering of rows or columns. Row attributes will be taken from the first file.
 			Hence, if rows are not in the same order in all files, the result may be meaningless.
-		
+
 		To guard against this issue, you are strongly advised to provide a ``key`` argument,
-		which is used to sort files while merging. The ``key`` should be the name of a row 
+		which is used to sort files while merging. The ``key`` should be the name of a row
 		atrribute that contains a unique value for each row. For example, to order rows by
 		the attribute ``Accession``:
 
