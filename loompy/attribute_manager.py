@@ -147,7 +147,7 @@ class AttributeManager:
 				values = loompy.normalize_attr_values(val)
 				a = ["/row_attrs/", "/col_attrs/"][self.axis]
 				if self.ds.shape[self.axis] != 0 and values.shape[0] != self.ds.shape[self.axis]:
-					raise ValueError(f"Attribute must have exactly {self.ds.shape[self.axis]} values but {len(values)} were given")
+					raise ValueError(f"Attribute '{name}' must have exactly {self.ds.shape[self.axis]} values but {len(values)} were given")
 				if self.ds._file[a].__contains__(name):
 					del self.ds._file[a + name]
 				self.ds._file[a + name] = values  # TODO: for 2D arrays, use block compression along columns/rows
