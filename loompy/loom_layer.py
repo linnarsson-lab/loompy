@@ -107,6 +107,7 @@ class LoomLayer():
 		data: List[np.ndarray] = []
 		row: List[np.ndarray] = []
 		col: List[np.ndarray] = []
+		i = 0
 		for (ix, selection, view) in self.ds.scan(items=cols, axis=1, layers=[self.name]):
 			if rows is not None:
 				vals = view.layers[self.name][rows, :]
@@ -115,7 +116,8 @@ class LoomLayer():
 			nonzeros = np.where(vals > 0)
 			data.append(vals[nonzeros])
 			row.append(nonzeros[0])
-			col.append(nonzeros[1] + ix)
+			col.append(nonzeros[1] + i)
+			i+= selection.shape[0]
 		return scipy.sparse.coo_matrix((np.concatenate(data), (np.concatenate(row), np.concatenate(col))), shape=(n_genes, n_cells))
 
 	def _resize(self, size: Tuple[int, int], axis: int = None) -> None:
