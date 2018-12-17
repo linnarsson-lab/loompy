@@ -31,6 +31,7 @@ import scipy.sparse
 from shutil import copyfile
 import logging
 import time
+import gzip
 import loompy
 from loompy import deprecated, timestamp
 import pandas as pd
@@ -1021,18 +1022,22 @@ def create_from_cellranger(indir: str, outdir: str = None, genome: str = None) -
 		outdir = indir
 	sampleid = os.path.split(os.path.abspath(indir))[-1]
 	matrix_folder = os.path.join(indir, 'outs', 'filtered_gene_bc_matrices')
-	if genome is None:
-		genome = [f for f in os.listdir(matrix_folder) if not f.startswith(".")][0]
-	matrix_folder = os.path.join(matrix_folder, genome)
-	matrix = mmread(os.path.join(matrix_folder, "matrix.mtx")).astype("float32").todense()
+	if os.path.exists(matrix_folder):
+		if genome is None:
+			genome = [f for f in os.listdir(matrix_folder) if not f.startswith(".")][0]
+		matrix_folder = os.path.join(matrix_folder, genome)
+		matrix = mmread(os.path.join(matrix_folder, "matrix.mtx")).astype("float32").todense()
+		genelines = open(os.path.join(matrix_folder, "genes.tsv"), "r").readlines()
+		bclines = open(os.path.join(matrix_folder, "barcodes.tsv"), "r").readlines()
+	else: # cellranger V3 file locations
+		matrix_folder = os.path.join(indir, 'outs', 'filtered_feature_bc_matrix')
+		matrix = mmread(os.path.join(matrix_folder, "matrix.mtx.gz")).astype("float32").todense()
+		genelines = gzip.open(os.path.join(matrix_folder, "features.tsv.gz"), "r").readlines()
+		bclines = gzip.open(os.path.join(matrix_folder, "barcodes.tsv.gz"), "r").readlines()
 
-	with open(os.path.join(matrix_folder, "genes.tsv"), "r") as f:
-		lines = f.readlines()
-	accession = np.array([x.split("\t")[0] for x in lines]).astype("str")
-	gene = np.array([x.split("\t")[1].strip() for x in lines]).astype("str")
-	with open(os.path.join(matrix_folder, "barcodes.tsv"), "r") as f:
-		lines = f.readlines()
-	cellids = np.array([sampleid + ":" + x.strip() for x in lines]).astype("str")
+	accession = np.array([x.split("\t")[0] for x in genelines]).astype("str")
+	gene = np.array([x.split("\t")[1].strip() for x in genelines]).astype("str")
+	cellids = np.array([sampleid + ":" + x.strip() for x in bclines]).astype("str")
 
 	col_attrs = {"CellID": cellids}
 	row_attrs = {"Accession": accession, "Gene": gene}
