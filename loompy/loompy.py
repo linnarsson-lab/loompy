@@ -1032,8 +1032,8 @@ def create_from_cellranger(indir: str, outdir: str = None, genome: str = None) -
 	else: # cellranger V3 file locations
 		matrix_folder = os.path.join(indir, 'outs', 'filtered_feature_bc_matrix')
 		matrix = mmread(os.path.join(matrix_folder, "matrix.mtx.gz")).astype("float32").todense()
-		genelines = gzip.open(os.path.join(matrix_folder, "features.tsv.gz"), "r").readlines()
-		bclines = gzip.open(os.path.join(matrix_folder, "barcodes.tsv.gz"), "r").readlines()
+		genelines = [ l.decode() for l in gzip.open(os.path.join(matrix_folder, "features.tsv.gz"), "r").readlines() ]
+		bclines = [ l.decode() for l in gzip.open(os.path.join(matrix_folder, "barcodes.tsv.gz"), "r").readlines() ]
 
 	accession = np.array([x.split("\t")[0] for x in genelines]).astype("str")
 	gene = np.array([x.split("\t")[1].strip() for x in genelines]).astype("str")
