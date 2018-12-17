@@ -998,10 +998,10 @@ def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loomp
 				ds.ca[key] = vals
 
 	except ValueError as ve:
-		ds.close(suppress_warning=True)
-		os.remove(filename)
+		#ds.close(suppress_warning=True) # ds does not exist here
+		if os.path.exists(filename):
+			os.remove(filename)
 		raise ve
-
 
 def create_from_cellranger(indir: str, outdir: str = None, genome: str = None) -> str:
 	"""
@@ -1030,6 +1030,8 @@ def create_from_cellranger(indir: str, outdir: str = None, genome: str = None) -
 		genelines = open(os.path.join(matrix_folder, "genes.tsv"), "r").readlines()
 		bclines = open(os.path.join(matrix_folder, "barcodes.tsv"), "r").readlines()
 	else: # cellranger V3 file locations
+		if genome is None:
+			genome = "" # Genome is not visible from V3 folder
 		matrix_folder = os.path.join(indir, 'outs', 'filtered_feature_bc_matrix')
 		matrix = mmread(os.path.join(matrix_folder, "matrix.mtx.gz")).astype("float32").todense()
 		genelines = gzip.open(os.path.join(matrix_folder, "features.tsv.gz"), "r").readlines()
