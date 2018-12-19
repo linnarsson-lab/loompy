@@ -117,7 +117,7 @@ class LoomLayer():
 			data.append(vals[nonzeros])
 			row.append(nonzeros[0])
 			col.append(nonzeros[1] + i)
-			i+= selection.shape[0]
+			i += selection.shape[0]
 		return scipy.sparse.coo_matrix((np.concatenate(data), (np.concatenate(row), np.concatenate(col))), shape=(n_genes, n_cells))
 
 	def _resize(self, size: Tuple[int, int], axis: int = None) -> None:
