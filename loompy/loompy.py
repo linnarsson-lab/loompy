@@ -566,13 +566,14 @@ class LoomConnection:
 		if (items is not None) and (np.issubdtype(items.dtype, np.bool_)):
 			items = np.where(items)[0]
 
-		ordering: np.ndarray = None
+		ordering: Union[np.ndarray, slice] = None
 		vals: Dict[str, loompy.MemoryLoomLayer] = {}
 		if axis == 1:
 			if key is not None:
 				ordering = np.argsort(self.ra[key])
 			else:
-				ordering = np.arange(self.shape[0])
+				# keep everything in original order
+				ordering = slice(None)
 			if items is None:
 				items = np.fromiter(range(self.shape[1]), dtype='int')
 			cols_per_chunk = batch_size
@@ -602,7 +603,8 @@ class LoomConnection:
 			if key is not None:
 				ordering = np.argsort(self.ca[key])
 			else:
-				ordering = np.arange(self.shape[1])
+				# keep everything in original order
+				ordering = slice(None)
 			if items is None:
 				items = np.fromiter(range(self.shape[0]), dtype='int')
 			rows_per_chunk = batch_size
