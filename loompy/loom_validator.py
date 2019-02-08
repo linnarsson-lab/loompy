@@ -45,14 +45,14 @@ class LoomValidator:
 			assessed relative to attribute name and data type conventions given at http://linnarssonlab.org/loompy/conventions/.
 		"""
 		valid1 = True
-		with h5py.File(path) as f:
+		with h5py.File(path, mode="r") as f:
 			valid1 = self.validate_spec(f)
 			if not valid1:
 				self.errors.append("For help, see http://linnarssonlab.org/loompy/format/")
 
 		valid2 = True
 		if strictness == "conventions":
-			with loompy.connect(path) as ds:
+			with loompy.connect(path, mode="r") as ds:
 				valid2 = self.validate_conventions(ds)
 				if not valid2:
 					self.errors.append("For help, see http://linnarssonlab.org/loompy/conventions/")
@@ -253,7 +253,7 @@ class LoomValidator:
 				delay_print("    (none)")
 
 		delay_print("Column graphs:")
-		if "#col_graphs" in file:
+		if "col_graphs" in file:
 			if self.version == "2.0.1":
 				self._check("col_graphs" in file, "'col_graphs' group is missing (try spec_version='old')")
 			for g in file["col_graphs"]:
