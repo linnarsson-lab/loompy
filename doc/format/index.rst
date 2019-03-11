@@ -61,7 +61,7 @@ standard for storing large numerical datasets. Quoting from h5py.org:
     dictionaries, and datasets work like NumPy arrays*.
 
 A valid Loom file is simply an HDF5 file that contains specific
-*groups* representing the main matrix as well as row and column
+*groups* containing the main matrix as well as row and column
 attributes. Because of this, Loom files can be created and read by
 any language that supports HDF5, including `Python <http://h5py.org>`__,
 `R <http://bioconductor.org/packages/release/bioc/html/rhdf5.html>`__,
@@ -144,6 +144,8 @@ Row and column sparse graphs
    format. The lengths of the three datasets MUST be equal, which defines the number 
    of edges in the graph. Note that the number of rows in the dataset defines 
    the vertices, so an unconnected vertex is one that has no entry in ``a`` or ``b``.
+-  Vertex indexing is zero-based. When an entry in ``a`` or ``b`` is zero, this denotes the first column 
+   in the matrix. If there are N columns, then vertices are numbered from 0 to N - 1. 
 
 Datatypes
 ---------
