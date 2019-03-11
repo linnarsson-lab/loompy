@@ -16,7 +16,7 @@ def normalize_attr_strings(a: np.ndarray) -> np.ndarray:
 		elif np.all([type(x) is np.string_ for x in a]) or np.all([type(x) is np.bytes_ for x in a]):
 			return a.astype("string_")
 		else:
-			logging.warn(f"Attribute contains mixed object types ({np.unique([str(type(x)) for x in a])}); casting all to string")
+			logging.debug(f"Attribute contains mixed object types ({np.unique([str(type(x)) for x in a])}); casting all to string")
 			return np.array([str(x) for x in a], dtype="string_")
 	elif np.issubdtype(a.dtype, np.string_) or np.issubdtype(a.dtype, np.object_):
 		return a

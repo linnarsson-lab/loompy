@@ -359,7 +359,7 @@ class LoomConnection:
 		for key in todel:
 			del col_attrs[key]
 		if did_remove:
-			logging.warn("Some column attributes were removed: " + ",".join(todel))
+			logging.debug("Some column attributes were removed: " + ",".join(todel))
 
 		todel = []
 		did_remove = False
@@ -377,7 +377,7 @@ class LoomConnection:
 		for key in todel:
 			del self.ca[key]  # delete_attr(key, axis=1)
 		if did_remove:
-			logging.warn("Some column attributes were removed: " + ",".join(todel))
+			logging.debug("Some column attributes were removed: " + ",".join(todel))
 
 		if is_new:
 			for k, v in layers_dict.items():
@@ -389,8 +389,15 @@ class LoomConnection:
 			old_n_cols = self.shape[1]
 			# Must set new shape here, otherwise the attribute manager will complain
 			self.shape = (self.shape[0], n_cols)
+			todel = []
 			for key, vals in col_attrs.items():
-				self.ca[key] = np.concatenate([self.ca[key], vals])
+				if vals.shape[1:] != self.col_attrs[key].shape[1:]:
+					logging.debug(f"Removing attribute {key} because shape {vals.shape} did not match existing shape {self.col_attrs[key].shape} beyond first dimension")
+					todel.append(key)
+				else:
+					self.ca[key] = np.concatenate([self.ca[key], vals])
+			for key in todel:
+				del self.ca[key]
 
 			# Add the columns layerwise
 			for key in self.layers.keys():
