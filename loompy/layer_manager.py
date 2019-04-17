@@ -17,7 +17,8 @@ class LayerManager:
 		storage: Dict[str, np.ndarray] = {}
 		setattr(self, "!storage", storage)
 		if ds is not None:
-			self.__dict__["storage"][""] = None
+			if "matrix" in ds._file:
+				self.__dict__["storage"][""] = None
 			if "layers" in ds._file:
 				for key in self.ds._file["layers"].keys():
 					self.__dict__["storage"][key] = None

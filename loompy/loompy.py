@@ -34,6 +34,8 @@ import time
 import gzip
 import loompy
 from loompy import deprecated, timestamp
+from .loom_view import LoomView
+import numpy_groupies.aggregate_numpy as npg
 import pandas as pd
 import warnings
 with warnings.catch_warnings():
@@ -405,7 +407,7 @@ class LoomConnection:
 				self.layers[key][:, old_n_cols:n_cols] = layers_dict[key]
 		self._file.flush()
 
-	def add_loom(self, other_file: str, key: str = None, fill_values: Dict[str, np.ndarray] = None, batch_size: int = 1000, convert_attrs: bool = False) -> None:
+	def add_loom(self, other_file: str, key: str = None, fill_values: Dict[str, np.ndarray] = None, batch_size: int = 1000, convert_attrs: bool = False, include_graphs: bool = False) -> None:
 		"""
 		Add the content of another loom file
 
@@ -415,60 +417,71 @@ class LoomConnection:
 			fill_values:     default values to use for missing attributes (or None to drop missing attrs, or 'auto' to fill with sensible defaults)
 			batch_size:       the batch size used by batchscan (limits the number of rows/columns read in memory)
 			convert_attrs:   convert file attributes that differ between files into column attributes
+			include_graphs:  if true, include all the column graphs from other_file that are also present in this file
 
 		Returns:
 			Nothing, but adds the loom file. Note that the other loom file must have exactly the same
 			number of rows, and must have exactly the same column attributes.
-			The all the contents including layers but ignores layers in `other_file` that are not already present in self
+			Adds all the contents including layers but ignores layers in `other_file` that are not already present in self
+			Note that graphs are normally not added, unless include_graphs == True, in which case column graphs are added
 		"""
 		if self._file.mode != "r+":
 			raise IOError("Cannot add data when connected in read-only mode")
 		# Connect to the loom files
-		other = connect(other_file)
-		# Verify that the row keys can be aligned
-		ordering = None
-		if key is not None:
-			# This was original Sten's version but it creates a 400M entries array in memory
-			# ordering = np.where(other.row_attrs[key][None, :] == self.row_attrs[key][:, None])[1]
+		with loompy.connect(other_file) as other:
+			# Verify that the row keys can be aligned
+			ordering = None
+			if key is not None:
+				# This was original Sten's version but it creates a 400M entries array in memory
+				# ordering = np.where(other.row_attrs[key][None, :] == self.row_attrs[key][:, None])[1]
 
-			def ixs_thatsort_a2b(a: np.ndarray, b: np.ndarray, check_content: bool = True) -> np.ndarray:
-				"This is super duper magic sauce to make the order of one list to be like another"
-				if check_content:
-					assert len(np.intersect1d(a, b)) == len(a), "The two arrays are not matching"
-				return np.argsort(a)[np.argsort(np.argsort(b))]
+				def ixs_thatsort_a2b(a: np.ndarray, b: np.ndarray, check_content: bool = True) -> np.ndarray:
+					"This is super duper magic sauce to make the order of one list to be like another"
+					if check_content:
+						assert len(np.intersect1d(a, b)) == len(a), "The two arrays are not matching"
+					return np.argsort(a)[np.argsort(np.argsort(b))]
 
-			ordering = ixs_thatsort_a2b(a=other.row_attrs[key], b=self.row_attrs[key])
-			pk1 = sorted(other.row_attrs[key])
-			pk2 = sorted(self.row_attrs[key])
-			for ix, val in enumerate(pk1):
-				if pk2[ix] != val:
-					raise ValueError("Primary keys are not 1-to-1 alignable!")
-		diff_layers = set(self.layers.keys()) - set(other.layers.keys())
-		if len(diff_layers) > 0:
-			raise ValueError("%s is missing a layer, cannot merge with current file. layers missing:%s" % (other_file, diff_layers))
+				ordering = ixs_thatsort_a2b(a=other.row_attrs[key], b=self.row_attrs[key])
+				pk1 = sorted(other.row_attrs[key])
+				pk2 = sorted(self.row_attrs[key])
+				for ix, val in enumerate(pk1):
+					if pk2[ix] != val:
+						raise ValueError("Primary keys are not 1-to-1 alignable!")
+			diff_layers = set(self.layers.keys()) - set(other.layers.keys())
+			if len(diff_layers) > 0:
+				raise ValueError("%s is missing a layer, cannot merge with current file. layers missing:%s" % (other_file, diff_layers))
 
-		if convert_attrs:
-			# Prepare to replace any global attribute that differ between looms or is missing in either loom with a column attribute.
-			globalkeys = set(self.attrs)
-			globalkeys.update(other.attrs)
-			for globalkey in globalkeys:
-				if globalkey in self.attrs and globalkey in other.attrs and self.attrs[globalkey] == other.attrs[globalkey]:
-					continue
-				if globalkey not in self.col_attrs:
-					self_value = self.attrs[globalkey] if globalkey in self.attrs else np.zeros(1, dtype=other.attrs[globalkey].dtype)[0]
-					self.col_attrs[globalkey] = np.array([self_value] * self.shape[1])
-				if globalkey not in other.col_attrs:
-					other_value = other.attrs[globalkey] if globalkey in other.attrs else np.zeros(1, dtype=self.attrs[globalkey].dtype)[0]
-					other.col_attrs[globalkey] = np.array([other_value] * other.shape[1])
-				if globalkey in self.attrs:
-					delattr(self.attrs, globalkey)
+			if convert_attrs:
+				# Prepare to replace any global attribute that differ between looms or is missing in either loom with a column attribute.
+				globalkeys = set(self.attrs)
+				globalkeys.update(other.attrs)
+				for globalkey in globalkeys:
+					if globalkey in self.attrs and globalkey in other.attrs and self.attrs[globalkey] == other.attrs[globalkey]:
+						continue
+					if globalkey not in self.col_attrs:
+						self_value = self.attrs[globalkey] if globalkey in self.attrs else np.zeros(1, dtype=other.attrs[globalkey].dtype)[0]
+						self.col_attrs[globalkey] = np.array([self_value] * self.shape[1])
+					if globalkey not in other.col_attrs:
+						other_value = other.attrs[globalkey] if globalkey in other.attrs else np.zeros(1, dtype=self.attrs[globalkey].dtype)[0]
+						other.col_attrs[globalkey] = np.array([other_value] * other.shape[1])
+					if globalkey in self.attrs:
+						delattr(self.attrs, globalkey)
 
-		for (ix, selection, vals) in other.batch_scan_layers(axis=1, layers=self.layers.keys(), batch_size=batch_size):
-			ca = {key: v[selection] for key, v in other.col_attrs.items()}
-			if ordering is not None:
-				vals = {key: val[ordering, :] for key, val in vals.items()}
-			self.add_columns(vals, ca, fill_values=fill_values)
-		other.close()
+			for (ix, selection, vals) in other.batch_scan_layers(axis=1, layers=self.layers.keys(), batch_size=batch_size):
+				ca = {key: v[selection] for key, v in other.col_attrs.items()}
+				if ordering is not None:
+					vals = {key: val[ordering, :] for key, val in vals.items()}
+				self.add_columns(vals, ca, fill_values=fill_values)
+			
+			if include_graphs:
+				for gname in self.col_graphs.keys():
+					if gname in other.col_graphs:
+						g1 = self.col_graphs[gname]
+						g2 = other.col_graphs[gname]
+						n = self.shape[1]
+						m = other.shape[1]
+						g3 = scipy.sparse.coo_matrix((np.concatenate([g1.data, g2.data]), (np.concatenate([g1.row, g2.row + n]), np.concatenate([g1.col, g2.col + n]))), shape=(n + m, n + m))
+						self.col_graphs[gname] = g3
 
 	def delete_attr(self, name: str, axis: int = 0) -> None:
 		"""
@@ -857,6 +870,64 @@ class LoomConnection:
 					raise ValueError("Invalid selector")
 		return pd.DataFrame(data)
 
+	def aggregate(self, out_file: str = None, select: np.ndarray = None, group_by: Union[str, np.ndarray] = "Clusters", aggr_by: str = "mean", aggr_ca_by: Dict[str, str] = None) -> LoomView:
+		"""
+		Aggregate the Loom file by applying aggregation functions to the main matrix as well as to the column attributes
+
+		Args:
+			out_file	The name of the output Loom file (will be appended to if it exists)
+			select		Bool array giving the columns to include (or None, to include all)
+			group_by	The column attribute to group by, or an np.ndarray of integer group labels
+			aggr_by 	The aggregation function for the main matrix
+			aggr_ca_by	A dictionary of aggregation functions for the column attributes (or None to skip)
+
+		Remarks:
+			aggr_by gives the aggregation function for the main matrix
+			aggr_ca_by is a dictionary with column attributes as keys and aggregation functionas as values
+			
+			Aggregation functions can be any valid aggregation function from here: https://github.com/ml31415/numpy-groupies
+
+			In addition, you can specify:
+				"tally" to count the number of occurences of each value of a categorical attribute
+		"""
+		ca = {}  # type: Dict[str, np.ndarray]
+		if select is not None:
+			raise ValueError("The 'select' argument is deprecated")
+		if isinstance(group_by, np.ndarray):
+			labels = group_by
+		else:
+			labels = (self.ca[group_by]).astype('int')
+		_, zero_strt_sort_noholes_lbls = np.unique(labels, return_inverse=True)
+		n_groups = len(set(labels))
+		if aggr_ca_by is not None:
+			for key in self.ca.keys():
+				if key not in aggr_ca_by:
+					continue
+				func = aggr_ca_by[key]
+				if func == "tally":
+					for val in set(self.ca[key]):
+						if np.issubdtype(type(val), np.str_):
+							val = val.replace("/", "-")  # Slashes are not allowed in attribute names
+							val = val.replace(".", "_")  # Nor are periods
+						ca[key + "_" + str(val)] = npg.aggregate(zero_strt_sort_noholes_lbls, (self.ca[key] == val).astype('int'), func="sum", fill_value=0)
+				elif func == "mode":
+					def mode(x):  # type: ignore
+						return scipy.stats.mode(x)[0][0]
+					ca[key] = npg.aggregate(zero_strt_sort_noholes_lbls, self.ca[key], func=mode, fill_value=0).astype('str')
+				elif func == "mean":
+					ca[key] = npg.aggregate(zero_strt_sort_noholes_lbls, self.ca[key], func=func, fill_value=0)
+				elif func == "first":
+					ca[key] = npg.aggregate(zero_strt_sort_noholes_lbls, self.ca[key], func=func, fill_value=self.ca[key][0])
+
+		m = np.empty((self.shape[0], n_groups))
+		for (_, selection, view) in self.scan(axis=0, layers=[""]):
+			vals_aggr = npg.aggregate(zero_strt_sort_noholes_lbls, view[:, :], func=aggr_by, axis=1, fill_value=0)
+			m[selection, :] = vals_aggr
+
+		if out_file is not None:
+			loompy.create(out_file, m, self.ra, ca)
+		return LoomView(m, self.ra, ca)
+
 	def export(self, out_file: str, layer: str = None, format: str = "tab") -> None:
 		"""
 		Export the specified layer and row/col attributes as tab-delimited file.
@@ -1012,6 +1083,7 @@ def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loomp
 			os.remove(filename)
 		raise ve
 
+
 def create_from_cellranger(indir: str, outdir: str = None, genome: str = None) -> str:
 	"""
 	Create a .loom file from 10X Genomics cellranger output
@@ -1075,7 +1147,6 @@ def create_from_cellranger(indir: str, outdir: str = None, genome: str = None) -
 def combine(files: List[str], output_file: str, key: str = None, file_attrs: Dict[str, str] = None, batch_size: int = 1000, convert_attrs: bool = False) -> None:
 	"""
 	Combine two or more loom files and save as a new loom file
-
 	Args:
 		files (list of str):    the list of input files (full paths)
 		output_file (str):      full path of the output loom file
@@ -1083,31 +1154,23 @@ def combine(files: List[str], output_file: str, key: str = None, file_attrs: Dic
 		file_attrs (dict):      file attributes (title, description, url, etc.)
 		batch_size (int):       limits the batch or cols/rows read in memory (default: 1000)
 		convert_attrs (bool):   convert file attributes that differ between files into column attributes
-
 	Returns:
 		Nothing, but creates a new loom file combining the input files.
-
 		Note that the loom files must have exactly the same
 		number of rows, and must have exactly the same column attributes.
 		Named layers not present in the first file are discarded.
-
-
 		.. warning::
 			If you don't give a ``key`` argument, the files will be combined without changing
 			the ordering of rows or columns. Row attributes will be taken from the first file.
 			Hence, if rows are not in the same order in all files, the result may be meaningless.
-
 		To guard against this issue, you are strongly advised to provide a ``key`` argument,
 		which is used to sort files while merging. The ``key`` should be the name of a row
 		atrribute that contains a unique value for each row. For example, to order rows by
 		the attribute ``Accession``:
-
 		.. highlight:: python
 		.. code-block:: python
-
 			import loompy
 			loompy.combine(files, key="Accession")
-
 	"""
 	if file_attrs is None:
 		file_attrs = {}
@@ -1125,6 +1188,93 @@ def combine(files: List[str], output_file: str, key: str = None, file_attrs: Dic
 		for f in files[1:]:
 			ds.add_loom(f, key, batch_size=batch_size, convert_attrs=convert_attrs)
 	ds.close()
+
+
+def combine_faster(files: List[str], output_file: str, file_attrs: Dict[str, str] = None, selections: List[np.ndarray] = None, key: str = None) -> None:
+	"""
+	Combine loom files and save as a new loom file
+
+	Args:
+		files (list of str):    the list of input files (full paths)
+		output_file (str):      full path of the output loom file
+		file_attrs (dict):      file attributes (title, description, url, etc.)
+		selections:				list of indicator arrays (one per file; or None to include all cells for the file) determining which columns to include from each file, or None to include all cells from all files
+		key:					row attribute to use as key for ordering the rows, or None to skip ordering
+
+	Returns:
+		Nothing, but creates a new loom file combining the input files.
+
+		Note that the loom files must have exactly the same
+		number of rows, in exactly the same order, and must have exactly the same column attributes.
+		Values in layers missing from one or more files will be replaced by zeros
+
+		.. warning::
+			The files will be combined without changing
+			the ordering of rows or columns. Row attributes will be taken from the first file.
+			Hence, if rows are not in the same order in all files, the result may be meaningless.
+	
+	Remarks:
+		This version assumes that the individual files will fit in memory. If you run out of memory, try the standard combine() method.
+	"""
+	if file_attrs is None:
+		file_attrs = {}
+
+	if len(files) == 0:
+		raise ValueError("The input file list was empty")
+
+	if selections is None:
+		selections = [None for _ in files]  # None means take all cells from the file
+
+	n_cells = 0
+	n_genes = 0
+	for f, s in zip(files, selections):
+		with loompy.connect(f) as ds:
+			if n_genes == 0:
+				n_genes = ds.shape[0]
+			elif n_genes != ds.shape[0]:
+				raise ValueError(f"All files must have exactly the same number of rows, but {f} had {ds.shape[0]} rows while previous files had {n_genes}")
+			if s is None:
+				n_cells += ds.shape[1]
+			else:
+				n_cells += s.sum()
+
+	col_attrs: Dict[str, np.ndarray] = {}
+	ix = 0
+	with loompy.new(output_file, file_attrs=file_attrs) as dsout:
+		for f, s in zip(files, selections):
+			with loompy.connect(f) as ds:
+				if key is not None:
+					ordering = np.argsort(ds.ra[key])
+				dsout.shape = (ds.shape[0], n_cells)  # Not really necessary to set this for each file, but no harm either; needed in order to make sure the first layer added will be the right shape
+				for layer in ds.layers.keys():
+					# Create the layer if it doesn't exist
+					if layer not in dsout.layers:
+						dsout[layer] = ds[layer].dtype.name
+					# Make sure the dtype didn't change between files
+					if dsout.layers[layer].dtype != ds[layer].dtype:
+						raise ValueError(f"Each layer must be same datatype in all files, but {layer} of type {ds[layer].dtype} in {f} differs from previous files where it was {dsout[layer].dtype}")
+
+					if key is None:
+						dsout[layer][:, ix: ix + ds.shape[1]] = ds[layer][:, :]
+					else:
+						dsout[layer][:, ix: ix + ds.shape[1]] = ds[layer][ordering, :]
+				for attr, vals in ds.ca.items():
+					if attr in col_attrs:
+						if col_attrs[attr].dtype != vals.dtype:
+							raise ValueError(f"Each column attribute must be same datatype in all files, but {attr} is {vals.dtype} in {f} but was {col_attrs[attr].dtype} in previous files")
+					else:
+						shape = list(vals.shape)
+						shape[0] = n_cells
+						col_attrs[attr] = np.zeros(shape, dtype=vals.dtype)
+					col_attrs[attr][ix: ix + ds.shape[1]] = vals
+				for attr, vals in ds.ra.items():
+					if attr not in dsout.ra:
+						if key is None:
+							dsout.ra[attr] = vals
+						else:
+							dsout.ra[attr] = vals[ordering]
+		for attr, vals in col_attrs.items():
+			dsout.ca[attr] = vals
 
 
 def connect(filename: str, mode: str = 'r+', *, validate: bool = True, spec_version: str = "2.0.1") -> LoomConnection:

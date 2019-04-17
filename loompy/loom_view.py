@@ -7,7 +7,7 @@ class LoomView:
 	"""
 	An in-memory loom dataset
 	"""
-	def __init__(self, layers: loompy.LayerManager, row_attrs: loompy.AttributeManager, col_attrs: loompy.AttributeManager, row_graphs: loompy.GraphManager, col_graphs: loompy.GraphManager, *, filename: str, file_attrs: loompy.FileAttributeManager) -> None:
+	def __init__(self, layers: loompy.LayerManager, row_attrs: loompy.AttributeManager, col_attrs: loompy.AttributeManager, row_graphs: loompy.GraphManager, col_graphs: loompy.GraphManager, *, filename: str = "", file_attrs: loompy.FileAttributeManager = None) -> None:
 		self.filename = filename
 		self.view = loompy.ViewManager(self)
 		self.layers = layers
