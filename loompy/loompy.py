@@ -1260,9 +1260,9 @@ def combine_faster(files: List[str], output_file: str, file_attrs: Dict[str, str
 						raise ValueError(f"Each layer must be same datatype in all files, but {layer} of type {ds[layer].dtype} in {f} differs from previous files where it was {dsout[layer].dtype}")
 
 					if key is None:
-						dsout[layer][:, ix: ix + ds.shape[1]] = ds[layer][:, :]
+						dsout[layer][:, ix: ix + ds.shape[1]] = ds[layer][:, :][:, s]
 					else:
-						dsout[layer][:, ix: ix + ds.shape[1]] = ds[layer][ordering, :]
+						dsout[layer][:, ix: ix + ds.shape[1]] = ds[layer][:, :][:, s][ordering, :]
 				for attr, vals in ds.ca.items():
 					if attr in col_attrs:
 						if col_attrs[attr].dtype != vals.dtype:
@@ -1271,13 +1271,14 @@ def combine_faster(files: List[str], output_file: str, file_attrs: Dict[str, str
 						shape = list(vals.shape)
 						shape[0] = n_cells
 						col_attrs[attr] = np.zeros(shape, dtype=vals.dtype)
-					col_attrs[attr][ix: ix + ds.shape[1]] = vals
+					col_attrs[attr][ix: ix + ds.shape[1]] = vals[s]
 				for attr, vals in ds.ra.items():
 					if attr not in dsout.ra:
 						if key is None:
 							dsout.ra[attr] = vals
 						else:
 							dsout.ra[attr] = vals[ordering]
+			ix = ix + ds.shape[1]
 		for attr, vals in col_attrs.items():
 			dsout.ca[attr] = vals
 
