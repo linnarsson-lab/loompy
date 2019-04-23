@@ -55,12 +55,14 @@ class LoomView:
 		for layer in self.layers.values():
 			layer._permute(ordering, axis=axis)
 		if axis == 0:
-			for g in self.row_graphs.values():
-				g._permute(ordering)
+			if self.row_graphs is not None:
+				for g in self.row_graphs.values():
+					g._permute(ordering)
 			for a in self.row_attrs.values():
 				a._permute(ordering)
 		elif axis == 1:
-			for g in self.col_graphs.values():
-				g._permute(ordering)
+			if self.col_graphs is not None:
+				for g in self.col_graphs.values():
+					g._permute(ordering)
 			for a in self.col_attrs.values():
 				a._permute(ordering)

@@ -870,7 +870,7 @@ class LoomConnection:
 					raise ValueError("Invalid selector")
 		return pd.DataFrame(data)
 
-	def aggregate(self, out_file: str = None, select: np.ndarray = None, group_by: Union[str, np.ndarray] = "Clusters", aggr_by: str = "mean", aggr_ca_by: Dict[str, str] = None) -> LoomView:
+	def aggregate(self, out_file: str = None, select: np.ndarray = None, group_by: Union[str, np.ndarray] = "Clusters", aggr_by: str = "mean", aggr_ca_by: Dict[str, str] = None) -> np.ndarray:
 		"""
 		Aggregate the Loom file by applying aggregation functions to the main matrix as well as to the column attributes
 
@@ -881,6 +881,9 @@ class LoomConnection:
 			aggr_by 	The aggregation function for the main matrix
 			aggr_ca_by	A dictionary of aggregation functions for the column attributes (or None to skip)
 
+		Returns:
+			m			Aggregated main matrix
+
 		Remarks:
 			aggr_by gives the aggregation function for the main matrix
 			aggr_ca_by is a dictionary with column attributes as keys and aggregation functionas as values
@@ -889,6 +892,7 @@ class LoomConnection:
 
 			In addition, you can specify:
 				"tally" to count the number of occurences of each value of a categorical attribute
+		
 		"""
 		ca = {}  # type: Dict[str, np.ndarray]
 		if select is not None:
@@ -907,9 +911,9 @@ class LoomConnection:
 				if func == "tally":
 					for val in set(self.ca[key]):
 						if np.issubdtype(type(val), np.str_):
-							val = val.replace("/", "-")  # Slashes are not allowed in attribute names
-							val = val.replace(".", "_")  # Nor are periods
-						ca[key + "_" + str(val)] = npg.aggregate(zero_strt_sort_noholes_lbls, (self.ca[key] == val).astype('int'), func="sum", fill_value=0)
+							valnew = val.replace("/", "-")  # Slashes are not allowed in attribute names
+							valnew = valnew.replace(".", "_")  # Nor are periods
+						ca[key + "_" + str(valnew)] = npg.aggregate(zero_strt_sort_noholes_lbls, (self.ca[key] == val).astype('int'), func="sum", fill_value=0)
 				elif func == "mode":
 					def mode(x):  # type: ignore
 						return scipy.stats.mode(x)[0][0]
@@ -926,7 +930,8 @@ class LoomConnection:
 
 		if out_file is not None:
 			loompy.create(out_file, m, self.ra, ca)
-		return LoomView(m, self.ra, ca)
+
+		return m
 
 	def export(self, out_file: str, layer: str = None, format: str = "tab") -> None:
 		"""

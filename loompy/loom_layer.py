@@ -101,6 +101,13 @@ class LoomLayer():
 			self.ds._file.flush()
 
 	def sparse(self, rows: np.ndarray = None, cols: np.ndarray = None) -> scipy.sparse.coo_matrix:
+		if rows is not None:
+			if np.issubdtype(rows.dtype, np.bool_):
+				rows = np.where(rows)[0]
+		if cols is not None:
+			if np.issubdtype(cols.dtype, np.bool_):
+				rows = np.where(cols)[0]
+				
 		n_genes = self.ds.shape[0] if rows is None else rows.shape[0]
 		n_cells = self.ds.shape[1] if cols is None else cols.shape[0]
 
