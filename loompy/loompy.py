@@ -1251,6 +1251,7 @@ def combine_faster(files: List[str], output_file: str, file_attrs: Dict[str, str
 				if key is not None:
 					ordering = np.argsort(ds.ra[key])
 				dsout.shape = (ds.shape[0], n_cells)  # Not really necessary to set this for each file, but no harm either; needed in order to make sure the first layer added will be the right shape
+				n_selected = s.sum()
 				for layer in ds.layers.keys():
 					# Create the layer if it doesn't exist
 					if layer not in dsout.layers:
@@ -1260,9 +1261,9 @@ def combine_faster(files: List[str], output_file: str, file_attrs: Dict[str, str
 						raise ValueError(f"Each layer must be same datatype in all files, but {layer} of type {ds[layer].dtype} in {f} differs from previous files where it was {dsout[layer].dtype}")
 
 					if key is None:
-						dsout[layer][:, ix: ix + ds.shape[1]] = ds[layer][:, :][:, s]
+						dsout[layer][:, ix: ix + n_selected] = ds[layer][:, :][:, s]
 					else:
-						dsout[layer][:, ix: ix + ds.shape[1]] = ds[layer][:, :][:, s][ordering, :]
+						dsout[layer][:, ix: ix + n_selected] = ds[layer][:, :][:, s][ordering, :]
 				for attr, vals in ds.ca.items():
 					if attr in col_attrs:
 						if col_attrs[attr].dtype != vals.dtype:
@@ -1271,14 +1272,14 @@ def combine_faster(files: List[str], output_file: str, file_attrs: Dict[str, str
 						shape = list(vals.shape)
 						shape[0] = n_cells
 						col_attrs[attr] = np.zeros(shape, dtype=vals.dtype)
-					col_attrs[attr][ix: ix + ds.shape[1]] = vals[s]
+					col_attrs[attr][ix: ix + n_selected] = vals[s]
 				for attr, vals in ds.ra.items():
 					if attr not in dsout.ra:
 						if key is None:
 							dsout.ra[attr] = vals
 						else:
 							dsout.ra[attr] = vals[ordering]
-			ix = ix + ds.shape[1]
+			ix = ix + n_selected
 		for attr, vals in col_attrs.items():
 			dsout.ca[attr] = vals
 
