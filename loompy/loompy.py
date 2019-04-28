@@ -1233,7 +1233,7 @@ def combine_faster(files: List[str], output_file: str, file_attrs: Dict[str, str
 	n_cells = 0
 	n_genes = 0
 	for f, s in zip(files, selections):
-		with loompy.connect(f) as ds:
+		with loompy.connect(f, "r") as ds:
 			if n_genes == 0:
 				n_genes = ds.shape[0]
 			elif n_genes != ds.shape[0]:
