@@ -1247,7 +1247,7 @@ def combine_faster(files: List[str], output_file: str, file_attrs: Dict[str, str
 	ix = 0
 	with loompy.new(output_file, file_attrs=file_attrs) as dsout:
 		for f, s in zip(files, selections):
-			with loompy.connect(f) as ds:
+			with loompy.connect(f, "r") as ds:
 				if key is not None:
 					ordering = np.argsort(ds.ra[key])
 				dsout.shape = (ds.shape[0], n_cells)  # Not really necessary to set this for each file, but no harm either; needed in order to make sure the first layer added will be the right shape
