@@ -1195,7 +1195,7 @@ def combine(files: List[str], output_file: str, key: str = None, file_attrs: Dic
 	ds.close()
 
 
-def combine_faster(files: List[str], output_file: str, file_attrs: Dict[str, str] = None, selections: List[np.ndarray] = None, key: str = None) -> None:
+def combine_faster(files: List[str], output_file: str, file_attrs: Dict[str, str] = None, selections: List[np.ndarray] = None, key: str = None, skip_attrs: List[str] = None) -> None:
 	"""
 	Combine loom files and save as a new loom file
 
@@ -1205,6 +1205,7 @@ def combine_faster(files: List[str], output_file: str, file_attrs: Dict[str, str
 		file_attrs (dict):      file attributes (title, description, url, etc.)
 		selections:				list of indicator arrays (one per file; or None to include all cells for the file) determining which columns to include from each file, or None to include all cells from all files
 		key:					row attribute to use as key for ordering the rows, or None to skip ordering
+		skip_attrs:				list of column attributes that should not be included in the output
 
 	Returns:
 		Nothing, but creates a new loom file combining the input files.
@@ -1265,6 +1266,8 @@ def combine_faster(files: List[str], output_file: str, file_attrs: Dict[str, str
 					else:
 						dsout[layer][:, ix: ix + n_selected] = ds[layer][:, :][:, s][ordering, :]
 				for attr, vals in ds.ca.items():
+					if attr in skip_attrs:
+						continue
 					if attr in col_attrs:
 						if col_attrs[attr].dtype != vals.dtype:
 							raise ValueError(f"Each column attribute must be same datatype in all files, but {attr} is {vals.dtype} in {f} but was {col_attrs[attr].dtype} in previous files")
