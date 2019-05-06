@@ -106,7 +106,7 @@ class LoomLayer():
 				rows = np.where(rows)[0]
 		if cols is not None:
 			if np.issubdtype(cols.dtype, np.bool_):
-				rows = np.where(cols)[0]
+				cols = np.where(cols)[0]
 				
 		n_genes = self.ds.shape[0] if rows is None else rows.shape[0]
 		n_cells = self.ds.shape[1] if cols is None else cols.shape[0]
