@@ -115,7 +115,7 @@ class LoomLayer():
 		row: List[np.ndarray] = []
 		col: List[np.ndarray] = []
 		i = 0
-		for (ix, selection, view) in self.ds.scan(items=cols, axis=1, layers=[self.name]):
+		for (ix, selection, view) in self.ds.scan(items=cols, axis=1, layers=[self.name], what=["layers"]):
 			if rows is not None:
 				vals = view.layers[self.name][rows, :]
 			else:

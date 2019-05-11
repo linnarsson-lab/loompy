@@ -544,7 +544,7 @@ class LoomConnection:
 		else:
 			raise ValueError("axis must be 0 (rows) or 1 (columns)")
 
-	def scan(self, *, items: np.ndarray = None, axis: int = None, layers: Iterable = None, key: str = None, batch_size: int = 8 * 64) -> Iterable[Tuple[int, np.ndarray, loompy.LoomView]]:
+	def scan(self, *, items: np.ndarray = None, axis: int = None, layers: Iterable = None, key: str = None, batch_size: int = 8 * 64, what: List[str] = ["col_attrs", "row_attrs", "layers", "col_graphs", "row_graphs"]) -> Iterable[Tuple[int, np.ndarray, loompy.LoomView]]:
 		"""
 		Scan across one axis and return batches of rows (columns) as LoomView objects
 
@@ -606,18 +606,42 @@ class LoomConnection:
 				if selection.shape[0] == 0:
 					ix += cols_per_chunk
 					continue
+				
+				# HERE
+				if selection.shape[0] == cols_per_chunk:
+					selection = None  # Meaning, select all columns
 
 				# Load the whole chunk from the file, then extract genes and cells using fancy indexing
 				for layer in layers:
 					temp = self.layers[layer][:, ix:ix + cols_per_chunk]
 					temp = temp[ordering, :]
-					temp = temp[:, selection]
+					if selection is not None:
+						temp = temp[:, selection]
 					vals[layer] = loompy.MemoryLoomLayer(layer, temp)
 				lm = loompy.LayerManager(None)
 				for key, layer in vals.items():
 					lm[key] = loompy.MemoryLoomLayer(key, layer)
-				view = loompy.LoomView(lm, self.ra[ordering], self.ca[ix + selection], self.row_graphs[ordering], self.col_graphs[ix + selection], filename=self.filename, file_attrs=self.attrs)
-				yield (ix, ix + selection, view)
+				ra = self.ra[ordering] if "row_attrs" in what else {}
+				if "col_attrs" in what:
+					if selection is not None:
+						ca = self.ca[ix + selection]
+					else:
+						ca = self.ca[ix: ix + cols_per_chunk]
+				else:
+					ca = {}
+				rg = self.row_graphs[ordering] if "row_graphs" in what else None
+				if "col_graphs" in what:
+					if selection is not None:
+						cg = self.col_graphs[ix + selection]
+					else:
+						cg = self.col_graphs[ix: ix + cols_per_chunk]
+				else:
+					cg = None
+				view = loompy.LoomView(lm, ra, ca, rg, cg, filename=self.filename, file_attrs=self.attrs)
+				if selection is not None:
+					yield (ix, ix + selection, view)
+				else:
+					yield (ix, ix + np.arange(cols_per_chunk), view)
 				ix += cols_per_chunk
 		elif axis == 0:
 			if key is not None:
@@ -638,6 +662,9 @@ class LoomConnection:
 					ix += rows_per_chunk
 					continue
 
+				if selection.shape[0] ==rows_per_chunk:
+					selection = None  # Meaning, select all rows
+
 				# Load the whole chunk from the file, then extract genes and cells using fancy indexing
 				for layer in layers:
 					temp = self.layers[layer][ix:ix + rows_per_chunk, :]
@@ -647,7 +674,24 @@ class LoomConnection:
 				lm = loompy.LayerManager(None)
 				for key, layer in vals.items():
 					lm[key] = loompy.MemoryLoomLayer(key, layer)
-				view = loompy.LoomView(lm, self.ra[ix + selection], self.ca[ordering], self.row_graphs[ix + selection], self.col_graphs[ordering], filename=self.filename, file_attrs=self.attrs)
+				
+				if "row_attrs" in what:
+					if selection is not None:
+						ra = self.ra[ix + selection]
+					else:
+						ra = self.ra[ix: ix + rows_per_chunk]
+				else:
+					ra = {}
+				ca = self.ca[ordering] if "col_attrs" in what else {}
+				if "row_graphs" in what:
+					if selection is not None:
+						rg = self.row_graphs[ix + selection]
+					else:
+						rg = self.row_graphs[ix: ix + rows_per_chunk]
+				else:
+					rg = None
+				cg = self.col_graphs[ordering] if "col_graphs" in what else None
+				view = loompy.LoomView(lm, ra, ca, rg, cg, filename=self.filename, file_attrs=self.attrs)
 				yield (ix, ix + selection, view)
 				ix += rows_per_chunk
 		else:
@@ -676,6 +720,7 @@ class LoomConnection:
 				if selection.shape[0] == 0:
 					ix += cols_per_chunk
 					continue
+
 
 				# Load the whole chunk from the file, then extract genes and cells using fancy indexing
 				vals = self.layers[layer][:, ix:ix + cols_per_chunk]
@@ -805,70 +850,6 @@ class LoomConnection:
 			self.col_attrs._permute(ordering)
 			self.col_graphs._permute(ordering)
 
-	def pandas(self, row_attr: str = None, selector: Union[List, Tuple, np.ndarray, slice] = None, columns: List[str] = None) -> pd.DataFrame:
-		"""
-		Create a Pandas DataFrame corresponding to (selected parts of) the Loom file.
-
-		Args:
-			row_attr:	Name of the row attribute to use for selecting rows to include (or None to omit row data)
-			selector:	A list, a tuple, a numpy.ndarray or a slice; used to select rows (or None to include all rows)
-			columns:	A list of column attributes to include, or None to include all
-
-		Returns:
-			Pandas DataFrame
-
-		Remarks:
-			The method returns a Pandas DataFrame with one column per row of the Loom file (i.e. transposed), which is usually
-			what is required for plotting and statistical analysis. By default, all column attributes and no rows are included.
-			To include row data, provide a ``row_attr`` and a ``selector``. The selector is matched against values of the given
-			row attribute, and matching rows are included.
-
-		Examples:
-			.. highlight:: python
-			.. code-block:: python
-
-				import loompy
-				with loompy.connect("mydata.loom") as ds:
-					# Include all column attributes, and rows where attribute "Gene" matches one of the given genes
-					df1 = ds.pandas("Gene", ["Actb", "Npy", "Vip", "Pvalb"])
-					# Include the top 100 rows and name them after values of the "Gene" attribute
-					df2 = ds.pandas("Gene", :100)
-					# Include the entire dataset, and name the rows after values of the "Accession" attribute
-					df3 = ds.pandas("Accession")
-
-		"""
-		if columns is None:
-			columns = [x for x in self.ca.keys()]
-
-		data: Dict[str, np.ndarray] = {}
-		for col in columns:
-			vals = self.ca[col]
-			if vals.ndim >= 2:
-				for i in range(vals.ndim):
-					data[col + f".{i+1}"] = vals[:, 0]
-			else:
-				data[col] = self.ca[col]
-		if row_attr is not None:  # Pick out some rows (genes)
-			if selector is None:  # Actually, pick all the rows
-				names = self.ra[row_attr]
-				vals = self[:, :]
-				for ix, name in enumerate(names):
-					data[name] = vals[ix, :][0]
-			else:  # Pick some specific rows
-				if type(selector) is slice:  # Based on a slice
-					names = self.ra[row_attr][selector]
-					vals = self[selector, :]
-					for ix, name in enumerate(names):
-						data[name] = vals[ix, :][0]
-				# Based on specific string values
-				elif all([type(s) is str for s in selector]):  # type: ignore
-					names = self.ra[row_attr][np.in1d(self.ra[row_attr], selector)]
-					for name in names:
-						vals = self[self.ra[row_attr] == name, :][0]
-						data[name] = vals
-				else:  # Give up
-					raise ValueError("Invalid selector")
-		return pd.DataFrame(data)
 
 	def aggregate(self, out_file: str = None, select: np.ndarray = None, group_by: Union[str, np.ndarray] = "Clusters", aggr_by: str = "mean", aggr_ca_by: Dict[str, str] = None) -> np.ndarray:
 		"""
