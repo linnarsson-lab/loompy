@@ -1233,7 +1233,7 @@ def combine_faster(files: List[str], output_file: str, file_attrs: Dict[str, str
 				if key is not None:
 					ordering = np.argsort(ds.ra[key])
 				dsout.shape = (ds.shape[0], n_cells)  # Not really necessary to set this for each file, but no harm either; needed in order to make sure the first layer added will be the right shape
-				n_selected = s.sum()
+				n_selected = s.sum() if is is not None else ds.shape[1]
 				for layer in ds.layers.keys():
 					# Create the layer if it doesn't exist
 					if layer not in dsout.layers:
