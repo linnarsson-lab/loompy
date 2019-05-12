@@ -576,6 +576,8 @@ class LoomConnection:
 		view: LoomView
 			a view corresponding to the current chunk
 		"""
+		if "layers" not in what:
+			raise ValueError("Layers must be included in 'what' parameter (but you can select specific layers using 'layers')")
 		if axis is None:
 			raise ValueError("Axis must be given (0 = rows, 1 = cols)")
 		if layers is None:
@@ -606,8 +608,7 @@ class LoomConnection:
 				if selection.shape[0] == 0:
 					ix += cols_per_chunk
 					continue
-				
-				# HERE
+
 				if selection.shape[0] == cols_per_chunk:
 					selection = None  # Meaning, select all columns
 
@@ -669,7 +670,8 @@ class LoomConnection:
 				for layer in layers:
 					temp = self.layers[layer][ix:ix + rows_per_chunk, :]
 					temp = temp[:, ordering]
-					temp = temp[selection, :]
+					if selection is not None:
+						temp = temp[selection, :]
 					vals[layer] = loompy.MemoryLoomLayer(layer, temp)
 				lm = loompy.LayerManager(None)
 				for key, layer in vals.items():
@@ -692,7 +694,10 @@ class LoomConnection:
 					rg = None
 				cg = self.col_graphs[ordering] if "col_graphs" in what else None
 				view = loompy.LoomView(lm, ra, ca, rg, cg, filename=self.filename, file_attrs=self.attrs)
-				yield (ix, ix + selection, view)
+				if selection is not None:
+					yield (ix, ix + selection, view)
+				else:
+					yield (ix, ix + np.arange(rows_per_chunk), view)
 				ix += rows_per_chunk
 		else:
 			raise ValueError("axis must be 0 or 1")
