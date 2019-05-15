@@ -1210,6 +1210,8 @@ def combine_faster(files: List[str], output_file: str, file_attrs: Dict[str, str
 	"""
 	if file_attrs is None:
 		file_attrs = {}
+	if skip_attrs is None:
+		skip_attrs = []
 
 	if len(files) == 0:
 		raise ValueError("The input file list was empty")
@@ -1248,9 +1250,15 @@ def combine_faster(files: List[str], output_file: str, file_attrs: Dict[str, str
 						raise ValueError(f"Each layer must be same datatype in all files, but {layer} of type {ds[layer].dtype} in {f} differs from previous files where it was {dsout[layer].dtype}")
 
 					if key is None:
-						dsout[layer][:, ix: ix + n_selected] = ds[layer][:, :][:, s]
+						if s is None:
+							dsout[layer][:, ix: ix + n_selected] = ds[layer][:, :]
+						else:
+							dsout[layer][:, ix: ix + n_selected] = ds[layer][:, :][:, s]
 					else:
-						dsout[layer][:, ix: ix + n_selected] = ds[layer][:, :][:, s][ordering, :]
+						if s is None:
+							dsout[layer][:, ix: ix + n_selected] = ds[layer][:, :][ordering, :]
+						else:
+							dsout[layer][:, ix: ix + n_selected] = ds[layer][:, :][:, s][ordering, :]							
 				for attr, vals in ds.ca.items():
 					if attr in skip_attrs:
 						continue
