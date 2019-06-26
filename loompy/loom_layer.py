@@ -120,7 +120,7 @@ class LoomLayer():
 				vals = view.layers[self.name][rows, :]
 			else:
 				vals = view.layers[self.name][:, :]
-			nonzeros = np.where(vals > 0)
+			nonzeros = np.where(vals != 0)
 			data.append(vals[nonzeros])
 			row.append(nonzeros[0])
 			col.append(nonzeros[1] + i)
