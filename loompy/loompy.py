@@ -22,25 +22,21 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import numpy as np
-from typing import *
-import warnings
-import os.path
-from scipy.io import mmread
-import scipy.sparse
-from shutil import copyfile
-import logging
-import time
 import gzip
+import logging
+import os.path
+import time
+from shutil import copyfile
+from typing import *
+
+import h5py
+import numpy as np
+import numpy_groupies.aggregate_numpy as npg
+import scipy.sparse
+from scipy.io import mmread
+
 import loompy
 from loompy import deprecated, timestamp
-from .loom_view import LoomView
-import numpy_groupies.aggregate_numpy as npg
-import pandas as pd
-import warnings
-with warnings.catch_warnings():
-	warnings.simplefilter("ignore")
-	import h5py
 
 
 class LoomConnection:
@@ -618,7 +614,7 @@ class LoomConnection:
 					temp = temp[ordering, :]
 					if selection is not None:
 						temp = temp[:, selection]
-					vals[layer] = loompy.MemoryLoomLayer(layer, temp)
+					vals[layer] = loompy.MemoryLoomLayer(layer, temp)					
 				lm = loompy.LayerManager(None)
 				for key, layer in vals.items():
 					lm[key] = loompy.MemoryLoomLayer(key, layer)
@@ -1241,24 +1237,19 @@ def combine_faster(files: List[str], output_file: str, file_attrs: Dict[str, str
 					ordering = np.argsort(ds.ra[key])
 				dsout.shape = (ds.shape[0], n_cells)  # Not really necessary to set this for each file, but no harm either; needed in order to make sure the first layer added will be the right shape
 				n_selected = s.sum() if s is not None else ds.shape[1]
-				for layer in ds.layers.keys():
-					# Create the layer if it doesn't exist
-					if layer not in dsout.layers:
-						dsout[layer] = ds[layer].dtype.name
-					# Make sure the dtype didn't change between files
-					if dsout.layers[layer].dtype != ds[layer].dtype:
-						raise ValueError(f"Each layer must be same datatype in all files, but {layer} of type {ds[layer].dtype} in {f} differs from previous files where it was {dsout[layer].dtype}")
-
-					if key is None:
-						if s is None:
-							dsout[layer][:, ix: ix + n_selected] = ds[layer][:, :]
-						else:
-							dsout[layer][:, ix: ix + n_selected] = ds[layer][:, :][:, s]
-					else:
-						if s is None:
-							dsout[layer][:, ix: ix + n_selected] = ds[layer][:, :][ordering, :]
-						else:
-							dsout[layer][:, ix: ix + n_selected] = ds[layer][:, :][:, s][ordering, :]							
+				j = 0
+				batch_size = 500_000_000 // ds.shape[0] // 4
+				for (_, _, view) in ds.scan(items=s, axis=1, key=key, what=["layers"], batch_size=batch_size):
+					logging.debug(j)
+					for layer in ds.layers.keys():
+						# Create the layer if it doesn't exist
+						if layer not in dsout.layers:
+							dsout[layer] = ds[layer].dtype.name
+						# Make sure the dtype didn't change between files
+						if dsout.layers[layer].dtype != ds[layer].dtype:
+							raise ValueError(f"Each layer must be same datatype in all files, but {layer} of type {ds[layer].dtype} in {f} differs from previous files where it was {dsout[layer].dtype}")
+						dsout[layer][:, ix + j: ix + j + view.shape[1]] = view[layer][:, :]
+					j += view.shape[1]
 				for attr, vals in ds.ca.items():
 					if attr in skip_attrs:
 						continue
