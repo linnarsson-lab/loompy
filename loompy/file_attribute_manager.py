@@ -1,4 +1,4 @@
-from typing import *
+from typing import Dict, List, Iterable, Tuple, Any, Iterator
 import scipy.sparse as sparse
 import numpy as np
 import loompy
