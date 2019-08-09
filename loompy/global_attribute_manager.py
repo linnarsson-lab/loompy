@@ -8,7 +8,7 @@ with warnings.catch_warnings():
 	import h5py
 
 
-class FileAttributeManager(object):
+class GlobalAttributeManager(object):
 	def __init__(self, f: h5py.File) -> None:
 		setattr(self, "!f", f)
 		storage: Dict[str, str] = {}
@@ -42,37 +42,58 @@ class FileAttributeManager(object):
 			return self.__dict__["storage"][name]
 		except KeyError:
 			if self.f is not None:
-				if name in self.f.attrs:
-					val = self.f.attrs[name]
-					materialized = loompy.materialize_attr_values(val)
-					self.__dict__["storage"][name] = materialized
-					return materialized
-			raise AttributeError(f"'{type(self)}' object has no attribute '{name}'")
+				if loompy.compare_loom_spec_version(self.f, "3.0.0") < 0:
+					if name in self.f.attrs:
+						val = self.f.attrs[name]
+					else:
+						raise AttributeError(f"File has no global attribute '{name}'")
+				else:
+					if name in self.f["attrs"]:
+						val = self.f["attrs"][name]
+					else:
+						raise AttributeError(f"File has no global attribute '{name}'")
+				materialized = loompy.materialize_attr_values(val)
+				self.__dict__["storage"][name] = materialized
+				return materialized
 
 	def __setitem__(self, name: str, val: Any) -> None:
 		return self.__setattr__(name, val)
 
 	def __setattr__(self, name: str, val: Any) -> None:
 		if name.startswith("!"):
-			super(FileAttributeManager, self).__setattr__(name[1:], val)
+			super(GlobalAttributeManager, self).__setattr__(name[1:], val)
 		elif "/" in name:
 			raise KeyError("Attribute name cannot contain slash (/)")
 		else:
 			if self.f is not None:
-				normalized = loompy.normalize_attr_values(val)
-				self.f.attrs[name] = normalized
-				self.f.flush()
-				val = self.f.attrs[name]
-				# Read it back in to ensure it's synced and normalized
-				normalized = loompy.materialize_attr_values(val)
-				self.__dict__["storage"][name] = normalized
+				if loompy.compare_loom_spec_version(self.f, "3.0.0") < 0:
+					normalized = loompy.normalize_attr_values(val)
+					self.f.attrs[name] = normalized
+					self.f.flush()
+					val = self.f.attrs[name]
+					# Read it back in to ensure it's synced and normalized
+					normalized = loompy.materialize_attr_values(val)
+					self.__dict__["storage"][name] = normalized
+				else:
+					normalized = loompy.normalize_attr_values(val)
+					self.f["attrs"][name] = normalized
+					self.f.flush()
+					val = self.f["attrs"][name]
+					# Read it back in to ensure it's synced and normalized
+					normalized = loompy.materialize_attr_values(val)
+					self.__dict__["storage"][name] = normalized
 
 	def __delattr__(self, name: str) -> None:
 		if name.startswith("!"):
-			super(FileAttributeManager, self).__delattr__(name[1:])
+			super(GlobalAttributeManager, self).__delattr__(name[1:])
 		else:
 			if self.f is not None:
-				del self.f.attrs[name]
+				if loompy.compare_loom_spec_version(self.f, "3.0.0") < 0:
+					if name in self.f.attrs:
+						del self.f.attrs[name]
+				else:
+					if name in self.f["attrs"]:
+						del self.f["attrs"][name]
 			del self.__dict__["storage"][name]
 
 	def get(self, name: str, default: Any = None) -> np.ndarray:

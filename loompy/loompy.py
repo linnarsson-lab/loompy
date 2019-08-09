@@ -25,9 +25,8 @@
 import gzip
 import logging
 import os.path
-import time
 from shutil import copyfile
-from typing import *
+from typing import Tuple, Union, Any, Dict, List, Iterable, Callable, Optional
 
 import h5py
 import numpy as np
@@ -92,7 +91,7 @@ class LoomConnection:
 		self.view = loompy.ViewManager(self)  #: Create a view of the file by slicing this attribute, like ``ds.view[:100, :100]``
 		self.ra = loompy.AttributeManager(self, axis=0)  #: Row attributes, dict-like with np.ndarray values
 		self.ca = loompy.AttributeManager(self, axis=1)  #: Column attributes, dict-like with np.ndarray values
-		self.attrs = loompy.FileAttributeManager(self._file)  #: Global attributes
+		self.attrs = loompy.GlobalAttributeManager(self._file)  #: Global attributes
 		self.row_graphs = loompy.GraphManager(self, axis=0)  #: Row graphs, dict-like with values that are :class:`scipy.sparse.coo_matrix` objects
 		self.col_graphs = loompy.GraphManager(self, axis=1)  #: Column graphs, dict-like with values that are :class:`scipy.sparse.coo_matrix` objects
 
@@ -467,7 +466,7 @@ class LoomConnection:
 				ca = {key: v[selection] for key, v in other.col_attrs.items()}
 				if ordering is not None:
 					vals = {key: val[ordering, :] for key, val in vals.items()}
-				self.add_columns(vals, ca, fill_values=fill_values)
+				self.add_columns(vals, ca, fill_values=fill_values)  # type: ignore
 			
 			if include_graphs:
 				for gname in self.col_graphs.keys():
@@ -614,7 +613,7 @@ class LoomConnection:
 					temp = temp[ordering, :]
 					if selection is not None:
 						temp = temp[:, selection]
-					vals[layer] = loompy.MemoryLoomLayer(layer, temp)					
+					vals[layer] = loompy.MemoryLoomLayer(layer, temp)
 				lm = loompy.LayerManager(None)
 				for key, layer in vals.items():
 					lm[key] = loompy.MemoryLoomLayer(key, layer)
@@ -659,7 +658,7 @@ class LoomConnection:
 					ix += rows_per_chunk
 					continue
 
-				if selection.shape[0] ==rows_per_chunk:
+				if selection.shape[0] == rows_per_chunk:
 					selection = None  # Meaning, select all rows
 
 				# Load the whole chunk from the file, then extract genes and cells using fancy indexing
@@ -721,7 +720,6 @@ class LoomConnection:
 				if selection.shape[0] == 0:
 					ix += cols_per_chunk
 					continue
-
 
 				# Load the whole chunk from the file, then extract genes and cells using fancy indexing
 				vals = self.layers[layer][:, ix:ix + cols_per_chunk]
@@ -850,7 +848,6 @@ class LoomConnection:
 		if axis == 1:
 			self.col_attrs._permute(ordering)
 			self.col_graphs._permute(ordering)
-
 
 	def aggregate(self, out_file: str = None, select: np.ndarray = None, group_by: Union[str, np.ndarray] = "Clusters", aggr_by: str = "mean", aggr_ca_by: Dict[str, str] = None) -> np.ndarray:
 		"""
@@ -984,6 +981,7 @@ def new(filename: str, *, file_attrs: Optional[Dict[str, str]] = None) -> LoomCo
 	# Create the file (empty).
 	# Yes, this might cause an exception, which we prefer to send to the caller
 	f = h5py.File(name=filename, mode='w')
+	f.create_group('/attrs')  # v3.0.0
 	f.create_group('/layers')
 	f.create_group('/row_attrs')
 	f.create_group('/col_attrs')
@@ -996,7 +994,6 @@ def new(filename: str, *, file_attrs: Optional[Dict[str, str]] = None) -> LoomCo
 	for vals in file_attrs:
 		ds.attrs[vals] = file_attrs[vals]
 	# store creation date
-	currentTime = time.localtime(time.time())
 	ds.attrs['CreationDate'] = timestamp()
 	ds.attrs["LOOM_SPEC_VERSION"] = loompy.loom_spec_version
 	return ds
@@ -1065,7 +1062,6 @@ def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loomp
 				ds.ca[key] = vals
 
 	except ValueError as ve:
-		#ds.close(suppress_warning=True) # ds does not exist here
 		if os.path.exists(filename):
 			os.remove(filename)
 		raise ve
@@ -1094,16 +1090,16 @@ def create_from_cellranger(indir: str, outdir: str = None, genome: str = None) -
 		if genome is None:
 			genome = [f for f in os.listdir(matrix_folder) if not f.startswith(".")][0]
 		matrix_folder = os.path.join(matrix_folder, genome)
-		matrix = mmread(os.path.join(matrix_folder, "matrix.mtx")).astype("float32").todense()
+		matrix = mmread(os.path.join(matrix_folder, "matrix.mtx")).todense()
 		genelines = open(os.path.join(matrix_folder, "genes.tsv"), "r").readlines()
 		bclines = open(os.path.join(matrix_folder, "barcodes.tsv"), "r").readlines()
-	else: # cellranger V3 file locations
+	else:  # cellranger V3 file locations
 		if genome is None:
-			genome = "" # Genome is not visible from V3 folder
+			genome = ""  # Genome is not visible from V3 folder
 		matrix_folder = os.path.join(indir, 'outs', 'filtered_feature_bc_matrix')
-		matrix = mmread(os.path.join(matrix_folder, "matrix.mtx.gz")).astype("float32").todense()
-		genelines = [ l.decode() for l in gzip.open(os.path.join(matrix_folder, "features.tsv.gz"), "r").readlines() ]
-		bclines = [ l.decode() for l in gzip.open(os.path.join(matrix_folder, "barcodes.tsv.gz"), "r").readlines() ]
+		matrix = mmread(os.path.join(matrix_folder, "matrix.mtx.gz")).todense()
+		genelines = [l.decode() for l in gzip.open(os.path.join(matrix_folder, "features.tsv.gz"), "r").readlines()]
+		bclines = [l.decode() for l in gzip.open(os.path.join(matrix_folder, "barcodes.tsv.gz"), "r").readlines()]
 
 	accession = np.array([x.split("\t")[0] for x in genelines]).astype("str")
 	gene = np.array([x.split("\t")[1].strip() for x in genelines]).astype("str")
@@ -1131,6 +1127,85 @@ def create_from_cellranger(indir: str, outdir: str = None, genome: str = None) -
 	return path
 
 
+def create_from_matrix_market(out_file: str, sample_id: str, layer_paths: Dict[str, str], row_metadata_path: str, column_metadata_path: str, delim: str = "\t", skip_row_headers: bool = False, skip_colums_headers: bool = False, file_attrs: Dict[str, str] = None, matrix_transposed: bool = False) -> None:
+	"""
+	Create a .loom file from .mtx matrix market format
+
+	Args:
+		out_file:				path to the newly created .loom file (will be overwritten if it exists)
+		sample_id:				string to use as prefix for cell IDs
+		layer_paths:			dict mapping layer names to paths to the corresponding matrix file (usually with .mtx extension)
+		row_metadata_path:		path to the row (usually genes) metadata file
+		column_metadata_path:	path to the column (usually cells) metadata file
+		delim:					delimiter used for metadata (default: "\t")
+		skip_row_headers:		if true, skip first line in rows metadata file
+		skip_column_headers: 	if true, skip first line in columns metadata file
+		file_attrs:				dict of global file attributes, or None
+		matrix_transposed:		if true, the main matrix is transposed
+	
+	Remarks:
+		layer_paths should typically map the empty string to a matrix market file: {"": "path/to/filename.mtx"}.
+		To create a multilayer loom file, map multiple named layers {"": "path/to/layer1.mtx", "layer2": "path/to/layer2.mtx"}
+		Note: the created file MUST have a main layer named "". If no such layer is given, BUT all given layers are the same
+		datatype, then a main layer will be created as the sum of the other layers. For example, {"spliced": "spliced.mtx", "unspliced": "unspliced.mtx"}
+		will create three layers, "", "spliced", and "unspliced", where "" is the sum of the other two.
+	"""
+	layers: Dict[str, Union[np.ndarray, scipy.sparse.coo_matrix]] = {}
+
+	for name, path in layer_paths.items():
+		matrix = mmread(path)
+		if matrix_transposed:
+			matrix = matrix.T
+		layers[name] = matrix
+	if "" not in layers:
+		main_matrix = None
+		for name, matrix in layers.items():
+			if main_matrix is None:
+				main_matrix = matrix.copy()
+			else:
+				main_matrix = main_matrix + matrix
+		layers[""] = main_matrix
+
+	genelines = open(row_metadata_path, "r").readlines()
+	bclines = open(column_metadata_path, "r").readlines()
+
+	accession = np.array([x.split("\t")[0] for x in genelines]).astype("str")
+	if(len(genelines[0].split("\t")) > 1):
+		gene = np.array([x.split("\t")[1].strip() for x in genelines]).astype("str")
+		row_attrs = {"Accession": accession, "Gene": gene}
+	else:
+		row_attrs = {"Accession": accession}
+
+	cellids = np.array([sample_id + ":" + x.strip() for x in bclines]).astype("str")
+	col_attrs = {"CellID": cellids}
+
+	create(out_file, layers[""], row_attrs, col_attrs, file_attrs=file_attrs)
+
+	if len(layers) > 1:
+		with loompy.connect(out_file) as ds:
+			for name, layer in layers.items():
+				if name == "":
+					continue
+				ds[name] = layer
+
+
+def create_from_kallistobus(out_file: str, in_dir: str, tr2g_file: str, whitelist_file: str, file_attrs: Dict[str, str] = None, layers: Dict[str, str] = None):
+	"""
+	Create a loom file from a kallisto-bus output folder.
+
+	Args:
+		out_file				Full path to the loom file to be created
+		in_dir					Full path to the kallisto-bus directory (containing output.bus, matrix.ec and transcripts.txt)
+		whitelist_file			Full path to the barcode whitelist file (e.g. 10xv2_whitelist.txt)
+		file_attrs				Optional dictionary of global attributes
+		layers					Dict of {layer_name: capture_file_path} to define extra layers
+	"""
+
+	pass
+
+	# def import(file: str, key: str)
+	# def demote()
+		
 def combine(files: List[str], output_file: str, key: str = None, file_attrs: Dict[str, str] = None, batch_size: int = 1000, convert_attrs: bool = False) -> None:
 	"""
 	Combine two or more loom files and save as a new loom file
