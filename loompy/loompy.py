@@ -1044,10 +1044,10 @@ def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loomp
 		if layer.shape != shape:  # type: ignore
 			raise ValueError(f"Layer '{name}' is not the same shape as the main matrix")
 	for name, ra in row_attrs.items():
-		if ra.shape[0] != shape[0]:
+		if len(ra) != shape[0]:
 			raise ValueError(f"Row attribute '{name}' is not the same length ({ra.shape[0]}) as number of rows in main matrix ({shape[0]})")
 	for name, ca in col_attrs.items():
-		if ca.shape[0] != shape[1]:
+		if len(ca) != shape[1]:
 			raise ValueError(f"Column attribute '{name}' is not the same length ({ca.shape[0]}) as number of columns in main matrix ({shape[1]})")
 
 	try:
