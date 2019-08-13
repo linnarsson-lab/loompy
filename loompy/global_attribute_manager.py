@@ -66,7 +66,7 @@ class GlobalAttributeManager(object):
 			raise KeyError("Attribute name cannot contain slash (/)")
 		else:
 			if self.f is not None:
-				if loompy.compare_loom_spec_version(self.f, "3.0.0") < 0:
+				if loompy.compare_loom_spec_version(self.f, "3.0.0") < 0 and "attrs" not in self.f["/"]:
 					normalized = loompy.normalize_attr_values(val)
 					self.f.attrs[name] = normalized
 					self.f.flush()

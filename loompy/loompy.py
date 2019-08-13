@@ -1052,7 +1052,10 @@ def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loomp
 
 	try:
 		with new(filename, file_attrs=file_attrs) as ds:
+			ds.layer[""] = layers[""]
 			for key, vals in layers.items():
+				if key == "":
+					continue
 				ds.layer[key] = vals
 
 			for key, vals in row_attrs.items():
