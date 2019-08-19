@@ -1,3 +1,11 @@
+
 import loompy
-import os
-loompy.combine_faster([os.path.join("/Users/stelin/loom/", x) for x in ("10X160_1.loom", "10X161_1.loom")], "/Users/stelin/combined.loom")
+import numpy as np
+
+global_attrs = {
+	"SampleID": "kjhlkjh",
+	"AmbientUMIs": 2983470867,
+	"MinimumCellUMIs": 2343523,
+	"Saturation": 0.5903294892
+}
+loompy.create("/Users/stelin/kallisto_GRCh38/10X_17_029b.loom", np.zeros((100, 100)), {}, {}, file_attrs=global_attrs)

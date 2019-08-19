@@ -78,7 +78,7 @@ class GlobalAttributeManager(object):
 					normalized = loompy.normalize_attr_values(val)
 					self.f["attrs"][name] = normalized
 					self.f.flush()
-					val = self.f["attrs"][name]
+					val = self.f["attrs"][name].value
 					# Read it back in to ensure it's synced and normalized
 					normalized = loompy.materialize_attr_values(val)
 					self.__dict__["storage"][name] = normalized
