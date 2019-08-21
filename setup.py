@@ -22,8 +22,7 @@ setup(
 	version=__version__,
 	packages=find_packages(),
 	python_requires='>=3.6',
-	install_requires=['h5py', 'numpy', 'scipy', 'setuptools', 'pandas'],
-	extras_require=dict(colors=['matplotlib']),
+	install_requires=['h5py', 'numpy', 'scipy', 'setuptools', 'numba'],
 	# metadata for upload to PyPI
 	author="Linnarsson Lab",
 	author_email="sten.linnarsson@ki.se",

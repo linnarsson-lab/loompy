@@ -17,7 +17,7 @@ def timestamp() -> str:
 
 def get_loom_spec_version(f: HDF5File) -> str:
 	if "attrs" in f and "LOOM_SPEC_VERSION" in f["/attrs"]:
-		return materialize_attr_values(f["/attrs"]["LOOM_SPEC_VERSION"])
+		return materialize_attr_values(f["/attrs"]["LOOM_SPEC_VERSION"].value)
 	if "LOOM_SPEC_VERSION" in f.attrs:
 		return materialize_attr_values(f.attrs["LOOM_SPEC_VERSION"])
 	return "0.0.0"

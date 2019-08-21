@@ -13,9 +13,14 @@ class GlobalAttributeManager(object):
 		setattr(self, "!f", f)
 		storage: Dict[str, str] = {}
 		setattr(self, "!storage", storage)
-		for key, val in f.attrs.items():
-			materialized = loompy.materialize_attr_values(val)
-			self.__dict__["storage"][key] = materialized
+		if "attrs" not in self.f:
+			for key, val in f.attrs.items():
+				materialized = loompy.materialize_attr_values(val)
+				self.__dict__["storage"][key] = materialized
+		else:
+			for key, val in f["attrs"].items():
+				materialized = loompy.materialize_attr_values(val.value)
+				self.__dict__["storage"][key] = materialized
 
 	def keys(self) -> List[str]:
 		return list(self.__dict__["storage"].keys())
