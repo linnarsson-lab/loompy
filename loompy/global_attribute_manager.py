@@ -81,6 +81,8 @@ class GlobalAttributeManager(object):
 					self.__dict__["storage"][name] = normalized
 				else:
 					normalized = loompy.normalize_attr_values(val)
+					if name in self.f["attrs"]:
+						del self.f["attrs"][name]
 					self.f["attrs"][name] = normalized
 					self.f.flush()
 					val = self.f["attrs"][name].value

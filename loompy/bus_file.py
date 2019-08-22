@@ -190,7 +190,7 @@ class BusFile:
 
 			# Read the records
 			self.n_records = (fsize - tlen - 20) // 32
-			self.bus = np.fromfile(f, dtype=[
+			self.bus = np.fromfile(fb, dtype=[
 				("barcode", np.uint64),
 				("UMI", np.uint64),
 				("equivalence_class", np.int32),
@@ -252,15 +252,15 @@ class BusFile:
 
 	def remove_empty_beads(self, stdevs: float = 20) -> None:
 		logging.info("Removing empty beads and erroneous barcodes")
-		ambient_beads = self.total_umis[(self.total_umis > 30) & (self.total_umis < 500)]
+		ambient_beads = self.total_umis[(self.total_umis > 10) & (self.total_umis < 500)]
 		self.ambient_umis = np.median(ambient_beads)
-		self.min_umis = self.ambient_umis + 20 * np.std(ambient_beads)
+		self.min_umis = self.ambient_umis * 20
 		self.ambient_profile = np.array(self.matrix.tocsr()[:, self.total_umis < self.min_umis].sum(axis=1)).T[0]
 
-		genes = np.sort(np.argsort(self.ambient_umis)[-250:])
+		genes = np.sort(np.argsort(self.ambient_profile)[-250:])
 		data = self.matrix.tocsr()[genes, :].toarray()
-		is_cell = np.array([(multinomial_distance(self.ambient_profile.astype(np.float64), data[:, i].astype(np.float64))) for i in range(data.shape[1])])
-		valid_cells = (is_cell > 0.5) | (self.total_umis > self.min_umis)
+		self.prob_is_cell = np.array([(multinomial_distance(self.ambient_profile.astype(np.float64), data[:, i].astype(np.float64))) for i in range(data.shape[1])])
+		valid_cells = (self.prob_is_cell > 0.5) | (self.total_umis > self.min_umis)
 
 		self.matrix = self.matrix.tocsr()[:, valid_cells]
 		self.cell_ids = self.cell_ids[valid_cells]
@@ -301,7 +301,8 @@ class BusFile:
 		# Create cell attributes
 		col_attrs = {
 			"CellID": [sample_id + "_" + twobit_to_dna(int(cid), 16) for cid in self.cell_ids],
-			"TotalUMIs": self.total_umis[self.total_umis > self.min_umis]
+			"TotalUMIs": self.total_umis[self.prob_is_cell > 0.5],
+			"ProbIsCell": self.prob_is_cell
 		}
 
 		# Load sample metadata
@@ -309,7 +310,9 @@ class BusFile:
 			"SampleID": sample_id,
 			"AmbientMedianUMIs": self.ambient_umis,
 			"CellThresholdUMIs": self.min_umis,
-			"RedundantReadFraction": 1 - self.bus_valid.sum() / self.n_records
+			"RedundantReadFraction": 1 - self.bus_valid.sum() / self.n_records,
+			"BarcodeProbIsCell": self.prob_is_cell,
+			"BarcodeTotalUMIs": self.total_umis
 		}
 
 		if samples_metadata_file is not None:
