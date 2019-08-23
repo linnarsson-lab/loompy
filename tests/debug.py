@@ -1,11 +1,5 @@
-
 import loompy
 import numpy as np
+import scipy.sparse as sparse
 
-global_attrs = {
-	"SampleID": "kjhlkjh",
-	"AmbientUMIs": 2983470867,
-	"MinimumCellUMIs": 2343523,
-	"Saturation": 0.5903294892
-}
-loompy.create("/Users/stelin/kallisto_GRCh38/10X_17_029b.loom", np.zeros((100, 100)), {}, {}, file_attrs=global_attrs)
+print(loompy.call_cells(sparse.csc_matrix(np.random.randint(0, 10, size=(500, 100000), dtype=np.uint16)), expected_n_cells=5000))

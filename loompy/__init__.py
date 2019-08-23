@@ -12,3 +12,4 @@ from .loompy import connect, create, create_append, combine, create_from_cellran
 from .loom_validator import LoomValidator
 from ._version import __version__, loom_spec_version
 from .bus_file import create_from_fastq
+from .cell_calling import call_cells

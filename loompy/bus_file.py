@@ -2,6 +2,7 @@ import array
 import json
 import logging
 import os
+import sqlite3 as sqlite
 import subprocess
 from math import lgamma
 from tempfile import TemporaryDirectory
@@ -11,6 +12,7 @@ import numpy as np
 import scipy.sparse as sparse
 from numba import jit
 
+from .cell_calling import call_cells
 from .loompy import connect, create
 
 
@@ -112,6 +114,38 @@ def ixs_thatsort_a2b(a: np.ndarray, b: np.ndarray, check_content: bool = True) -
 	if check_content:
 		assert len(np.intersect1d(a, b)) == len(a), f"The two arrays are not matching"
 	return np.argsort(a)[np.argsort(np.argsort(b))]
+
+
+def load_sample_metadata(path: str, sample_id: str) -> Dict[str, str]:
+	if not os.path.exists(path):
+		raise ValueError(f"Samples metadata file '{path}' not found.")
+	if path.endswith(".db"):
+		# sqlite3
+		with sqlite.connect("path") as db:
+			cursor = db.cursor()
+			cursor.execute("SELECT * FROM samples WHERE name = ?", [sample_id])
+			keys = [x[0] for x in cursor.description]
+			vals = cursor.fetchone()
+			if vals is not None:
+				return dict(zip(keys, vals))
+			raise ValueError(f"SampleID '{sample_id}' was not found in the samples database.")
+	else:
+		result = {}
+		with open(path) as f:
+			headers = f.readline()[:-1].split("\t")
+			if "SampleID" not in headers:
+				raise ValueError("Required column 'SampleID' not found in sample metadata file")
+			sample_metadata_key_idx = headers.index("SampleID")
+			sample_found = False
+			for line in f:
+				items = line[:-1].split("\t")
+				if len(items) > sample_metadata_key_idx and items[sample_metadata_key_idx] == sample_id:
+					for i, item in enumerate(items):
+						result[headers[i]] = item
+					sample_found = True
+		if not sample_found:
+			raise ValueError(f"SampleID '{sample_id}' not found in sample metadata file")
+		return result
 
 
 class BusFile:
@@ -250,26 +284,17 @@ class BusFile:
 		self.total_umis = np.array(self.matrix.sum(axis=0))[0]
 		return self.matrix
 
-	def remove_empty_beads(self, stdevs: float = 20) -> None:
-		logging.info("Removing empty beads and erroneous barcodes")
-		ambient_beads = self.total_umis[(self.total_umis > 10) & (self.total_umis < 500)]
-		self.ambient_umis = np.median(ambient_beads)
-		self.min_umis = self.ambient_umis * 20
-		self.ambient_profile = np.array(self.matrix.tocsr()[:, self.total_umis < self.min_umis].sum(axis=1)).T[0]
-
-		genes = np.sort(np.argsort(self.ambient_profile)[-250:])
-		data = self.matrix.tocsr()[genes, :].toarray()
-		self.prob_is_cell = np.array([(multinomial_distance(self.ambient_profile.astype(np.float64), data[:, i].astype(np.float64))) for i in range(data.shape[1])])
-		valid_cells = (self.prob_is_cell > 0.5) | (self.total_umis > self.min_umis)
-
-		self.matrix = self.matrix.tocsr()[:, valid_cells]
-		self.cell_ids = self.cell_ids[valid_cells]
-		self.n_cells = self.cell_ids.shape[0]
+	def remove_empty_beads(self, expected_n_cells: int) -> None:
+		logging.info("Calling cells")
+		self.ambient_pvalue, self.valid_cells = call_cells(self.matrix.tocsc(), expected_n_cells)
+		self.matrix = self.matrix.tocsr()[:, self.valid_cells]
+		self.cell_ids = self.cell_ids[self.valid_cells]
+		self.n_cells = self.valid_cells.sum()
 		for name in self.layers.keys():
-			self.layers[name] = self.layers[name].tocsr()[:, valid_cells]
+			self.layers[name] = self.layers[name].tocsc()[:, self.valid_cells]
 
 	def count_layer(self, layer_name: str, layer_fragments_file: str) -> sparse.coo_matrix:
-		fragments_idx = {f: i for i,f in enumerate(self.fragments)}
+		fragments_idx = {f: i for i, f in enumerate(self.fragments)}
 		with open(layer_fragments_file) as f:
 			include_fragments = set([fragments_idx[x[:-1]] for x in f.readlines()])
 		logging.info(f"Counting pseudoalignments for layer '{layer_name}'")
@@ -290,56 +315,39 @@ class BusFile:
 		self.layers[layer_name] = m.tocoo()
 		return self.layers[layer_name]
 
-	def save(self, out_file: str, sample_id: str, samples_metadata_file: str = None) -> None:
+	def save(self, out_file: str, sample_id: str, samples_metadata_file: str) -> None:
 		logging.info("Saving")
 		row_attrs = {}
 		# Transpose the gene metadata
 		for i, attr in enumerate(self.gene_metadata_attributes):
 			row_attrs[attr] = [v[i] for v in self.genes.values()]
-		row_attrs["AmbientUMIs"] = self.ambient_profile
 
 		# Create cell attributes
 		col_attrs = {
 			"CellID": [sample_id + "_" + twobit_to_dna(int(cid), 16) for cid in self.cell_ids],
-			"TotalUMIs": self.total_umis[self.prob_is_cell > 0.5],
-			"ProbIsCell": self.prob_is_cell
+			"TotalUMIs": self.total_umis[self.valid_cells]
 		}
 
 		# Load sample metadata
+		metadata = load_sample_metadata(samples_metadata_file, sample_id)
 		global_attrs = {
-			"SampleID": sample_id,
-			"AmbientMedianUMIs": self.ambient_umis,
-			"CellThresholdUMIs": self.min_umis,
-			"RedundantReadFraction": 1 - self.bus_valid.sum() / self.n_records,
-			"BarcodeProbIsCell": self.prob_is_cell,
-			"BarcodeTotalUMIs": self.total_umis
-		}
+			**{
+				"SampleID": sample_id,
+				"AmbientMedianUMIs": self.ambient_umis,
+				"CellThresholdUMIs": self.min_umis,
+				"RedundantReadFraction": 1 - self.bus_valid.sum() / self.n_records,
+				"AmbientPValue": self.ambient_pvalue,
+				"BarcodeTotalUMIs": self.total_umis,
+				"CellBarcodes": self.valid_cells
+			}, **metadata}
 
-		if samples_metadata_file is not None:
-			with open(samples_metadata_file) as f:
-				headers = f.readline()[:-1].split("\t")
-				if "SampleID" not in headers:
-					raise ValueError("Required column 'SampleID' not found in sample metadata file")
-				sample_metadata_key_idx = headers.index("SampleID")
-				sample_found = False
-				for line in f:
-					items = line[:-1].split("\t")
-					if len(items) > sample_metadata_key_idx and items[sample_metadata_key_idx] == sample_id:
-						for i, item in enumerate(items):
-							global_attrs[headers[i]] = item
-						sample_found = True
-			if not sample_found:
-				raise ValueError(f"SampleID '{sample_id}' not found in sample metadata file")
-
-		if "BarcodeUMIs" not in global_attrs:
-			global_attrs["BarcodeUMIs"] = self.total_umis
 		layers = self.layers.copy()
 		layers[""] = self.matrix
 		create(out_file, layers, row_attrs, col_attrs, file_attrs=global_attrs)
 
 
 def execute(cmd: List[str]) -> Generator:
-	popen = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+	popen = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)  # type: ignore
 	for stdout_line in iter(popen.stdout.readline, ""):
 		yield stdout_line
 	popen.stdout.close()
@@ -348,10 +356,18 @@ def execute(cmd: List[str]) -> Generator:
 		raise subprocess.CalledProcessError(return_code, cmd)
 
 
-def create_from_fastq(out_file: str, sample_id: str, fastqs: List[str], index_path: str, samples_metadata_file: str, technology: str = None, n_threads: int = 1) -> None:
+def create_from_fastq(out_file: str, sample_id: str, fastqs: List[str], index_path: str, samples_metadata_file: str, n_threads: int = 1) -> None:
 	"""
 	Args:
-		technology        String like "10xv2" or None to read the technology from the sample metadata file
+		technology			String like "10xv2" or None to read the technology from the sample metadata file
+		expected_n_cells	Expected number of cells captured in the sample, or None to read the number from the sample metadata file
+		samples_metadata_file	Path to tab-delimited file with one header row OR path to sqlite database with one table called "sample"
+	
+	Remarks:
+		Samples metadata table should contain these columns:
+			name			Sample name (i.e. sample id)
+			chemistry		10x chemistry version (v1, v2 or v3)
+			targetnumcells	Number of cells expected in the sample
 	"""
 	manifest_file = os.path.join(index_path, "manifest.json")
 	if not os.path.exists(manifest_file):
@@ -364,30 +380,15 @@ def create_from_fastq(out_file: str, sample_id: str, fastqs: List[str], index_pa
 	with open(manifest_file) as f:
 		manifest = json.load(f)
 	
-	if technology is None and samples_metadata_file is not None:
-		global_attrs = {}
-		with open(samples_metadata_file) as f:
-			headers = f.readline()[:-1].split("\t")
-			if "SampleID" not in headers:
-				raise ValueError("Required column 'SampleID' not found in sample metadata file")
-			sample_metadata_key_idx = headers.index("SampleID")
-			sample_found = False
-			for line in f:
-				items = line[:-1].split("\t")
-				if len(items) > sample_metadata_key_idx and items[sample_metadata_key_idx] == sample_id:
-					for i, item in enumerate(items):
-						global_attrs[headers[i]] = item
-					sample_found = True
-		if not sample_found:
-			raise ValueError(f"SampleID '{sample_id}' not found in sample metadata file")
-		if "Technology" in global_attrs:
-			technology = global_attrs["Technology"]
-		elif "Chemistry" in global_attrs:
-			technology = "10x" + global_attrs["Chemistry"]
-		else:
-			raise ValueError("technology was None but sample_metadata_file contained neither Technology nor Chemistry columns")
+	metadata = load_sample_metadata(samples_metadata_file, sample_id)
+
+	if ("chemistry" not in metadata) or ("targetnumcells" not in metadata):
+		raise ValueError("Samples metadata must contain columns 'targetnumcells' and either 'chemistry' or 'technology'")
+	if "technology" in metadata:
+		technology = metadata["technology"]
 	else:
-		raise ValueError("technology cannot be None if samples_metadata_file is also None")
+		technology = "10x" + metadata["chemistry"]
+	expected_n_cells = int(metadata["targetnumcells"])
 
 	whitelist_file: Optional[str] = os.path.join(index_path, f"{technology}_whitelist.txt")
 	if not os.path.exists(whitelist_file):  # type: ignore
@@ -419,14 +420,16 @@ def create_from_fastq(out_file: str, sample_id: str, fastqs: List[str], index_pa
 		logging.info(f"Found {bus.n_cells:,} corrected cell barcodes.")
 		logging.info("Removing redundant reads using UMIs")
 		bus.deduplicate()
-		logging.info(f"{int((1 - bus.bus_valid.sum() / bus.n_records) * 100)}% of all reads were redundant.")
+		seq_sat = 1 - bus.bus_valid.sum() / bus.n_records
+		logging.info(f"{int(seq_sat * 100)}% sequencing saturation.")
 		bus.count()
 		logging.info(f"Found {bus.matrix.count_nonzero():,} UMIs.")
 		for layer, layer_def in manifest["layers"].items():
 			bus.count_layer(layer, os.path.join(index_path, layer_def))
 			logging.info(f"Found {bus.layers[layer].count_nonzero():,} UMIs.")
-		bus.remove_empty_beads()
+		bus.remove_empty_beads(expected_n_cells)
 		logging.info(f"Creating loom file '{out_file}'")
 		bus.save(out_file, sample_id, samples_metadata_file)
 		with connect(out_file) as ds:
 			ds.attrs.Species = manifest["species"]
+			ds.attrs.SequencingSaturation = seq_sat
