@@ -302,19 +302,20 @@ def est_background_profile_sgt(matrix, use_bcs):
 
 
 # Sten Linnarsson's version (Aug 2019)
-def call_cells(matrix: sparse.csr_matrix, expected_n_cells: int = 5000) -> np.ndarray:
+def call_cells(matrix: sparse.csr_matrix, expected_n_cells: int = 5000, keep_cells_above: int = 1500) -> np.ndarray:
 	"""
 	Determine likely true cells among the barcodes by contrasting with the ambient RNA profile
 
 	Args:
 		matrix: 			expression matrix
 		expected_n_cells:	expected number of true cells in the sample
+		keep_cells_above:	number of UMIs above which all cells are included
 
 	Returns:
 		calls:	vector of bools indicating true cell barcodes
 	"""
 	n_barcodes = matrix.shape[1]
-	expected_n_cells = min(expected_n_cells, n_barcodes / 5)
+	expected_n_cells = min(expected_n_cells, n_barcodes // 5)
 	total_umis = np.array(matrix.sum(axis=0))[0]  # total UMIs per barcode
 	# upper limit of UMIs for barcodes considered ambient, calculated as greatest UMI count after removing twice the expected number of cells
 	max_ambient_umis = np.percentile(total_umis, 100 * (n_barcodes - expected_n_cells * 2) / n_barcodes)
@@ -348,6 +349,7 @@ def call_cells(matrix: sparse.csr_matrix, expected_n_cells: int = 5000) -> np.nd
 	pvalues = compute_ambient_pvalues(total_umis[eval_bcs], obs_loglk, distinct_ns, sim_loglk)
 	pvalues_adj = adjust_pvalue_bh(pvalues)
 
-	is_nonambient = pvalues_adj <= 0.01
-
-	return pvalues_adj, is_nonambient | (total_umis > min_cell_umis)
+	nonambient_bcs = np.where(eval_bcs)[0][pvalues_adj <= 0.01]
+	high_umi_bcs = np.where(eval_bcs)[0][total_umis[eval_bcs] > keep_cells_above]
+	valid_cells = np.union1d(nonambient_bcs, high_umi_bcs)
+	return max_ambient_umis, pvalues_adj[valid_cells], valid_cells

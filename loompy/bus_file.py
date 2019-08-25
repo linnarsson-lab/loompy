@@ -121,9 +121,9 @@ def load_sample_metadata(path: str, sample_id: str) -> Dict[str, str]:
 		raise ValueError(f"Samples metadata file '{path}' not found.")
 	if path.endswith(".db"):
 		# sqlite3
-		with sqlite.connect("path") as db:
+		with sqlite.connect(path) as db:
 			cursor = db.cursor()
-			cursor.execute("SELECT * FROM samples WHERE name = ?", [sample_id])
+			cursor.execute("SELECT * FROM sample WHERE name = ?", (sample_id,))
 			keys = [x[0] for x in cursor.description]
 			vals = cursor.fetchone()
 			if vals is not None:
@@ -132,10 +132,13 @@ def load_sample_metadata(path: str, sample_id: str) -> Dict[str, str]:
 	else:
 		result = {}
 		with open(path) as f:
-			headers = f.readline()[:-1].split("\t")
-			if "SampleID" not in headers:
-				raise ValueError("Required column 'SampleID' not found in sample metadata file")
-			sample_metadata_key_idx = headers.index("SampleID")
+			headers = [x.lower() for x in f.readline()[:-1].split("\t")]
+			if "sampleid" not in headers and 'name' not in headers:
+				raise ValueError("Required column 'SampleID' or 'Name' not found in sample metadata file")
+			if "sampleid" in headers:
+				sample_metadata_key_idx = headers.index("sampleid")
+			else:
+				sample_metadata_key_idx = headers.index("name")
 			sample_found = False
 			for line in f:
 				items = line[:-1].split("\t")
@@ -286,12 +289,13 @@ class BusFile:
 
 	def remove_empty_beads(self, expected_n_cells: int) -> None:
 		logging.info("Calling cells")
-		self.ambient_pvalue, self.valid_cells = call_cells(self.matrix.tocsc(), expected_n_cells)
+		self.ambient_umis, self.ambient_pvalue, self.valid_cells = call_cells(self.matrix.tocsc(), expected_n_cells)
 		self.matrix = self.matrix.tocsr()[:, self.valid_cells]
 		self.cell_ids = self.cell_ids[self.valid_cells]
-		self.n_cells = self.valid_cells.sum()
+		self.n_cells = self.valid_cells.shape[0]
 		for name in self.layers.keys():
 			self.layers[name] = self.layers[name].tocsc()[:, self.valid_cells]
+		logging.info(f"Found {self.n_cells} valid cells and ~{int(self.ambient_umis)} ambient UMIs.")
 
 	def count_layer(self, layer_name: str, layer_fragments_file: str) -> sparse.coo_matrix:
 		fragments_idx = {f: i for i, f in enumerate(self.fragments)}
@@ -333,7 +337,7 @@ class BusFile:
 		global_attrs = {
 			**{
 				"SampleID": sample_id,
-				"AmbientMedianUMIs": self.ambient_umis,
+				"AmbientUMIs": self.ambient_umis,
 				"CellThresholdUMIs": self.min_umis,
 				"RedundantReadFraction": 1 - self.bus_valid.sum() / self.n_records,
 				"AmbientPValue": self.ambient_pvalue,
@@ -382,13 +386,17 @@ def create_from_fastq(out_file: str, sample_id: str, fastqs: List[str], index_pa
 	
 	metadata = load_sample_metadata(samples_metadata_file, sample_id)
 
-	if ("chemistry" not in metadata) or ("targetnumcells" not in metadata):
+	if (("technology" not in metadata) and ("chemistry" not in metadata)) or ("targetnumcells" not in metadata):
+		print(metadata.keys())
 		raise ValueError("Samples metadata must contain columns 'targetnumcells' and either 'chemistry' or 'technology'")
 	if "technology" in metadata:
 		technology = metadata["technology"]
 	else:
 		technology = "10x" + metadata["chemistry"]
-	expected_n_cells = int(metadata["targetnumcells"])
+	try:
+		expected_n_cells = int(metadata["targetnumcells"])
+	except:
+		expected_n_cells = 5000
 
 	whitelist_file: Optional[str] = os.path.join(index_path, f"{technology}_whitelist.txt")
 	if not os.path.exists(whitelist_file):  # type: ignore
