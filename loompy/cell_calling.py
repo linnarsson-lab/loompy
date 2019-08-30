@@ -302,14 +302,13 @@ def est_background_profile_sgt(matrix, use_bcs):
 
 
 # Sten Linnarsson's version (Aug 2019)
-def call_cells(matrix: sparse.csr_matrix, expected_n_cells: int = 5000, keep_cells_above: int = 1500) -> np.ndarray:
+def call_cells(matrix: sparse.csr_matrix, expected_n_cells: int = 5000) -> np.ndarray:
 	"""
 	Determine likely true cells among the barcodes by contrasting with the ambient RNA profile
 
 	Args:
 		matrix: 			expression matrix
 		expected_n_cells:	expected number of true cells in the sample
-		keep_cells_above:	number of UMIs above which all cells are included
 
 	Returns:
 		calls:	vector of bools indicating true cell barcodes
@@ -343,13 +342,11 @@ def call_cells(matrix: sparse.csr_matrix, expected_n_cells: int = 5000, keep_cel
 	obs_loglk = eval_multinomial_loglikelihoods(eval_mat, ambient_profile_p)
 
 	# Simulate log likelihoods
-	distinct_ns, sim_loglk = simulate_multinomial_loglikelihoods(ambient_profile_p, total_umis[eval_bcs], num_sims=10000, verbose=True)
+	distinct_ns, sim_loglk = simulate_multinomial_loglikelihoods(ambient_profile_p, total_umis[eval_bcs], num_sims=1000, verbose=True)
 
 	# Compute p-values
 	pvalues = compute_ambient_pvalues(total_umis[eval_bcs], obs_loglk, distinct_ns, sim_loglk)
 	pvalues_adj = adjust_pvalue_bh(pvalues)
-
-	nonambient_bcs = np.where(eval_bcs)[0][pvalues_adj <= 0.01]
-	high_umi_bcs = np.where(eval_bcs)[0][total_umis[eval_bcs] > keep_cells_above]
-	valid_cells = np.union1d(nonambient_bcs, high_umi_bcs)
-	return max_ambient_umis, pvalues_adj[valid_cells], valid_cells
+	pvalues_adj_all = np.ones_like(total_umis)
+	pvalues_adj_all[eval_bcs] = pvalues_adj
+	return max_ambient_umis, pvalues_adj_all

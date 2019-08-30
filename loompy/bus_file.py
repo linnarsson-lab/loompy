@@ -1,4 +1,5 @@
 import array
+import gzip
 import json
 import logging
 import os
@@ -243,7 +244,6 @@ class BusFile:
 		self.cell_ids.sort()
 		self.n_cells = len(self.cell_ids)  # This will change after error correction
 		self.layers: Dict[str, sparse.coo_matrix] = {}  # Dict of layer name -> sparse matrix
-		self.min_umis = 0
 		self.ambient_umis = 0
 
 	def correct(self, whitelist_file: str = None) -> np.ndarray:
@@ -289,10 +289,11 @@ class BusFile:
 
 	def remove_empty_beads(self, expected_n_cells: int) -> None:
 		logging.info("Calling cells")
-		self.ambient_umis, self.ambient_pvalue, self.valid_cells = call_cells(self.matrix.tocsc(), expected_n_cells)
+		self.ambient_umis, self.ambient_pvalue = call_cells(self.matrix.tocsc(), expected_n_cells)
+		self.valid_cells = (self.ambient_pvalue < 0.01) | (self.total_umis > 1500)
 		self.matrix = self.matrix.tocsr()[:, self.valid_cells]
 		self.cell_ids = self.cell_ids[self.valid_cells]
-		self.n_cells = self.valid_cells.shape[0]
+		self.n_cells = self.valid_cells.sum()
 		for name in self.layers.keys():
 			self.layers[name] = self.layers[name].tocsc()[:, self.valid_cells]
 		logging.info(f"Found {self.n_cells} valid cells and ~{int(self.ambient_umis)} ambient UMIs.")
@@ -338,7 +339,6 @@ class BusFile:
 			**{
 				"SampleID": sample_id,
 				"AmbientUMIs": self.ambient_umis,
-				"CellThresholdUMIs": self.min_umis,
 				"RedundantReadFraction": 1 - self.bus_valid.sum() / self.n_records,
 				"AmbientPValue": self.ambient_pvalue,
 				"BarcodeTotalUMIs": self.total_umis,
@@ -404,13 +404,14 @@ def create_from_fastq(out_file: str, sample_id: str, fastqs: List[str], index_pa
 		whitelist_file = None
 
 	with TemporaryDirectory() as d:
-		logging.info("Pseudoaligning reads using kallisto.")
 		cmd = ["kallisto", "bus", "-i", os.path.join(index_path, manifest["index_file"]), "-o", d, "-x", technology, "-t", str(n_threads)] + fastqs
 		logging.info(" ".join(cmd))
 		for line in execute(cmd):
 			if line != "\n":
 				logging.info(line[:-1])
 
+		with open(os.path.join(d, "run_info.json")) as f:
+			run_info = json.load(f)
 		bus = BusFile(
 			os.path.join(d, "output.bus"),
 			os.path.join(index_path, manifest["gene_metadata_file"]),
@@ -440,4 +441,8 @@ def create_from_fastq(out_file: str, sample_id: str, fastqs: List[str], index_pa
 		bus.save(out_file, sample_id, samples_metadata_file)
 		with connect(out_file) as ds:
 			ds.attrs.Species = manifest["species"]
-			ds.attrs.SequencingSaturation = seq_sat
+			ds.attrs.Saturation = seq_sat
+			ds.attrs.NumReadsProcessed = int(run_info["n_processed"])
+			ds.attrs.NumPseudoaligned = int(run_info["n_pseudoaligned"])
+			ds.attrs.KallistoCommand = run_info["call"]
+			ds.attrs.KallistoVersion = run_info["kallisto_version"]

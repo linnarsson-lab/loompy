@@ -992,7 +992,10 @@ def new(filename: str, *, file_attrs: Optional[Dict[str, str]] = None) -> LoomCo
 
 	ds = connect(filename, validate=False)
 	for vals in file_attrs:
-		ds.attrs[vals] = file_attrs[vals]
+		if file_attrs[vals] is None:
+			ds.attrs[vals] = "None"
+		else:
+			ds.attrs[vals] = file_attrs[vals]
 	# store creation date
 	ds.attrs['CreationDate'] = timestamp()
 	ds.attrs["LOOM_SPEC_VERSION"] = loompy.loom_spec_version
