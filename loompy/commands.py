@@ -1,5 +1,5 @@
 import logging
-import sys
+import os
 from typing import List
 
 import click
@@ -27,6 +27,6 @@ def cli(show_message: bool = True, verbosity: str = "info") -> None:
 @click.argument('indexdir', required=True)
 @click.argument('metadatafile', required=True)
 @click.argument('fastqs', required=True, nargs=-1)
-@click.option('--threads', default=1, help="Number of threads to use")
+@click.option('--threads', default=os.cpu_count(), help="Number of threads to use")
 def fromfq(loomfile: str, sampleid: str, indexdir: str, metadatafile: str, threads: int, fastqs: List[str]) -> None:
 	create_from_fastq(loomfile, sampleid, list(fastqs), indexdir, metadatafile, threads)
