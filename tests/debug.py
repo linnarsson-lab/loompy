@@ -1,21 +1,6 @@
-import os
 import sys
-import matplotlib.pyplot as plt
-import matplotlib.mlab as mlab
 import logging
-import numpy as np
-import scipy.sparse as sparse
 import loompy
-from typing import List, Tuple, Dict
-from numba import jit
-from scipy.stats import norm, poisson
-
-from tqdm import trange
-
-from Bio import SeqIO
-from Bio.SeqRecord import SeqRecord
-from Bio.Seq import Seq
-import pysam
 
 # Create logger
 logger = logging.getLogger()

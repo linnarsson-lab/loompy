@@ -22,7 +22,11 @@ setup(
 	version=__version__,
 	packages=find_packages(),
 	python_requires='>=3.6',
-	install_requires=['h5py', 'numpy', 'scipy', 'setuptools', 'numba'],
+	install_requires=['h5py', 'numpy', 'scipy', 'setuptools', 'numba', 'click'],
+	entry_points='''
+		[console_scripts]
+		loompy=loompy.commands:cli
+	''',
 	# metadata for upload to PyPI
 	author="Linnarsson Lab",
 	author_email="sten.linnarsson@ki.se",
