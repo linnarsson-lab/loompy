@@ -18,7 +18,7 @@ def cli(show_message: bool = True, verbosity: str = "info") -> None:
 	logging.captureWarnings(True)
 
 	if show_message:
-		print(f"Loompy v{__version__} by Linnarsson Lab 🌸 (http://linnarssonlab.org)")
+		print(f"Loompy v{__version__} by Linnarsson Lab 🌸 (http://linnarssonlab.org & http://loompy.org)")
 		print()
 
 
