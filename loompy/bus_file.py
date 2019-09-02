@@ -407,7 +407,7 @@ def create_from_fastq(out_file: str, sample_id: str, fastqs: List[str], index_pa
 		if temp_folder is not None:
 			d = temp_folder
 			if not os.path.exists(d):
-				os.path.create(d)
+				os.mkdir(d)
 		cmd = ["kallisto", "bus", "-i", os.path.join(index_path, manifest["index_file"]), "-o", d, "-x", technology, "-t", str(n_threads)] + fastqs
 		logging.info(" ".join(cmd))
 		for line in execute(cmd):
