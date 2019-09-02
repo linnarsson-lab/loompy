@@ -360,7 +360,7 @@ def execute(cmd: List[str]) -> Generator:
 		raise subprocess.CalledProcessError(return_code, cmd)
 
 
-def create_from_fastq(out_file: str, sample_id: str, fastqs: List[str], index_path: str, samples_metadata_file: str, n_threads: int = 1) -> None:
+def create_from_fastq(out_file: str, sample_id: str, fastqs: List[str], index_path: str, samples_metadata_file: str, n_threads: int = 1, temp_folder: str = None) -> None:
 	"""
 	Args:
 		technology			String like "10xv2" or None to read the technology from the sample metadata file
@@ -404,6 +404,10 @@ def create_from_fastq(out_file: str, sample_id: str, fastqs: List[str], index_pa
 		whitelist_file = None
 
 	with TemporaryDirectory() as d:
+		if temp_folder is not None:
+			d = temp_folder
+			if not os.path.exists(d):
+				os.path.create(d)
 		cmd = ["kallisto", "bus", "-i", os.path.join(index_path, manifest["index_file"]), "-o", d, "-x", technology, "-t", str(n_threads)] + fastqs
 		logging.info(" ".join(cmd))
 		for line in execute(cmd):
