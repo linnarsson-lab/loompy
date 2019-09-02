@@ -327,12 +327,12 @@ def call_cells(matrix: sparse.csr_matrix, expected_n_cells: int = 5000) -> np.nd
 	if ambient_bcs.sum() == 0:
 		# No beads were ambient, because cells had very low UMIs
 		logging.warning("No ambient RNA beads were found; maybe sample had too few cells?")
-		return np.zeros_like(total_umis), total_umis > min_cell_umis
+		return max_ambient_umis, np.ones_like(total_umis)
 	try:
 		eval_features, ambient_profile_p = est_background_profile_sgt(matrix, ambient_bcs)
 	except SimpleGoodTuringError as e:
 		logging.error(e)
-		return np.zeros_like(total_umis), total_umis > min_cell_umis
+		return max_ambient_umis, np.ones_like(total_umis)
 
 	# Evaluate candidate barcodes
 	eval_bcs = total_umis > min_cell_umis

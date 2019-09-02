@@ -410,8 +410,15 @@ def create_from_fastq(out_file: str, sample_id: str, fastqs: List[str], index_pa
 			if line != "\n":
 				logging.info(line[:-1])
 
-		with open(os.path.join(d, "run_info.json")) as f:
-			run_info = json.load(f)
+		run_info: Optional[Dict[str, str]] = None
+		try:
+			with open(os.path.join(d, "run_info.json")) as f:
+				run_info = json.load(f)
+		except json.JSONDecodeError as e:
+			with open(os.path.join(d, "run_info.json")) as f:
+				for line in f:
+					logging.error(line)
+			logging.error(f"Error decoding run_info.json: {e}")
 		bus = BusFile(
 			os.path.join(d, "output.bus"),
 			os.path.join(index_path, manifest["gene_metadata_file"]),
@@ -442,7 +449,8 @@ def create_from_fastq(out_file: str, sample_id: str, fastqs: List[str], index_pa
 		with connect(out_file) as ds:
 			ds.attrs.Species = manifest["species"]
 			ds.attrs.Saturation = seq_sat
-			ds.attrs.NumReadsProcessed = int(run_info["n_processed"])
-			ds.attrs.NumPseudoaligned = int(run_info["n_pseudoaligned"])
-			ds.attrs.KallistoCommand = run_info["call"]
-			ds.attrs.KallistoVersion = run_info["kallisto_version"]
+			if run_info is not None:
+				ds.attrs.NumReadsProcessed = int(run_info["n_processed"])
+				ds.attrs.NumPseudoaligned = int(run_info["n_pseudoaligned"])
+				ds.attrs.KallistoCommand = run_info["call"]
+				ds.attrs.KallistoVersion = run_info["kallisto_version"]
