@@ -350,17 +350,20 @@ class BusFile:
 		create(out_file, layers, row_attrs, col_attrs, file_attrs=global_attrs)
 
 
-def execute(cmd: List[str]) -> Generator:
-	popen = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)  # type: ignore
-	for stdout_line in iter(popen.stdout.readline, ""):
-		yield stdout_line
-	popen.stdout.close()
-	return_code = popen.wait()
-	if return_code:
-		raise subprocess.CalledProcessError(return_code, cmd)
+def execute(cmd: List[str], synchronous: bool = False) -> Generator:
+	if synchronous:
+		yield os.popen(" ".join(cmd)).read()
+	else:
+		popen = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)  # type: ignore
+		for stdout_line in iter(popen.stdout.readline, ""):
+			yield stdout_line
+		popen.stdout.close()
+		return_code = popen.wait()
+		if return_code:
+			raise subprocess.CalledProcessError(return_code, cmd)
 
 
-def create_from_fastq(out_file: str, sample_id: str, fastqs: List[str], index_path: str, samples_metadata_file: str, n_threads: int = 1, temp_folder: str = None) -> None:
+def create_from_fastq(out_file: str, sample_id: str, fastqs: List[str], index_path: str, samples_metadata_file: str, n_threads: int = 1, temp_folder: str = None, synchronous: bool = False) -> None:
 	"""
 	Args:
 		technology			String like "10xv2" or None to read the technology from the sample metadata file
@@ -410,7 +413,7 @@ def create_from_fastq(out_file: str, sample_id: str, fastqs: List[str], index_pa
 				os.mkdir(d)
 		cmd = ["kallisto", "bus", "-i", os.path.join(index_path, manifest["index_file"]), "-o", d, "-x", technology, "-t", str(n_threads)] + fastqs
 		logging.info(" ".join(cmd))
-		for line in execute(cmd):
+		for line in execute(cmd, synchronous):
 			if line != "\n":
 				logging.info(line[:-1])
 
