@@ -1,7 +1,9 @@
 from typing import *
 import numpy as np
+import h5py
 import loompy
 from loompy import timestamp
+from .utils import compare_loom_spec_version
 
 
 class AttributeManager:
@@ -144,13 +146,17 @@ class AttributeManager:
 			raise KeyError("Attribute name cannot contain slash (/)")
 		else:
 			if self.ds is not None:
-				values = loompy.normalize_attr_values(val)
+				values = loompy.normalize_attr_values(val, compare_loom_spec_version(self.ds._file, "3.0.0") >= 0)
 				a = ["/row_attrs/", "/col_attrs/"][self.axis]
 				if self.ds.shape[self.axis] != 0 and values.shape[0] != self.ds.shape[self.axis]:
 					raise ValueError(f"Attribute '{name}' must have exactly {self.ds.shape[self.axis]} values but {len(values)} were given")
 				if self.ds._file[a].__contains__(name):
 					del self.ds._file[a + name]
-				self.ds._file[a + name] = values  # TODO: for 2D arrays, use block compression along columns/rows
+				
+				if values.dtype == np.object_:
+					self.ds._file.create_dataset(a + name, data=values, dtype=h5py.string_dtype(encoding="utf-8"))
+				else:
+					self.ds._file[a + name] = values
 				self.ds._file[a + name].attrs["last_modified"] = timestamp()
 				self.ds._file[a].attrs["last_modified"] = timestamp()
 				self.ds._file.attrs["last_modified"] = timestamp()

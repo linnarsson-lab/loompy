@@ -6,6 +6,7 @@ import warnings
 with warnings.catch_warnings():
 	warnings.simplefilter("ignore")
 	import h5py
+from .utils import compare_loom_spec_version
 
 
 class GlobalAttributeManager(object):
@@ -72,7 +73,7 @@ class GlobalAttributeManager(object):
 		else:
 			if self.f is not None:
 				if loompy.compare_loom_spec_version(self.f, "3.0.0") < 0 and "attrs" not in self.f["/"]:
-					normalized = loompy.normalize_attr_values(val)
+					normalized = loompy.normalize_attr_values(val, False)
 					self.f.attrs[name] = normalized
 					self.f.flush()
 					val = self.f.attrs[name]
@@ -80,12 +81,15 @@ class GlobalAttributeManager(object):
 					normalized = loompy.materialize_attr_values(val)
 					self.__dict__["storage"][name] = normalized
 				else:
-					normalized = loompy.normalize_attr_values(val)
+					normalized = loompy.normalize_attr_values(val, True)
 					if name in self.f["attrs"]:
 						del self.f["attrs"][name]
-					self.f["attrs"][name] = normalized
+					if not np.isscalar(normalized) and normalized.dtype == np.object_:
+						self.ds._file.create_dataset("attrs/" + name, data=normalized, dtype=h5py.string_dtype(encoding="utf-8"))
+					else:
+						self.f["attrs"][name] = normalized
 					self.f.flush()
-					val = self.f["attrs"][name].value
+					val = self.f["attrs"][name][()]
 					# Read it back in to ensure it's synced and normalized
 					normalized = loompy.materialize_attr_values(val)
 					self.__dict__["storage"][name] = normalized
