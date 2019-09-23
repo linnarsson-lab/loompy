@@ -20,7 +20,7 @@ class GlobalAttributeManager(object):
 				self.__dict__["storage"][key] = materialized
 		else:
 			for key, val in f["attrs"].items():
-				materialized = loompy.materialize_attr_values(val.value)
+				materialized = loompy.materialize_attr_values(val[()])
 				self.__dict__["storage"][key] = materialized
 
 	def keys(self) -> List[str]:
