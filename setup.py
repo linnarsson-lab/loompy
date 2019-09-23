@@ -2,11 +2,7 @@ from setuptools import find_packages, setup
 
 # First update the version in loompy/_version.py, then:
 
-# cd ~/code  (the directory where loompy resides)
-# cp -R loompy loompy-3.5
-# cd loompy-3.5/loompy
-# for f in *.py; do py-backwards -i $f -o $f -t 3.5; done
-# cd ..
+# cd ~/code/loompy  (the directory where loompy resides)
 # rm -r dist   (otherwise twine will upload the oldest build!)
 # python setup.py sdist
 # twine upload dist/*
