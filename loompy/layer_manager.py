@@ -146,7 +146,7 @@ class LayerManager:
 
 				# Fill the matrix with sparse data
 				if sparse.issparse(val):
-					m = val.tocsr()
+					m = val.tocsc()
 					window = 6400
 					ix = 0
 					while ix < val.shape[1]:

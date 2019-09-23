@@ -6,10 +6,10 @@ import loompy
 
 
 class LoomValidator:
-	def __init__(self, version: str = "2.0.1") -> None:
+	def __init__(self, version: str = "3.0.0") -> None:
 		"""
 		Args:
-			version: 		The Loom file format version to validate against ("2.0.1" or "old")
+			version: 		The Loom file format version to validate against ("3.0.0", "2.0.1", "old")
 		
 		Remarks:
 			"old" version will accept files that lack the "row_graphs" and "col_graphs" groups

@@ -6,7 +6,7 @@ Loom file format specs
 Versions
 --------
 
-This specification defines the Loom file format version ``2.0.1``.
+This specification defines the Loom file format version ``3.0.0``.
 
 
 .. _formatinfo:
@@ -91,15 +91,27 @@ Main matrix and layers
 Global attributes
 ^^^^^^^^^^^^^^^^^
 
--  There can OPTIONALLY be at least one `HDF5
-   attribute <https://www.hdfgroup.org/HDF5/Tutor/crtatt.html>`__ on the
-   root ``/`` group, which can be any valid scalar or multidimensional datatype and should be
-   interpreted as attributes of the whole Loom file. 
--  There can OPTIONALLY be an `HDF5
-   attribute <https://www.hdfgroup.org/HDF5/Tutor/crtatt.html>`__ on the
-   root ``/`` group named ``LOOM_SPEC_VERSION``, a string value giving the
-   loom file spec version that was followed in creating the file. See top of this
-   document for the current version of the spec.
+-  There MUST be an HDF5 group ``/attrs`` containing global attributes.
+-  There MUST be a HDF5 dataset ``/attrs/LOOM_SPEC_VERSION`` with the value ``v3.0.0``.
+
+Global attributes apply semantically to the whole file, not any specific part of it. 
+Such attributes are stored in the HDF5 group ``/attrs`` and can be any valid scalar
+or multidimensional datatype.
+
+As of Loom file format v3.0.0, only one global attribute is mandatory: the ``LOOM_SPEC_VERSION``
+attribute, which is a string value giving the loom file spec version that was followed in creating
+the file. See top of this document for the current version of the spec.
+
+Note: previous versions of the loom file format stored global attributes as `HDF5 attributes <https://www.hdfgroup.org/HDF5/Tutor/crtatt.html>`__
+on the root ``/`` group. However, such attributes are size-limited, which caused problems for some 
+applications. For backwards compatibility, readers compatible with Loom v3.0.0 and above MUST first look
+for global attributes under the HDF5 group ``/attrs`` (if it exists). If a requested attribute does not exist
+as a dataset under that group, the reader MUST then examine the HDF5 attributes on the root ``/`` group.
+
+When writing a global attribute, the writer MUST write only to the ``/attrs`` group if ``LOOM_SPEC_VERSION`` is
+``3.0.0`` or higher. The writer MUST write to both the ``/attrs`` group and the HDF5 attributes on the root ``/``
+group if ``LOOM_SPEC_VERSION`` is lower than ``3.0.0`` or if it does not exist. This is to preserve a consistent
+format for legacy files.
 
 
 Row and column attributes
