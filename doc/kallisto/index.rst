@@ -28,10 +28,12 @@ Using the ``loompy`` command
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 1. Install `kallisto <https://pachterlab.github.io/kallisto/>`_
+---------------------------------------------------------------
 
 The excellent kallisto tool performs ultra-fast pseudoalignment, which loompy uses to count reads (UMIs) on genes.
 
 2. Download an index (or build your own)
+----------------------------------------
 
 We provide a pre-built index of the `human genome <https://docs.python-guide.org/starting/install3/linux/>`_. 
 
@@ -54,10 +56,23 @@ Unzip the index to a directory, which will have the following content:
 
 
 3. Download metadata and fastq files
+-------------------------------------
+
+You need to provide the input fastq files, and metadata for your samples. For this tutorial, please download the following files:
 
 TBD
 
+Metadata can be provided either in the form of a tab-delimited file with a single header row, or as a sqlite3 database with a table named ``sample``.
+
+One metadata column must be named ``name`` and contain sample names (sample IDs). One column must be named ``technoplogy`` and contain the technology name (currently one of ``10xv1``,
+``10xv2`` or ``10xv3``). The technology name will be used to locate the barcode whitelist file (e.g. ``10xv3_whitelist.txt``). Finally, one
+column must be named ``targetnumcells`` and contain the target (or expected) cell number in the samples. If absent, the default will be 5000.
+
+The metadata file (or database) will typically contain metadata for all the samples you are working with, one row per sample.
+
+
 4. Run the ``loompy`` command
+------------------------------
 
 Run the following command (replace ``index_folder`` with the path to the index you just downloaded):
 

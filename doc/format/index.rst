@@ -74,6 +74,19 @@ any language that supports HDF5, including `Python <http://h5py.org>`__,
 
 .. _specifications:
 
+
+Standards
+---------
+
+The official MIME media type for a loom file is ``application/vnd.loom``, `approved by IANA <https://www.iana.org/assignments/media-types/application/vnd.loom>`_.
+You should use this media type when requesting a file using HTTP, or if you create a server that offers Loom files for download.
+
+See the `IANA record for application/vnd.loom <https://www.iana.org/assignments/media-types/application/vnd.loom>`_ for important security considerations.
+
+The Loom file format is designated as a standard format for gene expression matrices by the `Global Alliance for Genomics and Health (GA4GH) <https://www.ga4gh.org>`_ standards body, as part of the `rnaget API <https://github.com/ga4gh-rnaseq/schema/blob/master/rnaget.md>`_.
+The rnaget API documentation contains good examples of how to use the media type specification.
+
+
 Specification
 -------------
 

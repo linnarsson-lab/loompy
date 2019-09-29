@@ -10,6 +10,7 @@ This is a complete API reference to loompy |version| generated using the docstri
 .. toctree::
    create
    new
+   create_from_fastq
    create_from_cellranger
    connect
    combine
