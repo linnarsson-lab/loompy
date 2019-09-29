@@ -1215,6 +1215,7 @@ def create_from_kallistobus(out_file: str, in_dir: str, tr2g_file: str, whitelis
 def combine(files: List[str], output_file: str, key: str = None, file_attrs: Dict[str, str] = None, batch_size: int = 1000, convert_attrs: bool = False) -> None:
 	"""
 	Combine two or more loom files and save as a new loom file
+
 	Args:
 		files (list of str):    the list of input files (full paths)
 		output_file (str):      full path of the output loom file
@@ -1222,23 +1223,29 @@ def combine(files: List[str], output_file: str, key: str = None, file_attrs: Dic
 		file_attrs (dict):      file attributes (title, description, url, etc.)
 		batch_size (int):       limits the batch or cols/rows read in memory (default: 1000)
 		convert_attrs (bool):   convert file attributes that differ between files into column attributes
+
 	Returns:
 		Nothing, but creates a new loom file combining the input files.
 		Note that the loom files must have exactly the same
 		number of rows, and must have exactly the same column attributes.
 		Named layers not present in the first file are discarded.
+
 		.. warning::
 			If you don't give a ``key`` argument, the files will be combined without changing
 			the ordering of rows or columns. Row attributes will be taken from the first file.
 			Hence, if rows are not in the same order in all files, the result may be meaningless.
+
 		To guard against this issue, you are strongly advised to provide a ``key`` argument,
 		which is used to sort files while merging. The ``key`` should be the name of a row
-		atrribute that contains a unique value for each row. For example, to order rows by
+		attribute that contains a unique value for each row. For example, to order rows by
 		the attribute ``Accession``:
+
 		.. highlight:: python
 		.. code-block:: python
+
 			import loompy
 			loompy.combine(files, key="Accession")
+
 	"""
 	if file_attrs is None:
 		file_attrs = {}
