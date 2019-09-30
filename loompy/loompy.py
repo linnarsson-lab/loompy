@@ -55,7 +55,7 @@ class LoomConnection:
 	Inside the ``with`` block, you can access the dataset (here using the variable ``ds``). When execution
 	leaves the ``with`` block, the connection is automatically closed, freeing up resources.
 	'''
-	def __init__(self, filename: str, mode: str = 'r+', *, validate: bool = True, spec_version: str = "2.0.1") -> None:
+	def __init__(self, filename: str, mode: str = 'r+', *, validate: bool = True, spec_version: str = "3.0.0") -> None:
 		"""
 		Establish a connection to a Loom file.
 
@@ -1360,7 +1360,7 @@ def combine_faster(files: List[str], output_file: str, file_attrs: Dict[str, str
 			dsout.ca[attr] = vals
 
 
-def connect(filename: str, mode: str = 'r+', *, validate: bool = True, spec_version: str = "2.0.1") -> LoomConnection:
+def connect(filename: str, mode: str = 'r+', *, validate: bool = True, spec_version: str = "3.0.0") -> LoomConnection:
 	"""
 	Establish a connection to a .loom file.
 
