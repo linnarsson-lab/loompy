@@ -64,7 +64,7 @@ from 10x Genomics: `pbmc_1k_v3_fastqs.tar <http://cf.10xgenomics.com/samples/cel
 
 Metadata can be provided either in the form of a tab-delimited file with a single header row, or as a sqlite3 database with a table named ``sample``.
 
-One metadata column must be named ``name`` and contain sample names (sample IDs). One column must be named ``technoplogy`` and contain the technology name (currently one of ``10xv1``,
+One metadata column must be named ``name`` and contain sample names (sample IDs). One column must be named ``technology`` and contain the technology name (currently one of ``10xv1``,
 ``10xv2`` or ``10xv3``). The technology name will be used to locate the barcode whitelist file (e.g. ``10xv3_whitelist.txt``). Finally, one
 column must be named ``targetnumcells`` and contain the target (or expected) cell number in the samples. If absent, the default will be 5000.
 
