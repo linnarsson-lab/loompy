@@ -18,7 +18,7 @@ setup(
 	version=__version__,
 	packages=find_packages(),
 	python_requires='>=3.6',
-	install_requires=['h5py', 'numpy', 'scipy', 'setuptools', 'numba', 'click'],
+	install_requires=['h5py', 'numpy', 'scipy', 'setuptools', 'numba', 'click', "numpy-groupies"],
 	entry_points='''
 		[console_scripts]
 		loompy=loompy.commands:cli
