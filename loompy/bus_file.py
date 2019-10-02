@@ -354,7 +354,7 @@ def execute(cmd: List[str], synchronous: bool = False) -> Generator:
 	if synchronous:
 		yield os.popen(" ".join(cmd)).read()
 	else:
-		popen = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)  # type: ignore
+		popen = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)  # type: ignore
 		for stdout_line in iter(popen.stdout.readline, ""):
 			yield stdout_line
 		popen.stdout.close()
