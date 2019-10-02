@@ -117,14 +117,7 @@ the file. See top of this document for the current version of the spec.
 
 Note: previous versions of the loom file format stored global attributes as `HDF5 attributes <https://www.hdfgroup.org/HDF5/Tutor/crtatt.html>`__
 on the root ``/`` group. However, such attributes are size-limited, which caused problems for some 
-applications. For backwards compatibility, readers compatible with Loom v3.0.0 and above MUST first look
-for global attributes under the HDF5 group ``/attrs`` (if it exists). If a requested attribute does not exist
-as a dataset under that group, the reader MUST then examine the HDF5 attributes on the root ``/`` group.
-
-When writing a global attribute, the writer MUST write only to the ``/attrs`` group if ``LOOM_SPEC_VERSION`` is
-``3.0.0`` or higher. The writer MUST write to both the ``/attrs`` group and the HDF5 attributes on the root ``/``
-group if ``LOOM_SPEC_VERSION`` is lower than ``3.0.0`` or if it does not exist. This is to preserve a consistent
-format for legacy files.
+applications. 
 
 
 Row and column attributes
@@ -181,19 +174,12 @@ Row and column attributes are multidimensional arrays whose first dimension matc
 
 Global attributes are scalars or multidimensional arrays of any shape, whose elements are any of the numeric datatypes ``int8``, ``int16``, ``int32``, ``int64``, ``uint8``, ``uint16``, ``uint32``, ``uint64``, ``float16``, ``float32`` and ``float64`` or fixed-length ASCII strings.
 
-All strings in Loom files are stored as fixed-length null-padded 7-bit ASCII. ``h5dump`` should report something like this:
+Starting with v3.0.0 of the spec, all strings are stored as variable-length UTF-8 encoded. 
 
-.. code::
+Note: in previous version, strings were stored as fixed-length null-padded 7-bit ASCII. Unicode characters outside 7-bit ASCII were stored using
+`XML entity encoding <https://en.wikipedia.org/wiki/List_of_XML_and_HTML_character_entity_references>`_, to ensure maximum compatibility. Strings
+were decoded when read and encoded when written.
 
-  DATATYPE  H5T_STRING {
-    STRSIZE 24;
-    STRPAD H5T_STR_NULLPAD;
-    CSET H5T_CSET_ASCII;
-    CTYPE H5T_C_S1;
-  }
-
-
-Unicode characters outside 7-bit ASCII are stored using `XML entity encoding <https://en.wikipedia.org/wiki/List_of_XML_and_HTML_character_entity_references>`_, to ensure maximum compatibility. Strings SHOULD be decoded when read and encoded when written. A compatible implementation may choose to encode/decode or not, but MUST decode on reading if it encodes on writing.
 
 .. _loomexample:
 
@@ -205,6 +191,10 @@ Here's an example of the structure of a valid Loom file:
 +----------------------+-------------------------------+---------------------------------------------+
 | Group                | Type                          | Description                                 |
 +======================+===============================+=============================================+
+| /attrs/              | (subgroup)                    | Global attribbutes                          |
++----------------------+-------------------------------+---------------------------------------------+
+| /attrs/Species       | string                        | Row attribute "Species" of type string      |
++----------------------+-------------------------------+---------------------------------------------+
 | /matrix              | float32[N,M] or uint16[N,M]   | Main matrix of N rows and M columns         |
 +----------------------+-------------------------------+---------------------------------------------+
 | /layers/             | (subgroup)                    | Subgroup of additional matrix layers        |
@@ -232,3 +222,13 @@ Here's an example of the structure of a valid Loom file:
 
 
 
+Backwards compatibility
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Loom v3.0.0 introduces two major backwards-incompatible changes (global attributes and variable-length strings; see above).
+
+A compliant Loom reader MUST check the LOOM_SPEC_VERSION and treat files consistently with their spec. For example, 
+when writing a global attribute, the writer MUST write only to the ``/attrs`` group if ``LOOM_SPEC_VERSION`` is
+``3.0.0`` or higher. The writer MUST write the HDF5 attributes on the root ``/``
+group if ``LOOM_SPEC_VERSION`` is lower than ``3.0.0`` or if it does not exist. This is to preserve a consistent
+format for legacy files.
