@@ -15,8 +15,6 @@ class LoomValidator:
 			"old" version will accept files that lack the "row_graphs" and "col_graphs" groups
 		"""
 		self.version = version  #: Version of the spec to validate against
-		if version != "2.0.1" and version != 'old':
-			raise ValueError("This validator can only validate against Loom specs '2.0.1' or 'old'")
 		self.errors: List[str] = []  #: Errors found during validation
 		self.warnings: List[str] = []  #: Warnings triggered during validation
 		self.summary: List[str] = []  #: Summary of the file structure
@@ -44,6 +42,7 @@ class LoomValidator:
 			at http://linnarssonlab.org/loompy/format/. In "conventions" mode, conformance is additionally
 			assessed relative to attribute name and data type conventions given at http://linnarssonlab.org/loompy/conventions/.
 		"""
+
 		valid1 = True
 		with h5py.File(path, mode="r") as f:
 			valid1 = self.validate_spec(f)
@@ -194,15 +193,18 @@ class LoomValidator:
 		width = max(width_ca, width_ra, width_globals)
 
 		delay_print("Global attributes:")
-		for key, value in file.attrs.items():
-			if type(value) is str:
-				self.warnings.append(f"Global attribute '{key}' has dtype string, which will be deprecated in future Loom versions")
-				delay_print(f"{key: >{width}} string")
-			elif type(value) is bytes:
-				self.warnings.append(f"Global attribute '{key}' has dtype bytes, which will be deprecated in future Loom versions")
-				delay_print(f"{key: >{width}} bytes")
-			else:
-				delay_print(f"{key: >{width}} {dt(file.attrs[key].dtype)}")
+		if self.version == "3.0.0":
+			self._check("attrs" in file, "Global attributes missing")
+		else:
+			for key, value in file.attrs.items():
+				if type(value) is str:
+					self.warnings.append(f"Global attribute '{key}' has dtype string, which will be deprecated in future Loom versions")
+					delay_print(f"{key: >{width}} string")
+				elif type(value) is bytes:
+					self.warnings.append(f"Global attribute '{key}' has dtype bytes, which will be deprecated in future Loom versions")
+					delay_print(f"{key: >{width}} bytes")
+				else:
+					delay_print(f"{key: >{width}} {dt(file.attrs[key].dtype)}")
 				
 		if self._check("matrix" in file, "Main matrix missing"):
 			self._check(file["matrix"].dtype in matrix_types, f"Main matrix dtype={file['matrix'].dtype} is not allowed")
@@ -238,7 +240,7 @@ class LoomValidator:
 
 		delay_print("Row graphs:")
 		if "row_graphs" in file:
-			if self.version == "2.0.1":
+			if self.version == "2.0.1" or self.version == "3.0.0":
 				self._check("row_graphs" in file, "'row_graphs' group is missing (try spec_version='old')")
 			for g in file["row_graphs"]:
 				self._check("a" in file["row_graphs"][g], f"Row graph '{g}' is missing vector 'a', denoting start vertices")
@@ -254,7 +256,7 @@ class LoomValidator:
 
 		delay_print("Column graphs:")
 		if "col_graphs" in file:
-			if self.version == "2.0.1":
+			if self.version == "2.0.1" or self.version == "3.0.0":
 				self._check("col_graphs" in file, "'col_graphs' group is missing (try spec_version='old')")
 			for g in file["col_graphs"]:
 				self._check("a" in file["col_graphs"][g], f"Column graph '{g}' is missing vector 'a', denoting start vertices")
