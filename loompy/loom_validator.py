@@ -184,7 +184,10 @@ class LoomValidator:
 			width_ra = max([len(x) for x in (file["row_attrs"].keys())], default=0)
 		if self._check("col_attrs" in file, "'col_attrs' group is missing"):
 			width_ca = max([len(x) for x in (file["col_attrs"].keys())], default=0)
-		if len(file.attrs) > 0:
+		if self.version == "3.0.0":
+			if self._check("attrs" in file, "Global attributes missing"):
+				width_globals = max([len(x) for x in (file["attrs"].keys())], default=0)
+		elif len(file.attrs) > 0:
 			width_globals = max([len(x) for x in file.attrs.keys()])
 		width_layers = 0
 		if "layers" in file and len(file["layers"]) > 0:
@@ -195,6 +198,11 @@ class LoomValidator:
 		delay_print("Global attributes:")
 		if self.version == "3.0.0":
 			self._check("attrs" in file, "Global attributes missing")
+			for attr in file["attrs"]:
+				if type(attr) is np.ndarray:
+					delay_print(f"{attr: >{width}} {attr.dtype} {attr.shape}")
+				else:
+					delay_print(f"{attr: >{width}} {type(attr).__name__} (scalar)")
 		else:
 			for key, value in file.attrs.items():
 				if type(value) is str:
@@ -218,13 +226,17 @@ class LoomValidator:
 				self._check(file["layers"][layer].dtype in matrix_types, f"Layer '{layer}' dtype={file['layers'][layer].dtype} is not allowed")
 				delay_print(f"{layer: >{width}} {file['layers'][layer].dtype}")
 
+		if self.version == "3.0.0":
+			expected_dtype = np.object_
+		else:
+			expected_dtype = np.string_
 		delay_print("Row attributes:")
 		if self._check("row_attrs" in file, "'row_attrs' group is missing"):
 			for ra in file["row_attrs"]:
 				self._check(file["row_attrs"][ra].shape[0] == shape[0], f"Row attribute '{ra}' shape {file['row_attrs'][ra].shape[0]} first dimension does not match row dimension {shape}")
-				self._check(file["row_attrs"][ra].dtype in matrix_types or np.issubdtype(file['row_attrs'][ra].dtype, np.string_), f"Row attribute '{ra}' dtype {file['row_attrs'][ra].dtype} is not allowed")
+				self._check(file["row_attrs"][ra].dtype in matrix_types or np.issubdtype(file['row_attrs'][ra].dtype, expected_dtype), f"Row attribute '{ra}' dtype {file['row_attrs'][ra].dtype} is not allowed")
 				ra_shape = file['row_attrs'][ra].shape
-				delay_print(f"{ra: >{width}} {dt(file['row_attrs'][ra].dtype)} {ra_shape if len(ra_shape) > 1 else ''}")
+				delay_print(f"{ra: >{width}} {dt(file['row_attrs'][ra].dtype) if not np.issubdtype(dt(file['row_attrs'][ra].dtype), np.object_) else 'UTF-8'} {ra_shape if len(ra_shape) > 1 else ''}")
 			if len(file["row_attrs"]) == 0:
 				delay_print("    (none)")
 
@@ -232,7 +244,7 @@ class LoomValidator:
 		if self._check("col_attrs" in file, "'col_attrs' group is missing"):
 			for ca in file["col_attrs"]:
 				self._check(file["col_attrs"][ca].shape[0] == shape[1], f"Column attribute '{ca}' shape {file['col_attrs'][ca].shape[0]} first dimension does not match column dimension {shape}")
-				self._check(file["col_attrs"][ca].dtype in matrix_types or np.issubdtype(file["col_attrs"][ca].dtype, np.string_), f"Column attribute '{ca}' dtype {file['col_attrs'][ca].dtype} is not allowed")
+				self._check(file["col_attrs"][ca].dtype in matrix_types or np.issubdtype(file["col_attrs"][ca].dtype, expected_dtype), f"Column attribute '{ca}' dtype {file['col_attrs'][ca].dtype} is not allowed")
 				ca_shape = file['col_attrs'][ca].shape
 				delay_print(f"{ca: >{width}} {dt(file['col_attrs'][ca].dtype)} {ca_shape if len(ca_shape) > 1 else ''}")
 			if len(file["col_attrs"]) == 0:
