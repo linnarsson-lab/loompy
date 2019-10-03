@@ -4,12 +4,14 @@ import logging
 import numpy as np
 import loompy
 
+from .utils import get_loom_spec_version
+
 
 class LoomValidator:
-	def __init__(self, version: str = "3.0.0") -> None:
+	def __init__(self, version: str = None) -> None:
 		"""
 		Args:
-			version: 		The Loom file format version to validate against ("3.0.0", "2.0.1", "old")
+			version: 		The Loom file format version to validate against ("3.0.0", "2.0.1", "old"), or None to infer from file
 		
 		Remarks:
 			"old" version will accept files that lack the "row_graphs" and "col_graphs" groups
@@ -42,9 +44,10 @@ class LoomValidator:
 			at http://linnarssonlab.org/loompy/format/. In "conventions" mode, conformance is additionally
 			assessed relative to attribute name and data type conventions given at http://linnarssonlab.org/loompy/conventions/.
 		"""
-
 		valid1 = True
 		with h5py.File(path, mode="r") as f:
+			if self.version == None:
+				self.version = get_loom_spec_version(f)
 			valid1 = self.validate_spec(f)
 			if not valid1:
 				self.errors.append("For help, see http://linnarssonlab.org/loompy/format/")
@@ -236,7 +239,7 @@ class LoomValidator:
 				self._check(file["row_attrs"][ra].shape[0] == shape[0], f"Row attribute '{ra}' shape {file['row_attrs'][ra].shape[0]} first dimension does not match row dimension {shape}")
 				self._check(file["row_attrs"][ra].dtype in matrix_types or np.issubdtype(file['row_attrs'][ra].dtype, expected_dtype), f"Row attribute '{ra}' dtype {file['row_attrs'][ra].dtype} is not allowed")
 				ra_shape = file['row_attrs'][ra].shape
-				delay_print(f"{ra: >{width}} {dt(file['row_attrs'][ra].dtype) if not np.issubdtype(dt(file['row_attrs'][ra].dtype), np.object_) else 'UTF-8'} {ra_shape if len(ra_shape) > 1 else ''}")
+				delay_print(f"{ra: >{width}} {dt(file['row_attrs'][ra].dtype)} {ra_shape if len(ra_shape) > 1 else ''}")
 			if len(file["row_attrs"]) == 0:
 				delay_print("    (none)")
 

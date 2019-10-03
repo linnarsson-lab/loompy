@@ -55,7 +55,7 @@ class LoomConnection:
 	Inside the ``with`` block, you can access the dataset (here using the variable ``ds``). When execution
 	leaves the ``with`` block, the connection is automatically closed, freeing up resources.
 	'''
-	def __init__(self, filename: str, mode: str = 'r+', *, validate: bool = True, spec_version: str = "3.0.0") -> None:
+	def __init__(self, filename: str, mode: str = 'r+', *, validate: bool = True) -> None:
 		"""
 		Establish a connection to a Loom file.
 
@@ -77,9 +77,9 @@ class LoomConnection:
 
 		# Validate the file
 		if validate:
-			lv = loompy.LoomValidator(version=spec_version)
+			lv = loompy.LoomValidator()
 			if not lv.validate(filename):
-				raise ValueError("\n".join(lv.errors) + f"\n{filename} does not appead to be a valid Loom file according to Loom spec version '{spec_version}'")
+				raise ValueError("\n".join(lv.errors) + f"\n{filename} does not appead to be a valid Loom file according to Loom spec version '{lv.version}'")
 
 		self._file = h5py.File(filename, mode)
 		self._closed = False
@@ -1386,4 +1386,4 @@ def connect(filename: str, mode: str = 'r+', *, validate: bool = True, spec_vers
 
 		Note: if validation is requested, an exception is raised if validation fails.
 	"""
-	return LoomConnection(filename, mode, validate=validate, spec_version=spec_version)
+	return LoomConnection(filename, mode, validate=validate)
