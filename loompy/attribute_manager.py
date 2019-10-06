@@ -154,7 +154,7 @@ class AttributeManager:
 					del self.ds._file[a + name]
 				
 				if values.dtype == np.object_:
-					self.ds._file.create_dataset(a + name, data=values, dtype=h5py.string_dtype(encoding="utf-8"))
+					self.ds._file.create_dataset(a + name, data=values, dtype=h5py.special_dtype(vlen=str))
 				else:
 					self.ds._file[a + name] = values
 				self.ds._file[a + name].attrs["last_modified"] = timestamp()

@@ -85,7 +85,7 @@ class GlobalAttributeManager(object):
 					if name in self.f["attrs"]:
 						del self.f["attrs"][name]
 					if not np.isscalar(normalized) and normalized.dtype == np.object_:
-						self.ds._file.create_dataset("attrs/" + name, data=normalized, dtype=h5py.string_dtype(encoding="utf-8"))
+						self.ds._file.create_dataset("attrs/" + name, data=normalized, dtype=h5py.special_dtype(vlen=str))
 					else:
 						self.f["attrs"][name] = normalized
 					self.f.flush()
