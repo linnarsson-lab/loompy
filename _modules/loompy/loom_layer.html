@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>loompy.loom_layer &#8212; loompy 3.0.6 documentation</title>
+    <link rel="stylesheet" href="../../_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../../_static/js/jquery-1.11.0.min.js "></script>
+<script type="text/javascript" src="../../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../../_static/bootstrap-3.3.7/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-light navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../../index.html"><span><img src="../../_static/Loom_icon.png"></span>
+          Loom</a>
+        <span class="navbar-text navbar-version pull-left"><b>3.0</b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="http://loompy.org">loompy.org</a></li>
+                <li><a href="https://github.com/linnarsson-lab/loompy">GitHub</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../../index.html">Contents <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul>
+<li class="toctree-l1"><a class="reference internal" href="../../index.html">Loompy documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/index.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../installation/index.html#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../installation/index.html#easy-installation">Easy installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../installation/index.html#from-source">From source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../installation/index.html#getting-started">Getting Started</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../semantics/index.html">Understanding the semantics of loom files</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../semantics/index.html#connecting-not-loading-and-saving">Connecting, not loading and saving</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../semantics/index.html#reading-and-writing">Reading and writing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../semantics/index.html#efficient-indexing-and-compression">Efficient indexing and compression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../semantics/index.html#matrix-and-attributes">Matrix and attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../semantics/index.html#data-types">Data types</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../kallisto/index.html">Create from fastq</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../kallisto/index.html#the-loompy-command-line-tool">The <code class="docutils literal notranslate"><span class="pre">loompy</span></code> command-line tool</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../kallisto/index.html#using-the-loompy-fromfq-command">Using the <code class="docutils literal notranslate"><span class="pre">loompy</span> <span class="pre">fromfq</span></code> command</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../apiwalkthrough/index.html">API Walkthrough</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../apiwalkthrough/index.html#creating-and-connecting">Creating and connecting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../apiwalkthrough/index.html#manipulate-data">Manipulate data</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../cookbook/index.html">Cookbook</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../cookbook/index.html#working-with-a-newly-created-file">Working with a newly created file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../cookbook/index.html#loading-attributes-from-pandas">Loading attributes from Pandas</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../cookbook/index.html#combining-data-using-scan-and-new">Combining data using scan() and new()</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../cookbook/index.html#fitting-an-incremental-pca">Fitting an incremental PCA</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../conventions/index.html">Conventions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../conventions/index.html#single-analysis-per-file">Single analysis per file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../conventions/index.html#orientation">Orientation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../conventions/index.html#attribute-naming-conventions">Attribute naming conventions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../format/index.html">Loom file format specs</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../format/index.html#versions">Versions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../format/index.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../format/index.html#hdf5-concepts">HDF5 concepts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../format/index.html#standards">Standards</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../format/index.html#specification">Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../format/index.html#datatypes">Datatypes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../format/index.html#example">Example</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../fullapi/index.html">Complete API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../fullapi/create.html">create (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../fullapi/new.html">new (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../fullapi/create_from_fastq.html">create_from_fastq (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../fullapi/create_from_cellranger.html">create_from_cellranger (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../fullapi/connect.html">connect (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../fullapi/combine.html">combine (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../fullapi/loompy.html">LoomConnection (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../fullapi/layer_manager.html">LayerManager (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../fullapi/memory_loom_layer.html">MemoryLoomLayer (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../fullapi/loom_layer.html">LoomLayer (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../fullapi/view_manager.html">ViewManager (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../fullapi/loom_view.html">LoomView (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../fullapi/loom_validator.html">LoomValidator (class)</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+      <div class="col-md-3">
+        <div id="sidebar" class="bs-sidenav" role="complementary"><div class="list-group">
+    <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../index.html">Loompy documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../semantics/index.html">Understanding the semantics of loom files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../kallisto/index.html">Create from fastq</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../apiwalkthrough/index.html">API Walkthrough</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../conventions/index.html">Conventions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../format/index.html">Loom file format specs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../fullapi/index.html">Complete API Reference</a></li>
+</ul>
+
+</div>
+        </div>
+      </div>
+    <div class="body col-md-9 content" role="main">
+      
+  <h1>Source code for loompy.loom_layer</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">scipy</span>
+<span class="kn">from</span> <span class="nn">loompy</span> <span class="k">import</span> <span class="n">timestamp</span>
+
+
+<div class="viewcode-block" id="MemoryLoomLayer"><a class="viewcode-back" href="../../fullapi/memory_loom_layer.html#loompy.MemoryLoomLayer">[docs]</a><span class="k">class</span> <span class="nc">MemoryLoomLayer</span><span class="p">():</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	A layer residing in memory (without a corresponding layer on disk), typically</span>
+<span class="sd">	as part of a :class:`loompy.LoomView`. MemoryLoomLayer supports a subset of </span>
+<span class="sd">	the operations suported for regular layers.</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="MemoryLoomLayer.__init__"><a class="viewcode-back" href="../../fullapi/memory_loom_layer.html#loompy.MemoryLoomLayer.__init__">[docs]</a>	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">matrix</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>  <span class="c1">#: Name of the layer</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="n">matrix</span><span class="o">.</span><span class="n">shape</span>  <span class="c1">#: Shape of the layer</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">matrix</span></div>
+
+	<span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">slice</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">slice</span><span class="p">],</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">slice</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="nb">slice</span><span class="p">]</span>
+
+	<span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">slice</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">slice</span><span class="p">],</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">slice</span><span class="p">]],</span> <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="nb">slice</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span>
+
+<div class="viewcode-block" id="MemoryLoomLayer.sparse"><a class="viewcode-back" href="../../fullapi/memory_loom_layer.html#loompy.MemoryLoomLayer.sparse">[docs]</a>	<span class="k">def</span> <span class="nf">sparse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rows</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">cols</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">scipy</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">coo_matrix</span><span class="p">:</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Return the layer as :class:`scipy.sparse.coo_matrix`</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">return</span> <span class="n">scipy</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">coo_matrix</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">rows</span><span class="p">,</span> <span class="p">:][:,</span> <span class="n">cols</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="MemoryLoomLayer.permute"><a class="viewcode-back" href="../../fullapi/memory_loom_layer.html#loompy.MemoryLoomLayer.permute">[docs]</a>	<span class="k">def</span> <span class="nf">permute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ordering</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Permute the layer along an axis</span>
+
+<span class="sd">		Args:</span>
+<span class="sd">			axis: The axis to permute (0, permute the rows; 1, permute the columns)</span>
+<span class="sd">			ordering: The permutation vector</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">if</span> <span class="n">axis</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">ordering</span><span class="p">,</span> <span class="p">:]</span>
+		<span class="k">elif</span> <span class="n">axis</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">[:,</span> <span class="n">ordering</span><span class="p">]</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;axis must be 0 or 1&quot;</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="LoomLayer"><a class="viewcode-back" href="../../fullapi/loom_layer.html#loompy.LoomLayer">[docs]</a><span class="k">class</span> <span class="nc">LoomLayer</span><span class="p">():</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	Represents a layer (matrix) of values in the loom file, which can be accessed by slicing.</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+	
+	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">ds</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span>  <span class="c1">#: The :class:`.LoomConnection` object this layer belongs to</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>  <span class="c1">#: Name of the layer (str)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">shape</span>  <span class="c1">#: Shape of the layer, tuple of (n_rows, n_cols)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">dtype</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>  <span class="c1">#: Datatype of the layer (str)</span>
+		<span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">dtype</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ds</span><span class="o">.</span><span class="n">_file</span><span class="p">[</span><span class="s2">&quot;/matrix&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">dtype</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ds</span><span class="o">.</span><span class="n">_file</span><span class="p">[</span><span class="s2">&quot;/layers/&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span>
+
+<div class="viewcode-block" id="LoomLayer.last_modified"><a class="viewcode-back" href="../../fullapi/loom_layer.html#loompy.LoomLayer.last_modified">[docs]</a>	<span class="k">def</span> <span class="nf">last_modified</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Return a compact ISO8601 timestamp (UTC timezone) indicating when the file was last modified</span>
+
+<span class="sd">		Note: if the layer does not contain a timestamp, and the mode is &#39;r+&#39;, a new timestamp will be set and returned.</span>
+<span class="sd">		Otherwise, the current time in UTC will be returned.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+			<span class="k">if</span> <span class="s2">&quot;last_modified&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ds</span><span class="o">.</span><span class="n">_file</span><span class="p">[</span><span class="s2">&quot;/matrix&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
+				<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ds</span><span class="o">.</span><span class="n">_file</span><span class="p">[</span><span class="s2">&quot;/matrix&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;last_modified&quot;</span><span class="p">]</span>
+			<span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">ds</span><span class="o">.</span><span class="n">_file</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;r+&#39;</span><span class="p">:</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">ds</span><span class="o">.</span><span class="n">_file</span><span class="p">[</span><span class="s2">&quot;/matrix&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;last_modified&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">timestamp</span><span class="p">()</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">ds</span><span class="o">.</span><span class="n">_file</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+				<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ds</span><span class="o">.</span><span class="n">_file</span><span class="p">[</span><span class="s2">&quot;/matrix&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;last_modified&quot;</span><span class="p">]</span>
+
+		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+			<span class="k">if</span> <span class="s2">&quot;last_modified&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ds</span><span class="o">.</span><span class="n">_file</span><span class="p">[</span><span class="s2">&quot;/layers/&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
+				<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ds</span><span class="o">.</span><span class="n">_file</span><span class="p">[</span><span class="s2">&quot;/layers/&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;last_modified&quot;</span><span class="p">]</span>
+			<span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">ds</span><span class="o">.</span><span class="n">_file</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;r+&#39;</span><span class="p">:</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">ds</span><span class="o">.</span><span class="n">_file</span><span class="p">[</span><span class="s2">&quot;/layers/&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;last_modified&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">timestamp</span><span class="p">()</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">ds</span><span class="o">.</span><span class="n">_file</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+				<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ds</span><span class="o">.</span><span class="n">_file</span><span class="p">[</span><span class="s2">&quot;/layers/&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;last_modified&quot;</span><span class="p">]</span>
+
+		<span class="k">return</span> <span class="n">timestamp</span><span class="p">()</span></div>
+
+	<span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">slice</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">slice</span><span class="p">],</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">slice</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+			<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ds</span><span class="o">.</span><span class="n">_file</span><span class="p">[</span><span class="s1">&#39;/matrix&#39;</span><span class="p">]</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="nb">slice</span><span class="p">)</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ds</span><span class="o">.</span><span class="n">_file</span><span class="p">[</span><span class="s1">&#39;/layers/&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="nb">slice</span><span class="p">)</span>
+
+	<span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">slice</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">slice</span><span class="p">],</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">slice</span><span class="p">]],</span> <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">ds</span><span class="o">.</span><span class="n">_file</span><span class="p">[</span><span class="s1">&#39;/matrix&#39;</span><span class="p">][</span><span class="nb">slice</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">ds</span><span class="o">.</span><span class="n">_file</span><span class="p">[</span><span class="s2">&quot;/matrix&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;last_modified&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">timestamp</span><span class="p">()</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">ds</span><span class="o">.</span><span class="n">_file</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;last_modified&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">timestamp</span><span class="p">()</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">ds</span><span class="o">.</span><span class="n">_file</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">ds</span><span class="o">.</span><span class="n">_file</span><span class="p">[</span><span class="s1">&#39;/layers/&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="nb">slice</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">ds</span><span class="o">.</span><span class="n">_file</span><span class="p">[</span><span class="s2">&quot;/layers/&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;last_modified&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">timestamp</span><span class="p">()</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">ds</span><span class="o">.</span><span class="n">_file</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;last_modified&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">timestamp</span><span class="p">()</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">ds</span><span class="o">.</span><span class="n">_file</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+<div class="viewcode-block" id="LoomLayer.sparse"><a class="viewcode-back" href="../../fullapi/loom_layer.html#loompy.LoomLayer.sparse">[docs]</a>	<span class="k">def</span> <span class="nf">sparse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rows</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">cols</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">scipy</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">coo_matrix</span><span class="p">:</span>
+		<span class="k">if</span> <span class="n">rows</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+			<span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">rows</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">):</span>
+				<span class="n">rows</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">rows</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+		<span class="k">if</span> <span class="n">cols</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+			<span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">cols</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">):</span>
+				<span class="n">cols</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">cols</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+				
+		<span class="n">n_genes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">rows</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">rows</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+		<span class="n">n_cells</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">cols</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">cols</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+		<span class="n">data</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+		<span class="n">row</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+		<span class="n">col</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+		<span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+		<span class="k">for</span> <span class="p">(</span><span class="n">ix</span><span class="p">,</span> <span class="n">selection</span><span class="p">,</span> <span class="n">view</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ds</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="n">items</span><span class="o">=</span><span class="n">cols</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">layers</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">],</span> <span class="n">what</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;layers&quot;</span><span class="p">]):</span>
+			<span class="k">if</span> <span class="n">rows</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+				<span class="n">vals</span> <span class="o">=</span> <span class="n">view</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="n">rows</span><span class="p">,</span> <span class="p">:]</span>
+			<span class="k">else</span><span class="p">:</span>
+				<span class="n">vals</span> <span class="o">=</span> <span class="n">view</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][:,</span> <span class="p">:]</span>
+			<span class="n">nonzeros</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">vals</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+			<span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="n">nonzeros</span><span class="p">])</span>
+			<span class="n">row</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nonzeros</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+			<span class="n">col</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nonzeros</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">i</span><span class="p">)</span>
+			<span class="n">i</span> <span class="o">+=</span> <span class="n">selection</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+		<span class="k">return</span> <span class="n">scipy</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">coo_matrix</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">row</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">col</span><span class="p">))),</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">n_genes</span><span class="p">,</span> <span class="n">n_cells</span><span class="p">))</span></div>
+
+	<span class="k">def</span> <span class="nf">_resize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+		<span class="sd">&quot;&quot;&quot;Resize the dataset, or the specified axis.</span>
+
+<span class="sd">		The dataset must be stored in chunked format; it can be resized up to the &quot;maximum shape&quot; (keyword maxshape) specified at creation time.</span>
+<span class="sd">		The rank of the dataset cannot be changed.</span>
+<span class="sd">		&quot;Size&quot; should be a shape tuple, or if an axis is specified, an integer.</span>
+
+<span class="sd">		BEWARE: This functions differently than the NumPy resize() method!</span>
+<span class="sd">		The data is not &quot;reshuffled&quot; to fit in the new shape; each axis is grown or shrunk independently.</span>
+<span class="sd">		The coordinates of existing data are fixed.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">ds</span><span class="o">.</span><span class="n">_file</span><span class="p">[</span><span class="s1">&#39;/matrix&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">axis</span><span class="p">)</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">ds</span><span class="o">.</span><span class="n">_file</span><span class="p">[</span><span class="s1">&#39;/layers/&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">axis</span><span class="p">)</span>
+
+<div class="viewcode-block" id="LoomLayer.map"><a class="viewcode-back" href="../../fullapi/loom_layer.html#loompy.LoomLayer.map">[docs]</a>	<span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="nb">int</span><span class="p">]],</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">chunksize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">selection</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Apply a function along an axis without loading the entire dataset in memory.</span>
+
+<span class="sd">		Args:</span>
+<span class="sd">			f_list (list of func):		Function(s) that takes a numpy ndarray as argument</span>
+
+<span class="sd">			axis (int):		Axis along which to apply the function (0 = rows, 1 = columns)</span>
+
+<span class="sd">			chunksize (int): Number of rows (columns) to load per chunk</span>
+
+<span class="sd">			selection (array of bool): Columns (rows) to include</span>
+
+<span class="sd">		Returns:</span>
+<span class="sd">			numpy.ndarray result of function application</span>
+
+<span class="sd">			If you supply a list of functions, the result will be a list of numpy arrays. This is more</span>
+<span class="sd">			efficient than repeatedly calling map() one function at a time.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">f_list</span><span class="p">,</span> <span class="s1">&#39;__call__&#39;</span><span class="p">):</span>
+			<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;f_list must be a list of functions, not a function itself&quot;</span><span class="p">)</span>
+
+		<span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+		<span class="k">if</span> <span class="n">axis</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+			<span class="n">rows_per_chunk</span> <span class="o">=</span> <span class="n">chunksize</span>
+			<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">f_list</span><span class="p">)):</span>
+				<span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+			<span class="n">ix</span> <span class="o">=</span> <span class="mi">0</span>
+			<span class="k">while</span> <span class="n">ix</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+				<span class="n">rows_per_chunk</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">ix</span><span class="p">,</span> <span class="n">rows_per_chunk</span><span class="p">)</span>
+				<span class="k">if</span> <span class="n">selection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+					<span class="n">chunk</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">ix</span><span class="p">:</span><span class="n">ix</span> <span class="o">+</span> <span class="n">rows_per_chunk</span><span class="p">,</span> <span class="p">:][:,</span> <span class="n">selection</span><span class="p">]</span>
+				<span class="k">else</span><span class="p">:</span>
+					<span class="n">chunk</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">ix</span><span class="p">:</span><span class="n">ix</span> <span class="o">+</span> <span class="n">rows_per_chunk</span><span class="p">,</span> <span class="p">:]</span>
+				<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">f_list</span><span class="p">)):</span>
+					<span class="n">result</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">ix</span><span class="p">:</span><span class="n">ix</span> <span class="o">+</span> <span class="n">rows_per_chunk</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">apply_along_axis</span><span class="p">(</span><span class="n">f_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span> <span class="n">chunk</span><span class="p">)</span>
+				<span class="n">ix</span> <span class="o">=</span> <span class="n">ix</span> <span class="o">+</span> <span class="n">rows_per_chunk</span>
+		<span class="k">elif</span> <span class="n">axis</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+			<span class="n">cols_per_chunk</span> <span class="o">=</span> <span class="n">chunksize</span>
+			<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">f_list</span><span class="p">)):</span>
+				<span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+			<span class="n">ix</span> <span class="o">=</span> <span class="mi">0</span>
+			<span class="k">while</span> <span class="n">ix</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+				<span class="n">cols_per_chunk</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">ix</span><span class="p">,</span> <span class="n">cols_per_chunk</span><span class="p">)</span>
+				<span class="k">if</span> <span class="n">selection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+					<span class="n">chunk</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[:,</span> <span class="n">ix</span><span class="p">:</span><span class="n">ix</span> <span class="o">+</span> <span class="n">cols_per_chunk</span><span class="p">][</span><span class="n">selection</span><span class="p">,</span> <span class="p">:]</span>
+				<span class="k">else</span><span class="p">:</span>
+					<span class="n">chunk</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[:,</span> <span class="n">ix</span><span class="p">:</span><span class="n">ix</span> <span class="o">+</span> <span class="n">cols_per_chunk</span><span class="p">]</span>
+				<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">f_list</span><span class="p">)):</span>
+					<span class="n">result</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">ix</span><span class="p">:</span><span class="n">ix</span> <span class="o">+</span> <span class="n">cols_per_chunk</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">apply_along_axis</span><span class="p">(</span><span class="n">f_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="n">chunk</span><span class="p">)</span>
+				<span class="n">ix</span> <span class="o">=</span> <span class="n">ix</span> <span class="o">+</span> <span class="n">cols_per_chunk</span>
+		<span class="k">return</span> <span class="n">result</span></div>
+
+	<span class="k">def</span> <span class="nf">_permute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ordering</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+			<span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ds</span><span class="o">.</span><span class="n">_file</span><span class="p">[</span><span class="s1">&#39;/matrix&#39;</span><span class="p">]</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ds</span><span class="o">.</span><span class="n">_file</span><span class="p">[</span><span class="s1">&#39;/layers/&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+		<span class="k">if</span> <span class="n">axis</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+			<span class="n">chunksize</span> <span class="o">=</span> <span class="mi">5000</span>
+			<span class="n">start</span> <span class="o">=</span> <span class="mi">0</span>
+			<span class="k">while</span> <span class="n">start</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+				<span class="n">submatrix</span> <span class="o">=</span> <span class="n">obj</span><span class="p">[:,</span> <span class="n">start</span><span class="p">:</span><span class="n">start</span> <span class="o">+</span> <span class="n">chunksize</span><span class="p">]</span>
+				<span class="n">obj</span><span class="p">[:,</span> <span class="n">start</span><span class="p">:</span><span class="n">start</span> <span class="o">+</span> <span class="n">chunksize</span><span class="p">]</span> <span class="o">=</span> <span class="n">submatrix</span><span class="p">[</span><span class="n">ordering</span><span class="p">,</span> <span class="p">:]</span>
+				<span class="n">start</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="n">chunksize</span>
+		<span class="k">elif</span> <span class="n">axis</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+			<span class="n">chunksize</span> <span class="o">=</span> <span class="mi">100000000</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+			<span class="n">start</span> <span class="o">=</span> <span class="mi">0</span>
+			<span class="k">while</span> <span class="n">start</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+				<span class="n">submatrix</span> <span class="o">=</span> <span class="n">obj</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">start</span> <span class="o">+</span> <span class="n">chunksize</span><span class="p">,</span> <span class="p">:]</span>
+				<span class="n">obj</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">start</span> <span class="o">+</span> <span class="n">chunksize</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">submatrix</span><span class="p">[:,</span> <span class="n">ordering</span><span class="p">]</span>
+				<span class="n">start</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="n">chunksize</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;axis must be 0 or 1&quot;</span><span class="p">)</span></div>
+</pre></div>
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2017, LinnarssonLab.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.2.0.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

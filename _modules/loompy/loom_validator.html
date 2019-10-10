@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>loompy.loom_validator &#8212; loompy 3.0.6 documentation</title>
+    <link rel="stylesheet" href="../../_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../../_static/js/jquery-1.11.0.min.js "></script>
+<script type="text/javascript" src="../../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../../_static/bootstrap-3.3.7/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-light navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../../index.html"><span><img src="../../_static/Loom_icon.png"></span>
+          Loom</a>
+        <span class="navbar-text navbar-version pull-left"><b>3.0</b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="http://loompy.org">loompy.org</a></li>
+                <li><a href="https://github.com/linnarsson-lab/loompy">GitHub</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../../index.html">Contents <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul>
+<li class="toctree-l1"><a class="reference internal" href="../../index.html">Loompy documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/index.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../installation/index.html#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../installation/index.html#easy-installation">Easy installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../installation/index.html#from-source">From source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../installation/index.html#getting-started">Getting Started</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../semantics/index.html">Understanding the semantics of loom files</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../semantics/index.html#connecting-not-loading-and-saving">Connecting, not loading and saving</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../semantics/index.html#reading-and-writing">Reading and writing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../semantics/index.html#efficient-indexing-and-compression">Efficient indexing and compression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../semantics/index.html#matrix-and-attributes">Matrix and attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../semantics/index.html#data-types">Data types</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../kallisto/index.html">Create from fastq</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../kallisto/index.html#the-loompy-command-line-tool">The <code class="docutils literal notranslate"><span class="pre">loompy</span></code> command-line tool</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../kallisto/index.html#using-the-loompy-fromfq-command">Using the <code class="docutils literal notranslate"><span class="pre">loompy</span> <span class="pre">fromfq</span></code> command</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../apiwalkthrough/index.html">API Walkthrough</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../apiwalkthrough/index.html#creating-and-connecting">Creating and connecting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../apiwalkthrough/index.html#manipulate-data">Manipulate data</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../cookbook/index.html">Cookbook</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../cookbook/index.html#working-with-a-newly-created-file">Working with a newly created file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../cookbook/index.html#loading-attributes-from-pandas">Loading attributes from Pandas</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../cookbook/index.html#combining-data-using-scan-and-new">Combining data using scan() and new()</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../cookbook/index.html#fitting-an-incremental-pca">Fitting an incremental PCA</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../conventions/index.html">Conventions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../conventions/index.html#single-analysis-per-file">Single analysis per file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../conventions/index.html#orientation">Orientation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../conventions/index.html#attribute-naming-conventions">Attribute naming conventions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../format/index.html">Loom file format specs</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../format/index.html#versions">Versions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../format/index.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../format/index.html#hdf5-concepts">HDF5 concepts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../format/index.html#standards">Standards</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../format/index.html#specification">Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../format/index.html#datatypes">Datatypes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../format/index.html#example">Example</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../fullapi/index.html">Complete API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../fullapi/create.html">create (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../fullapi/new.html">new (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../fullapi/create_from_fastq.html">create_from_fastq (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../fullapi/create_from_cellranger.html">create_from_cellranger (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../fullapi/connect.html">connect (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../fullapi/combine.html">combine (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../fullapi/loompy.html">LoomConnection (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../fullapi/layer_manager.html">LayerManager (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../fullapi/memory_loom_layer.html">MemoryLoomLayer (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../fullapi/loom_layer.html">LoomLayer (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../fullapi/view_manager.html">ViewManager (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../fullapi/loom_view.html">LoomView (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../fullapi/loom_validator.html">LoomValidator (class)</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+      <div class="col-md-3">
+        <div id="sidebar" class="bs-sidenav" role="complementary"><div class="list-group">
+    <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../index.html">Loompy documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../semantics/index.html">Understanding the semantics of loom files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../kallisto/index.html">Create from fastq</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../apiwalkthrough/index.html">API Walkthrough</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../conventions/index.html">Conventions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../format/index.html">Loom file format specs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../fullapi/index.html">Complete API Reference</a></li>
+</ul>
+
+</div>
+        </div>
+      </div>
+    <div class="body col-md-9 content" role="main">
+      
+  <h1>Source code for loompy.loom_validator</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">h5py</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">loompy</span>
+
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="k">import</span> <span class="n">get_loom_spec_version</span>
+
+
+<div class="viewcode-block" id="LoomValidator"><a class="viewcode-back" href="../../fullapi/loom_validator.html#loompy.LoomValidator">[docs]</a><span class="k">class</span> <span class="nc">LoomValidator</span><span class="p">:</span>
+<div class="viewcode-block" id="LoomValidator.__init__"><a class="viewcode-back" href="../../fullapi/loom_validator.html#loompy.LoomValidator.__init__">[docs]</a>	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">version</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Args:</span>
+<span class="sd">			version: 		The Loom file format version to validate against (&quot;3.0.0&quot;, &quot;2.0.1&quot;, &quot;old&quot;), or None to infer from file</span>
+<span class="sd">		</span>
+<span class="sd">		Remarks:</span>
+<span class="sd">			&quot;old&quot; version will accept files that lack the &quot;row_graphs&quot; and &quot;col_graphs&quot; groups</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">version</span> <span class="o">=</span> <span class="n">version</span>  <span class="c1">#: Version of the spec to validate against</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">errors</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1">#: Errors found during validation</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">warnings</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1">#: Warnings triggered during validation</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">summary</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1">#: Summary of the file structure</span></div>
+
+	<span class="k">def</span> <span class="nf">_check</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">condition</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="n">condition</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+		<span class="k">return</span> <span class="n">condition</span>
+	
+	<span class="k">def</span> <span class="nf">_warn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">condition</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="n">condition</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">warnings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+		<span class="k">return</span> <span class="n">condition</span>
+
+<div class="viewcode-block" id="LoomValidator.validate"><a class="viewcode-back" href="../../fullapi/loom_validator.html#loompy.LoomValidator.validate">[docs]</a>	<span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">strictness</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;speconly&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Validate a file for conformance to the Loom specification</span>
+
+<span class="sd">		Args:</span>
+<span class="sd">			path: 			Full path to the file to be validated</span>
+<span class="sd">			strictness:		&quot;speconly&quot; or &quot;conventions&quot;</span>
+
+<span class="sd">		Remarks:</span>
+<span class="sd">			In &quot;speconly&quot; mode, conformance is assessed relative to the file format specification</span>
+<span class="sd">			at http://linnarssonlab.org/loompy/format/. In &quot;conventions&quot; mode, conformance is additionally</span>
+<span class="sd">			assessed relative to attribute name and data type conventions given at http://linnarssonlab.org/loompy/conventions/.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="n">valid1</span> <span class="o">=</span> <span class="kc">True</span>
+		<span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+			<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">version</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">version</span> <span class="o">=</span> <span class="n">get_loom_spec_version</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+			<span class="n">valid1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">validate_spec</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+			<span class="k">if</span> <span class="ow">not</span> <span class="n">valid1</span><span class="p">:</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;For help, see http://linnarssonlab.org/loompy/format/&quot;</span><span class="p">)</span>
+
+		<span class="n">valid2</span> <span class="o">=</span> <span class="kc">True</span>
+		<span class="k">if</span> <span class="n">strictness</span> <span class="o">==</span> <span class="s2">&quot;conventions&quot;</span><span class="p">:</span>
+			<span class="k">with</span> <span class="n">loompy</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">ds</span><span class="p">:</span>
+				<span class="n">valid2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">validate_conventions</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
+				<span class="k">if</span> <span class="ow">not</span> <span class="n">valid2</span><span class="p">:</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;For help, see http://linnarssonlab.org/loompy/conventions/&quot;</span><span class="p">)</span>
+
+		<span class="k">return</span> <span class="n">valid1</span> <span class="ow">and</span> <span class="n">valid2</span></div>
+
+<div class="viewcode-block" id="LoomValidator.validate_conventions"><a class="viewcode-back" href="../../fullapi/loom_validator.html#loompy.LoomValidator.validate_conventions">[docs]</a>	<span class="k">def</span> <span class="nf">validate_conventions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ds</span><span class="p">:</span> <span class="n">loompy</span><span class="o">.</span><span class="n">LoomConnection</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Validate the LoomConnection object against the attribute name/dtype conventions.</span>
+
+<span class="sd">		Args:</span>
+<span class="sd">			ds:			LoomConnection object</span>
+<span class="sd">		</span>
+<span class="sd">		Returns:</span>
+<span class="sd">			True if the file conforms to the conventions, else False</span>
+<span class="sd">		</span>
+<span class="sd">		Remarks:</span>
+<span class="sd">			Upon return, the instance attributes &#39;self.errors&#39; and &#39;self.warnings&#39; contain</span>
+<span class="sd">			lists of errors and warnings.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="p">(</span><span class="n">n_genes</span><span class="p">,</span> <span class="n">n_cells</span><span class="p">)</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">shape</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">_warn</span><span class="p">(</span><span class="s2">&quot;Description&quot;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">,</span> <span class="s2">&quot;Optional global attribute &#39;Description&#39; is missing&quot;</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_warn</span><span class="p">(</span><span class="s2">&quot;Journal&quot;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">,</span> <span class="s2">&quot;Optional global attribute &#39;Journal&#39; is missing&quot;</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_warn</span><span class="p">(</span><span class="s2">&quot;Authors&quot;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">,</span> <span class="s2">&quot;Optional global attribute &#39;Authors&#39; is missing&quot;</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_warn</span><span class="p">(</span><span class="s2">&quot;Title&quot;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">,</span> <span class="s2">&quot;Optional global attribute &#39;Title&#39; is missing&quot;</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_warn</span><span class="p">(</span><span class="s2">&quot;Year&quot;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">,</span> <span class="s2">&quot;Optional global attribute &#39;Year&#39; is missing&quot;</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_warn</span><span class="p">(</span><span class="s2">&quot;CreationDate&quot;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">,</span> <span class="s2">&quot;Optional global attribute &#39;CreationDate&#39; is missing&quot;</span><span class="p">)</span>
+
+		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="s2">&quot;ClusterID&quot;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">ca</span><span class="p">,</span> <span class="s2">&quot;Column attribute &#39;ClusterID&#39; is missing&quot;</span><span class="p">):</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">ca</span><span class="o">.</span><span class="n">ClusterID</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int_</span><span class="p">),</span> <span class="s2">&quot;Column attribute &#39;ClusterID&#39; must be integer dtype&quot;</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">ca</span><span class="o">.</span><span class="n">ClusterID</span><span class="p">))</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">ca</span><span class="o">.</span><span class="n">ClusterID</span><span class="p">)</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">ca</span><span class="o">.</span><span class="n">ClusterID</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Column attribute &#39;ClusterID&#39; must be integers 0, 1, 2, ... with no missing values&quot;</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">ca</span><span class="o">.</span><span class="n">ClusterID</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">n_cells</span><span class="p">,),</span> <span class="n">f</span><span class="s2">&quot;Column attribute &#39;ClusterID&#39; must be 1-dimensional array of </span><span class="si">{n_cells}</span><span class="s2"> elements&quot;</span><span class="p">)</span>
+
+		<span class="k">if</span> <span class="s2">&quot;ClusterName&quot;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">ca</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">ca</span><span class="o">.</span><span class="n">ClusterName</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="nb">object</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">ca</span><span class="o">.</span><span class="n">ClusterName</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">str_</span><span class="p">),</span> <span class="s2">&quot;Column attribute &#39;ClusterName&#39; must be an array of strings&quot;</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">ca</span><span class="o">.</span><span class="n">ClusterName</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">n_cells</span><span class="p">,),</span> <span class="n">f</span><span class="s2">&quot;Column attribute &#39;ClusterName&#39; must be 1-dimensional array of </span><span class="si">{n_cells}</span><span class="s2"> elements&quot;</span><span class="p">)</span>
+			<span class="n">one_to_one</span> <span class="o">=</span> <span class="kc">True</span>
+			<span class="k">for</span> <span class="n">cid</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">ca</span><span class="o">.</span><span class="n">ClusterID</span><span class="p">):</span>
+				<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">ca</span><span class="o">.</span><span class="n">ClusterName</span><span class="p">[</span><span class="n">ds</span><span class="o">.</span><span class="n">ca</span><span class="o">.</span><span class="n">ClusterID</span> <span class="o">==</span> <span class="n">cid</span><span class="p">]))</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+					<span class="n">one_to_one</span> <span class="o">=</span> <span class="kc">False</span>
+					<span class="k">break</span>
+			<span class="k">for</span> <span class="n">cn</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">ca</span><span class="o">.</span><span class="n">ClusterName</span><span class="p">):</span>
+				<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">ca</span><span class="o">.</span><span class="n">ClusterID</span><span class="p">[</span><span class="n">ds</span><span class="o">.</span><span class="n">ca</span><span class="o">.</span><span class="n">ClusterName</span> <span class="o">==</span> <span class="n">cn</span><span class="p">]))</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+					<span class="n">one_to_one</span> <span class="o">=</span> <span class="kc">False</span>
+					<span class="k">break</span>
+			<span class="k">if</span> <span class="ow">not</span> <span class="n">one_to_one</span><span class="p">:</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;ClusterName must correspond 1:1 with ClusterID&quot;</span><span class="p">)</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">warnings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Optional column attribute &#39;ClusterName&#39; is missing&quot;</span><span class="p">)</span>
+
+		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="s2">&quot;CellID&quot;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">ca</span><span class="p">,</span> <span class="s2">&quot;Column attribute &#39;CellID&#39; is missing&quot;</span><span class="p">):</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">ca</span><span class="o">.</span><span class="n">CellID</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="nb">object</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">ca</span><span class="o">.</span><span class="n">CellID</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">str_</span><span class="p">),</span> <span class="n">f</span><span class="s2">&quot;Column attribute &#39;CellID&#39; must be an array of strings, not &#39;</span><span class="si">{ds.ca.CellID[0].dtype}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">ca</span><span class="o">.</span><span class="n">CellID</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">n_cells</span><span class="p">,),</span> <span class="n">f</span><span class="s2">&quot;Column attribute &#39;CellID&#39; must be 1-dimensional array of </span><span class="si">{n_cells}</span><span class="s2"> elements&quot;</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">ca</span><span class="o">.</span><span class="n">CellID</span><span class="p">))</span> <span class="o">==</span> <span class="n">n_cells</span><span class="p">,</span> <span class="s2">&quot;Column attribute &#39;CellID&#39; cannot contain duplicate values&quot;</span><span class="p">)</span>
+
+		<span class="k">if</span> <span class="s2">&quot;Valid&quot;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">ca</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">ca</span><span class="o">.</span><span class="n">Valid</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int_</span><span class="p">),</span> <span class="n">f</span><span class="s2">&quot;Column attribute &#39;Valid&#39; must be integer dtype, not &#39;</span><span class="si">{ds.ca.Valid.dtype}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+			<span class="n">valids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">ca</span><span class="o">.</span><span class="n">Valid</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">ca</span><span class="o">.</span><span class="n">Valid</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])),</span> <span class="s2">&quot;Column attribute &#39;Valid&#39; must be integers 0 or 1 only&quot;</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">ca</span><span class="o">.</span><span class="n">Valid</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">n_cells</span><span class="p">,),</span> <span class="n">f</span><span class="s2">&quot;Column attribute &#39;Valid&#39; must be 1-dimensional array of </span><span class="si">{n_cells}</span><span class="s2"> elements&quot;</span><span class="p">)</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">warnings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Optional column attribute &#39;Valid&#39; is missing&quot;</span><span class="p">)</span>
+
+		<span class="k">if</span> <span class="s2">&quot;Outliers&quot;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">ca</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">ca</span><span class="o">.</span><span class="n">Outliers</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int_</span><span class="p">),</span> <span class="n">f</span><span class="s2">&quot;Column attribute &#39;Outliers&#39; must be integer dtype, not &#39;</span><span class="si">{ds.ca.Outliers.dtype}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">ca</span><span class="o">.</span><span class="n">Outliers</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])),</span> <span class="s2">&quot;Column attribute &#39;Outliers&#39; must be integers 0 or 1 only&quot;</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">ca</span><span class="o">.</span><span class="n">Outliers</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">n_cells</span><span class="p">,),</span> <span class="n">f</span><span class="s2">&quot;Column attribute &#39;Outliers&#39; must be 1-dimensional array of </span><span class="si">{n_cells}</span><span class="s2"> elements&quot;</span><span class="p">)</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">warnings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Optional column attribute &#39;Outliers&#39; is missing&quot;</span><span class="p">)</span>
+
+		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="s2">&quot;Accession&quot;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">ra</span><span class="p">,</span> <span class="s2">&quot;Row attribute &#39;Accession&#39; is missing&quot;</span><span class="p">):</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">Accession</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="nb">object</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">Accession</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">str_</span><span class="p">),</span> <span class="n">f</span><span class="s2">&quot;Row attribute &#39;Accession&#39; must be an array of strings, not &#39;</span><span class="si">{ds.ra.Accession[0].dtype}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">Accession</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">n_genes</span><span class="p">,),</span> <span class="n">f</span><span class="s2">&quot;Row attribute &#39;Accession&#39; must be 1-dimensional array of </span><span class="si">{n_genes}</span><span class="s2"> elements&quot;</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">Accession</span><span class="p">))</span> <span class="o">==</span> <span class="n">n_genes</span><span class="p">,</span> <span class="s2">&quot;Row attribute &#39;Accession&#39; cannot contain duplicate values&quot;</span><span class="p">)</span>
+
+		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="s2">&quot;Gene&quot;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">ra</span><span class="p">,</span> <span class="s2">&quot;Row attribute &#39;Gene&#39; is missing&quot;</span><span class="p">):</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">Gene</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="nb">object</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">Gene</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">str_</span><span class="p">),</span> <span class="n">f</span><span class="s2">&quot;Row attribute &#39;Gene&#39; must be an array of strings, not &#39;</span><span class="si">{ds.ra.Gene[0].dtype}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">Gene</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">n_genes</span><span class="p">,),</span> <span class="n">f</span><span class="s2">&quot;Row attribute &#39;Gene&#39; must be 1-dimensional array of </span><span class="si">{n_genes}</span><span class="s2"> elements&quot;</span><span class="p">)</span>
+
+		<span class="k">if</span> <span class="s2">&quot;Valid&quot;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">ra</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">Valid</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int_</span><span class="p">),</span> <span class="n">f</span><span class="s2">&quot;Row attribute &#39;Valid&#39; must be integer dtype, not &#39;</span><span class="si">{ds.ra.Valid.dtype}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+			<span class="n">valids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">Valid</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">Valid</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])),</span> <span class="s2">&quot;Row attribute &#39;Valid&#39; must be integers 0 or 1 only&quot;</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">Valid</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">n_cells</span><span class="p">,),</span> <span class="n">f</span><span class="s2">&quot;Row attribute &#39;Valid&#39; must be 1-dimensional array of </span><span class="si">{n_cells}</span><span class="s2"> elements&quot;</span><span class="p">)</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">warnings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Optional row attribute &#39;Valid&#39; is missing&quot;</span><span class="p">)</span>
+
+		<span class="k">if</span> <span class="s2">&quot;Selected&quot;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">ra</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">Selected</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int_</span><span class="p">),</span> <span class="n">f</span><span class="s2">&quot;Row attribute &#39;Selected&#39; must be integer dtype, not &#39;</span><span class="si">{ds.ra.Selected.dtype}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+			<span class="n">valids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">Selected</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">Selected</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])),</span> <span class="s2">&quot;Row attribute &#39;Selected&#39; must be integers 0 or 1 only&quot;</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">Selected</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">n_cells</span><span class="p">,),</span> <span class="n">f</span><span class="s2">&quot;Row attribute &#39;Selected&#39; must be 1-dimensional array of </span><span class="si">{n_cells}</span><span class="s2"> elements&quot;</span><span class="p">)</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">warnings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Optional row attribute &#39;Selected&#39; is missing&quot;</span><span class="p">)</span>
+
+		<span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">errors</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span></div>
+		
+<div class="viewcode-block" id="LoomValidator.validate_spec"><a class="viewcode-back" href="../../fullapi/loom_validator.html#loompy.LoomValidator.validate_spec">[docs]</a>	<span class="k">def</span> <span class="nf">validate_spec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">:</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Validate the LoomConnection object against the format specification.</span>
+
+<span class="sd">		Args:</span>
+<span class="sd">			file:			h5py File object</span>
+<span class="sd">		</span>
+<span class="sd">		Returns:</span>
+<span class="sd">			True if the file conforms to the specs, else False</span>
+<span class="sd">		</span>
+<span class="sd">		Remarks:</span>
+<span class="sd">			Upon return, the instance attributes &#39;self.errors&#39; and &#39;self.warnings&#39; contain</span>
+<span class="sd">			lists of errors and warnings, and the &#39;self.summary&#39; attribute contains a summary</span>
+<span class="sd">			of the file contents.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="n">matrix_types</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;float16&quot;</span><span class="p">,</span> <span class="s2">&quot;float32&quot;</span><span class="p">,</span> <span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;int8&quot;</span><span class="p">,</span> <span class="s2">&quot;int16&quot;</span><span class="p">,</span> <span class="s2">&quot;int32&quot;</span><span class="p">,</span> <span class="s2">&quot;int64&quot;</span><span class="p">,</span> <span class="s2">&quot;uint8&quot;</span><span class="p">,</span> <span class="s2">&quot;uint16&quot;</span><span class="p">,</span> <span class="s2">&quot;uint32&quot;</span><span class="p">,</span> <span class="s2">&quot;uint64&quot;</span><span class="p">]</span>
+		<span class="n">vertex_types</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;int8&quot;</span><span class="p">,</span> <span class="s2">&quot;int16&quot;</span><span class="p">,</span> <span class="s2">&quot;int32&quot;</span><span class="p">,</span> <span class="s2">&quot;int64&quot;</span><span class="p">,</span> <span class="s2">&quot;uint8&quot;</span><span class="p">,</span> <span class="s2">&quot;uint16&quot;</span><span class="p">,</span> <span class="s2">&quot;uint32&quot;</span><span class="p">,</span> <span class="s2">&quot;uint64&quot;</span><span class="p">]</span>
+		<span class="n">weight_types</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;float16&quot;</span><span class="p">,</span> <span class="s2">&quot;float32&quot;</span><span class="p">,</span> <span class="s2">&quot;float64&quot;</span><span class="p">]</span>
+
+		<span class="k">def</span> <span class="nf">delay_print</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">summary</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+
+		<span class="k">def</span> <span class="nf">dt</span><span class="p">(</span><span class="n">t</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+			<span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;|S&quot;</span><span class="p">):</span>
+				<span class="k">return</span> <span class="n">f</span><span class="s2">&quot;string&quot;</span>
+			<span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+		<span class="n">width_ra</span> <span class="o">=</span> <span class="mi">0</span>
+		<span class="n">width_ca</span> <span class="o">=</span> <span class="mi">0</span>
+		<span class="n">width_globals</span> <span class="o">=</span> <span class="mi">0</span>
+		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="s2">&quot;row_attrs&quot;</span> <span class="ow">in</span> <span class="n">file</span><span class="p">,</span> <span class="s2">&quot;&#39;row_attrs&#39; group is missing&quot;</span><span class="p">):</span>
+			<span class="n">width_ra</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">(</span><span class="n">file</span><span class="p">[</span><span class="s2">&quot;row_attrs&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())],</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="s2">&quot;col_attrs&quot;</span> <span class="ow">in</span> <span class="n">file</span><span class="p">,</span> <span class="s2">&quot;&#39;col_attrs&#39; group is missing&quot;</span><span class="p">):</span>
+			<span class="n">width_ca</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">(</span><span class="n">file</span><span class="p">[</span><span class="s2">&quot;col_attrs&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())],</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">version</span> <span class="o">==</span> <span class="s2">&quot;3.0.0&quot;</span><span class="p">:</span>
+			<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="s2">&quot;attrs&quot;</span> <span class="ow">in</span> <span class="n">file</span><span class="p">,</span> <span class="s2">&quot;Global attributes missing&quot;</span><span class="p">):</span>
+				<span class="n">width_globals</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">(</span><span class="n">file</span><span class="p">[</span><span class="s2">&quot;attrs&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())],</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+		<span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">attrs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+			<span class="n">width_globals</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">file</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">keys</span><span class="p">()])</span>
+		<span class="n">width_layers</span> <span class="o">=</span> <span class="mi">0</span>
+		<span class="k">if</span> <span class="s2">&quot;layers&quot;</span> <span class="ow">in</span> <span class="n">file</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">file</span><span class="p">[</span><span class="s2">&quot;layers&quot;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+			<span class="n">width_layers</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">file</span><span class="p">[</span><span class="s2">&quot;layers&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()])</span>
+		<span class="n">width_layers</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">width_layers</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="s2">&quot;Main matrix&quot;</span><span class="p">))</span>
+		<span class="n">width</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">width_ca</span><span class="p">,</span> <span class="n">width_ra</span><span class="p">,</span> <span class="n">width_globals</span><span class="p">)</span>
+
+		<span class="n">delay_print</span><span class="p">(</span><span class="s2">&quot;Global attributes:&quot;</span><span class="p">)</span>
+		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">version</span> <span class="o">==</span> <span class="s2">&quot;3.0.0&quot;</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="s2">&quot;attrs&quot;</span> <span class="ow">in</span> <span class="n">file</span><span class="p">,</span> <span class="s2">&quot;Global attributes missing&quot;</span><span class="p">)</span>
+			<span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">file</span><span class="p">[</span><span class="s2">&quot;attrs&quot;</span><span class="p">]:</span>
+				<span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span> <span class="ow">is</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+					<span class="n">delay_print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;{attr: &gt;</span><span class="si">{width}</span><span class="s2">} </span><span class="si">{attr.dtype}</span><span class="s2"> </span><span class="si">{attr.shape}</span><span class="s2">&quot;</span><span class="p">)</span>
+				<span class="k">else</span><span class="p">:</span>
+					<span class="n">delay_print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;{attr: &gt;</span><span class="si">{width}</span><span class="s2">} {type(attr).__name__} (scalar)&quot;</span><span class="p">)</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">file</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+				<span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">str</span><span class="p">:</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">warnings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Global attribute &#39;</span><span class="si">{key}</span><span class="s2">&#39; has dtype string, which will be deprecated in future Loom versions&quot;</span><span class="p">)</span>
+					<span class="n">delay_print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;{key: &gt;</span><span class="si">{width}</span><span class="s2">} string&quot;</span><span class="p">)</span>
+				<span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">bytes</span><span class="p">:</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">warnings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Global attribute &#39;</span><span class="si">{key}</span><span class="s2">&#39; has dtype bytes, which will be deprecated in future Loom versions&quot;</span><span class="p">)</span>
+					<span class="n">delay_print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;{key: &gt;</span><span class="si">{width}</span><span class="s2">} bytes&quot;</span><span class="p">)</span>
+				<span class="k">else</span><span class="p">:</span>
+					<span class="n">delay_print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;{key: &gt;</span><span class="si">{width}</span><span class="s2">} {dt(file.attrs[key].dtype)}&quot;</span><span class="p">)</span>
+				
+		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="s2">&quot;matrix&quot;</span> <span class="ow">in</span> <span class="n">file</span><span class="p">,</span> <span class="s2">&quot;Main matrix missing&quot;</span><span class="p">):</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">file</span><span class="p">[</span><span class="s2">&quot;matrix&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span> <span class="ow">in</span> <span class="n">matrix_types</span><span class="p">,</span> <span class="n">f</span><span class="s2">&quot;Main matrix dtype=</span><span class="si">{file[&#39;matrix&#39;].dtype}</span><span class="s2"> is not allowed&quot;</span><span class="p">)</span>
+			<span class="n">shape</span> <span class="o">=</span> <span class="n">file</span><span class="p">[</span><span class="s2">&quot;matrix&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+			<span class="n">delay_print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Layers shape=</span><span class="si">{shape}</span><span class="s2">:&quot;</span><span class="p">)</span>
+			<span class="n">delay_print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;{&#39;Main matrix&#39;: &gt;</span><span class="si">{width}</span><span class="s2">} </span><span class="si">{file[&#39;matrix&#39;].dtype}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+		<span class="k">if</span> <span class="s2">&quot;layers&quot;</span> <span class="ow">in</span> <span class="n">file</span><span class="p">:</span>
+			<span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">file</span><span class="p">[</span><span class="s2">&quot;layers&quot;</span><span class="p">]:</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">file</span><span class="p">[</span><span class="s2">&quot;layers&quot;</span><span class="p">][</span><span class="n">layer</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">shape</span><span class="p">,</span> <span class="n">f</span><span class="s2">&quot;Layer &#39;</span><span class="si">{layer}</span><span class="s2">&#39; shape </span><span class="si">{file[&#39;layers&#39;][layer].shape}</span><span class="s2"> does not match main matrix shape </span><span class="si">{shape}</span><span class="s2">&quot;</span><span class="p">)</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">file</span><span class="p">[</span><span class="s2">&quot;layers&quot;</span><span class="p">][</span><span class="n">layer</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span> <span class="ow">in</span> <span class="n">matrix_types</span><span class="p">,</span> <span class="n">f</span><span class="s2">&quot;Layer &#39;</span><span class="si">{layer}</span><span class="s2">&#39; dtype=</span><span class="si">{file[&#39;layers&#39;][layer].dtype}</span><span class="s2"> is not allowed&quot;</span><span class="p">)</span>
+				<span class="n">delay_print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;{layer: &gt;</span><span class="si">{width}</span><span class="s2">} </span><span class="si">{file[&#39;layers&#39;][layer].dtype}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">version</span> <span class="o">==</span> <span class="s2">&quot;3.0.0&quot;</span><span class="p">:</span>
+			<span class="n">expected_dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">object_</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="n">expected_dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">string_</span>
+		<span class="n">delay_print</span><span class="p">(</span><span class="s2">&quot;Row attributes:&quot;</span><span class="p">)</span>
+		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="s2">&quot;row_attrs&quot;</span> <span class="ow">in</span> <span class="n">file</span><span class="p">,</span> <span class="s2">&quot;&#39;row_attrs&#39; group is missing&quot;</span><span class="p">):</span>
+			<span class="k">for</span> <span class="n">ra</span> <span class="ow">in</span> <span class="n">file</span><span class="p">[</span><span class="s2">&quot;row_attrs&quot;</span><span class="p">]:</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">file</span><span class="p">[</span><span class="s2">&quot;row_attrs&quot;</span><span class="p">][</span><span class="n">ra</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">f</span><span class="s2">&quot;Row attribute &#39;</span><span class="si">{ra}</span><span class="s2">&#39; shape </span><span class="si">{file[&#39;row_attrs&#39;][ra].shape[0]}</span><span class="s2"> first dimension does not match row dimension </span><span class="si">{shape}</span><span class="s2">&quot;</span><span class="p">)</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">file</span><span class="p">[</span><span class="s2">&quot;row_attrs&quot;</span><span class="p">][</span><span class="n">ra</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span> <span class="ow">in</span> <span class="n">matrix_types</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">file</span><span class="p">[</span><span class="s1">&#39;row_attrs&#39;</span><span class="p">][</span><span class="n">ra</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">expected_dtype</span><span class="p">),</span> <span class="n">f</span><span class="s2">&quot;Row attribute &#39;</span><span class="si">{ra}</span><span class="s2">&#39; dtype </span><span class="si">{file[&#39;row_attrs&#39;][ra].dtype}</span><span class="s2"> is not allowed&quot;</span><span class="p">)</span>
+				<span class="n">ra_shape</span> <span class="o">=</span> <span class="n">file</span><span class="p">[</span><span class="s1">&#39;row_attrs&#39;</span><span class="p">][</span><span class="n">ra</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+				<span class="n">delay_print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;{ra: &gt;</span><span class="si">{width}</span><span class="s2">} {dt(file[&#39;row_attrs&#39;][ra].dtype)} {ra_shape if len(ra_shape) &gt; 1 else &#39;&#39;}&quot;</span><span class="p">)</span>
+			<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">file</span><span class="p">[</span><span class="s2">&quot;row_attrs&quot;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+				<span class="n">delay_print</span><span class="p">(</span><span class="s2">&quot;    (none)&quot;</span><span class="p">)</span>
+
+		<span class="n">delay_print</span><span class="p">(</span><span class="s2">&quot;Column attributes:&quot;</span><span class="p">)</span>
+		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="s2">&quot;col_attrs&quot;</span> <span class="ow">in</span> <span class="n">file</span><span class="p">,</span> <span class="s2">&quot;&#39;col_attrs&#39; group is missing&quot;</span><span class="p">):</span>
+			<span class="k">for</span> <span class="n">ca</span> <span class="ow">in</span> <span class="n">file</span><span class="p">[</span><span class="s2">&quot;col_attrs&quot;</span><span class="p">]:</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">file</span><span class="p">[</span><span class="s2">&quot;col_attrs&quot;</span><span class="p">][</span><span class="n">ca</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">f</span><span class="s2">&quot;Column attribute &#39;</span><span class="si">{ca}</span><span class="s2">&#39; shape </span><span class="si">{file[&#39;col_attrs&#39;][ca].shape[0]}</span><span class="s2"> first dimension does not match column dimension </span><span class="si">{shape}</span><span class="s2">&quot;</span><span class="p">)</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">file</span><span class="p">[</span><span class="s2">&quot;col_attrs&quot;</span><span class="p">][</span><span class="n">ca</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span> <span class="ow">in</span> <span class="n">matrix_types</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">file</span><span class="p">[</span><span class="s2">&quot;col_attrs&quot;</span><span class="p">][</span><span class="n">ca</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">expected_dtype</span><span class="p">),</span> <span class="n">f</span><span class="s2">&quot;Column attribute &#39;</span><span class="si">{ca}</span><span class="s2">&#39; dtype </span><span class="si">{file[&#39;col_attrs&#39;][ca].dtype}</span><span class="s2"> is not allowed&quot;</span><span class="p">)</span>
+				<span class="n">ca_shape</span> <span class="o">=</span> <span class="n">file</span><span class="p">[</span><span class="s1">&#39;col_attrs&#39;</span><span class="p">][</span><span class="n">ca</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+				<span class="n">delay_print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;{ca: &gt;</span><span class="si">{width}</span><span class="s2">} {dt(file[&#39;col_attrs&#39;][ca].dtype)} {ca_shape if len(ca_shape) &gt; 1 else &#39;&#39;}&quot;</span><span class="p">)</span>
+			<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">file</span><span class="p">[</span><span class="s2">&quot;col_attrs&quot;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+				<span class="n">delay_print</span><span class="p">(</span><span class="s2">&quot;    (none)&quot;</span><span class="p">)</span>
+
+		<span class="n">delay_print</span><span class="p">(</span><span class="s2">&quot;Row graphs:&quot;</span><span class="p">)</span>
+		<span class="k">if</span> <span class="s2">&quot;row_graphs&quot;</span> <span class="ow">in</span> <span class="n">file</span><span class="p">:</span>
+			<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">version</span> <span class="o">==</span> <span class="s2">&quot;2.0.1&quot;</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">version</span> <span class="o">==</span> <span class="s2">&quot;3.0.0&quot;</span><span class="p">:</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="s2">&quot;row_graphs&quot;</span> <span class="ow">in</span> <span class="n">file</span><span class="p">,</span> <span class="s2">&quot;&#39;row_graphs&#39; group is missing (try spec_version=&#39;old&#39;)&quot;</span><span class="p">)</span>
+			<span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">file</span><span class="p">[</span><span class="s2">&quot;row_graphs&quot;</span><span class="p">]:</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="s2">&quot;a&quot;</span> <span class="ow">in</span> <span class="n">file</span><span class="p">[</span><span class="s2">&quot;row_graphs&quot;</span><span class="p">][</span><span class="n">g</span><span class="p">],</span> <span class="n">f</span><span class="s2">&quot;Row graph &#39;</span><span class="si">{g}</span><span class="s2">&#39; is missing vector &#39;a&#39;, denoting start vertices&quot;</span><span class="p">)</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">file</span><span class="p">[</span><span class="s2">&quot;row_graphs&quot;</span><span class="p">][</span><span class="n">g</span><span class="p">][</span><span class="s1">&#39;a&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span> <span class="ow">in</span> <span class="n">vertex_types</span><span class="p">,</span> <span class="n">f</span><span class="s2">&quot;/row_graphs/</span><span class="si">{g}</span><span class="s2">/a.dtype </span><span class="si">{file[&#39;row_graphs&#39;][g][&#39;a&#39;].dtype}</span><span class="s2"> must be integer&quot;</span><span class="p">)</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="s2">&quot;b&quot;</span> <span class="ow">in</span> <span class="n">file</span><span class="p">[</span><span class="s2">&quot;row_graphs&quot;</span><span class="p">][</span><span class="n">g</span><span class="p">],</span> <span class="n">f</span><span class="s2">&quot;Row graph &#39;</span><span class="si">{g}</span><span class="s2">&#39; is missing vector &#39;b&#39;, denoting end vertices&quot;</span><span class="p">)</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">file</span><span class="p">[</span><span class="s2">&quot;row_graphs&quot;</span><span class="p">][</span><span class="n">g</span><span class="p">][</span><span class="s1">&#39;b&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span> <span class="ow">in</span> <span class="n">vertex_types</span><span class="p">,</span> <span class="n">f</span><span class="s2">&quot;/row_graphs/</span><span class="si">{g}</span><span class="s2">/b.dtype </span><span class="si">{file[&#39;row_graphs&#39;][g][&#39;b&#39;].dtype}</span><span class="s2"> must be integer&quot;</span><span class="p">)</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="s2">&quot;w&quot;</span> <span class="ow">in</span> <span class="n">file</span><span class="p">[</span><span class="s2">&quot;row_graphs&quot;</span><span class="p">][</span><span class="n">g</span><span class="p">],</span> <span class="n">f</span><span class="s2">&quot;Row graph &#39;</span><span class="si">{g}</span><span class="s2">&#39; is missing vector &#39;w&#39;, denoting vertex weights&quot;</span><span class="p">)</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">file</span><span class="p">[</span><span class="s2">&quot;row_graphs&quot;</span><span class="p">][</span><span class="n">g</span><span class="p">][</span><span class="s1">&#39;w&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span> <span class="ow">in</span> <span class="n">weight_types</span><span class="p">,</span> <span class="n">f</span><span class="s2">&quot;/row_graphs/</span><span class="si">{g}</span><span class="s2">/w.dtype </span><span class="si">{file[&#39;row_graphs&#39;][g][&#39;w&#39;].dtype}</span><span class="s2"> must be float&quot;</span><span class="p">)</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">file</span><span class="p">[</span><span class="s1">&#39;row_graphs&#39;</span><span class="p">][</span><span class="n">g</span><span class="p">][</span><span class="s1">&#39;a&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">file</span><span class="p">[</span><span class="s1">&#39;row_graphs&#39;</span><span class="p">][</span><span class="n">g</span><span class="p">][</span><span class="s1">&#39;b&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">and</span> <span class="n">file</span><span class="p">[</span><span class="s1">&#39;row_graphs&#39;</span><span class="p">][</span><span class="n">g</span><span class="p">][</span><span class="s1">&#39;a&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">file</span><span class="p">[</span><span class="s1">&#39;row_graphs&#39;</span><span class="p">][</span><span class="n">g</span><span class="p">][</span><span class="s1">&#39;w&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">f</span><span class="s2">&quot;Row graph &#39;</span><span class="si">{g}</span><span class="s2">&#39; sparse vectors a, b and w must have equal length&quot;</span><span class="p">)</span>
+				<span class="n">delay_print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;    &#39;</span><span class="si">{g}</span><span class="s2">&#39; with </span><span class="si">{file[&#39;row_graphs&#39;][g][&#39;a&#39;].shape[0]}</span><span class="s2"> edges&quot;</span><span class="p">)</span>
+			<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">file</span><span class="p">[</span><span class="s2">&quot;row_graphs&quot;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+				<span class="n">delay_print</span><span class="p">(</span><span class="s2">&quot;    (none)&quot;</span><span class="p">)</span>
+
+		<span class="n">delay_print</span><span class="p">(</span><span class="s2">&quot;Column graphs:&quot;</span><span class="p">)</span>
+		<span class="k">if</span> <span class="s2">&quot;col_graphs&quot;</span> <span class="ow">in</span> <span class="n">file</span><span class="p">:</span>
+			<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">version</span> <span class="o">==</span> <span class="s2">&quot;2.0.1&quot;</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">version</span> <span class="o">==</span> <span class="s2">&quot;3.0.0&quot;</span><span class="p">:</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="s2">&quot;col_graphs&quot;</span> <span class="ow">in</span> <span class="n">file</span><span class="p">,</span> <span class="s2">&quot;&#39;col_graphs&#39; group is missing (try spec_version=&#39;old&#39;)&quot;</span><span class="p">)</span>
+			<span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">file</span><span class="p">[</span><span class="s2">&quot;col_graphs&quot;</span><span class="p">]:</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="s2">&quot;a&quot;</span> <span class="ow">in</span> <span class="n">file</span><span class="p">[</span><span class="s2">&quot;col_graphs&quot;</span><span class="p">][</span><span class="n">g</span><span class="p">],</span> <span class="n">f</span><span class="s2">&quot;Column graph &#39;</span><span class="si">{g}</span><span class="s2">&#39; is missing vector &#39;a&#39;, denoting start vertices&quot;</span><span class="p">)</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">file</span><span class="p">[</span><span class="s2">&quot;col_graphs&quot;</span><span class="p">][</span><span class="n">g</span><span class="p">][</span><span class="s1">&#39;a&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span> <span class="ow">in</span> <span class="n">vertex_types</span><span class="p">,</span> <span class="n">f</span><span class="s2">&quot;/col_graphs/</span><span class="si">{g}</span><span class="s2">/a.dtype </span><span class="si">{file[&#39;col_graphs&#39;][g][&#39;a&#39;].dtype}</span><span class="s2"> must be integer&quot;</span><span class="p">)</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="s2">&quot;b&quot;</span> <span class="ow">in</span> <span class="n">file</span><span class="p">[</span><span class="s2">&quot;col_graphs&quot;</span><span class="p">][</span><span class="n">g</span><span class="p">],</span> <span class="n">f</span><span class="s2">&quot;Column graph &#39;</span><span class="si">{g}</span><span class="s2">&#39; is missing vector &#39;b&#39;, denoting end vertices&quot;</span><span class="p">)</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">file</span><span class="p">[</span><span class="s2">&quot;col_graphs&quot;</span><span class="p">][</span><span class="n">g</span><span class="p">][</span><span class="s1">&#39;b&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span> <span class="ow">in</span> <span class="n">vertex_types</span><span class="p">,</span> <span class="n">f</span><span class="s2">&quot;/col_graphs/</span><span class="si">{g}</span><span class="s2">/b.dtype </span><span class="si">{file[&#39;col_graphs&#39;][g][&#39;b&#39;].dtype}</span><span class="s2"> must be integer&quot;</span><span class="p">)</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="s2">&quot;w&quot;</span> <span class="ow">in</span> <span class="n">file</span><span class="p">[</span><span class="s2">&quot;col_graphs&quot;</span><span class="p">][</span><span class="n">g</span><span class="p">],</span> <span class="n">f</span><span class="s2">&quot;Column graph &#39;</span><span class="si">{g}</span><span class="s2">&#39; is missing vector &#39;w&#39;, denoting vertex weights&quot;</span><span class="p">)</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">file</span><span class="p">[</span><span class="s2">&quot;col_graphs&quot;</span><span class="p">][</span><span class="n">g</span><span class="p">][</span><span class="s1">&#39;w&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span> <span class="ow">in</span> <span class="n">weight_types</span><span class="p">,</span> <span class="n">f</span><span class="s2">&quot;/col_graphs/</span><span class="si">{g}</span><span class="s2">/w.dtype </span><span class="si">{file[&#39;col_graphs&#39;][g][&#39;w&#39;].dtype}</span><span class="s2"> must be float&quot;</span><span class="p">)</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">file</span><span class="p">[</span><span class="s1">&#39;col_graphs&#39;</span><span class="p">][</span><span class="n">g</span><span class="p">][</span><span class="s1">&#39;a&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">file</span><span class="p">[</span><span class="s1">&#39;col_graphs&#39;</span><span class="p">][</span><span class="n">g</span><span class="p">][</span><span class="s1">&#39;b&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">and</span> <span class="n">file</span><span class="p">[</span><span class="s1">&#39;col_graphs&#39;</span><span class="p">][</span><span class="n">g</span><span class="p">][</span><span class="s1">&#39;a&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">file</span><span class="p">[</span><span class="s1">&#39;col_graphs&#39;</span><span class="p">][</span><span class="n">g</span><span class="p">][</span><span class="s1">&#39;w&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">f</span><span class="s2">&quot;Column graph &#39;</span><span class="si">{g}</span><span class="s2">&#39; sparse vectors a, b and w must have equal length&quot;</span><span class="p">)</span>
+				<span class="n">delay_print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;    &#39;</span><span class="si">{g}</span><span class="s2">&#39; with </span><span class="si">{file[&#39;col_graphs&#39;][g][&#39;a&#39;].shape[0]}</span><span class="s2"> edges&quot;</span><span class="p">)</span>
+			<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">file</span><span class="p">[</span><span class="s2">&quot;col_graphs&quot;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+				<span class="n">delay_print</span><span class="p">(</span><span class="s2">&quot;    (none)&quot;</span><span class="p">)</span>
+
+		<span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">errors</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span></div></div>
+</pre></div>
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2017, LinnarssonLab.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.2.0.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

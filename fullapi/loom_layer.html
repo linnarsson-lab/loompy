@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>LoomLayer (class) &#8212; loompy 3.0.6 documentation</title>
+    <link rel="stylesheet" href="../_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="ViewManager (class)" href="view_manager.html" />
+    <link rel="prev" title="MemoryLoomLayer (class)" href="memory_loom_layer.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.11.0.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.3.7/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-light navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html"><span><img src="../_static/Loom_icon.png"></span>
+          Loom</a>
+        <span class="navbar-text navbar-version pull-left"><b>3.0</b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="http://loompy.org">loompy.org</a></li>
+                <li><a href="https://github.com/linnarsson-lab/loompy">GitHub</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">Contents <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Loompy documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/index.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../installation/index.html#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../installation/index.html#easy-installation">Easy installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../installation/index.html#from-source">From source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../installation/index.html#getting-started">Getting Started</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../semantics/index.html">Understanding the semantics of loom files</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../semantics/index.html#connecting-not-loading-and-saving">Connecting, not loading and saving</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../semantics/index.html#reading-and-writing">Reading and writing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../semantics/index.html#efficient-indexing-and-compression">Efficient indexing and compression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../semantics/index.html#matrix-and-attributes">Matrix and attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../semantics/index.html#data-types">Data types</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../kallisto/index.html">Create from fastq</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../kallisto/index.html#the-loompy-command-line-tool">The <code class="docutils literal notranslate"><span class="pre">loompy</span></code> command-line tool</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../kallisto/index.html#using-the-loompy-fromfq-command">Using the <code class="docutils literal notranslate"><span class="pre">loompy</span> <span class="pre">fromfq</span></code> command</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../apiwalkthrough/index.html">API Walkthrough</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../apiwalkthrough/index.html#creating-and-connecting">Creating and connecting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../apiwalkthrough/index.html#manipulate-data">Manipulate data</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../cookbook/index.html">Cookbook</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../cookbook/index.html#working-with-a-newly-created-file">Working with a newly created file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cookbook/index.html#loading-attributes-from-pandas">Loading attributes from Pandas</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cookbook/index.html#combining-data-using-scan-and-new">Combining data using scan() and new()</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cookbook/index.html#fitting-an-incremental-pca">Fitting an incremental PCA</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../conventions/index.html">Conventions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../conventions/index.html#single-analysis-per-file">Single analysis per file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../conventions/index.html#orientation">Orientation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../conventions/index.html#attribute-naming-conventions">Attribute naming conventions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../format/index.html">Loom file format specs</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../format/index.html#versions">Versions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../format/index.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../format/index.html#hdf5-concepts">HDF5 concepts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../format/index.html#standards">Standards</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../format/index.html#specification">Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../format/index.html#datatypes">Datatypes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../format/index.html#example">Example</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Complete API Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="create.html">create (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="new.html">new (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="create_from_fastq.html">create_from_fastq (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="create_from_cellranger.html">create_from_cellranger (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="connect.html">connect (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="combine.html">combine (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="loompy.html">LoomConnection (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="layer_manager.html">LayerManager (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="memory_loom_layer.html">MemoryLoomLayer (class)</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">LoomLayer (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="view_manager.html">ViewManager (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="loom_view.html">LoomView (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="loom_validator.html">LoomValidator (class)</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+      <div class="col-md-3">
+        <div id="sidebar" class="bs-sidenav" role="complementary"><div class="list-group">
+    <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Loompy documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../semantics/index.html">Understanding the semantics of loom files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../kallisto/index.html">Create from fastq</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../apiwalkthrough/index.html">API Walkthrough</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../conventions/index.html">Conventions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../format/index.html">Loom file format specs</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Complete API Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="create.html">create (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="new.html">new (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="create_from_fastq.html">create_from_fastq (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="create_from_cellranger.html">create_from_cellranger (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="connect.html">connect (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="combine.html">combine (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="loompy.html">LoomConnection (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="layer_manager.html">LayerManager (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="memory_loom_layer.html">MemoryLoomLayer (class)</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">LoomLayer (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="view_manager.html">ViewManager (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="loom_view.html">LoomView (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="loom_validator.html">LoomValidator (class)</a></li>
+</ul>
+</li>
+</ul>
+
+</div>
+        </div>
+      </div>
+    <div class="body col-md-9 content" role="main">
+      
+  <div class="section" id="loomlayer-class">
+<h1>LoomLayer (class)<a class="headerlink" href="#loomlayer-class" title="Permalink to this headline">¶</a></h1>
+<p>A LoomLayer represents a layer of data and provides a numpy ndarray-like interface.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">loompy</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s2">&quot;mydataset.loom&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">ds</span><span class="p">:</span>
+    <span class="c1"># Names of all the layers (&quot;&quot; is the main matrix)</span>
+    <span class="n">ds</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+
+    <span class="c1"># Upper left corner of the main matrix</span>
+    <span class="n">ds</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="s2">&quot;&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># Shorthand to slice the main matrix</span>
+    <span class="n">ds</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># Load the entire layer named &quot;spliced&quot;</span>
+    <span class="n">ds</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="s2">&quot;spliced&quot;</span><span class="p">][:,</span> <span class="p">:]</span>
+
+    <span class="c1"># Shorthand access to the layer named &quot;spliced&quot;</span>
+    <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;spliced&quot;</span><span class="p">][:,</span> <span class="p">:]</span>
+
+    <span class="c1"># Assign a row of data to the named layer</span>
+    <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;spliced&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">new_data</span>
+
+    <span class="c1"># Create a new empty layer of `ìnt32`` elements</span>
+    <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;empty_layer&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;int32&quot;</span>
+</pre></div>
+</div>
+<p>Layers can also be accessed using numpy fancy indexing, e.g. with a vector of bools or a list of element indices.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Note that
+using fancy indexing to slice more than ~1% of the rows (or columns) is inefficient. If you want to extract a larger subset
+of rows or columns, you’re better of using <a class="reference internal" href="loompy.html#loompy.loompy.LoomConnection.scan" title="loompy.loompy.LoomConnection.scan"><code class="xref py py-meth docutils literal notranslate"><span class="pre">LoomConnection.scan()</span></code></a>.</p>
+</div>
+<dl class="class">
+<dt id="loompy.LoomLayer">
+<em class="property">class </em><code class="sig-prename descclassname">loompy.</code><code class="sig-name descname">LoomLayer</code><span class="sig-paren">(</span><em class="sig-param">name: str</em>, <em class="sig-param">ds: Any</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/loompy/loom_layer.html#LoomLayer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#loompy.LoomLayer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Represents a layer (matrix) of values in the loom file, which can be accessed by slicing.</p>
+<dl class="attribute">
+<dt id="loompy.LoomLayer.ds">
+<code class="sig-name descname">ds</code><em class="property"> = None</em><a class="headerlink" href="#loompy.LoomLayer.ds" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="loompy.html#loompy.loompy.LoomConnection" title="loompy.loompy.LoomConnection"><code class="xref py py-class docutils literal notranslate"><span class="pre">LoomConnection</span></code></a> object this layer belongs to</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="loompy.LoomLayer.name">
+<code class="sig-name descname">name</code><em class="property"> = None</em><a class="headerlink" href="#loompy.LoomLayer.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name of the layer (str)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="loompy.LoomLayer.shape">
+<code class="sig-name descname">shape</code><em class="property"> = None</em><a class="headerlink" href="#loompy.LoomLayer.shape" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shape of the layer, tuple of (n_rows, n_cols)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="loompy.LoomLayer.dtype">
+<code class="sig-name descname">dtype</code><em class="property"> = None</em><a class="headerlink" href="#loompy.LoomLayer.dtype" title="Permalink to this definition">¶</a></dt>
+<dd><p>Datatype of the layer (str)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="loompy.LoomLayer.last_modified">
+<code class="sig-name descname">last_modified</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; str<a class="reference internal" href="../_modules/loompy/loom_layer.html#LoomLayer.last_modified"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#loompy.LoomLayer.last_modified" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a compact ISO8601 timestamp (UTC timezone) indicating when the file was last modified</p>
+<p>Note: if the layer does not contain a timestamp, and the mode is ‘r+’, a new timestamp will be set and returned.
+Otherwise, the current time in UTC will be returned.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="loompy.LoomLayer.sparse">
+<code class="sig-name descname">sparse</code><span class="sig-paren">(</span><em class="sig-param">rows: numpy.ndarray = None</em>, <em class="sig-param">cols: numpy.ndarray = None</em><span class="sig-paren">)</span> &#x2192; scipy.sparse.coo.coo_matrix<a class="reference internal" href="../_modules/loompy/loom_layer.html#LoomLayer.sparse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#loompy.LoomLayer.sparse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="loompy.LoomLayer.map">
+<code class="sig-name descname">map</code><span class="sig-paren">(</span><em class="sig-param">f_list: List[Callable[[numpy.ndarray], int]], axis: int = 0, chunksize: int = 1000, selection: numpy.ndarray = None</em><span class="sig-paren">)</span> &#x2192; List[numpy.ndarray]<a class="reference internal" href="../_modules/loompy/loom_layer.html#LoomLayer.map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#loompy.LoomLayer.map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply a function along an axis without loading the entire dataset in memory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>f_list</strong> (<em>list of func</em>) – Function(s) that takes a numpy ndarray as argument</p></li>
+<li><p><strong>axis</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Axis along which to apply the function (0 = rows, 1 = columns)</p></li>
+<li><p><strong>chunksize</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Number of rows (columns) to load per chunk</p></li>
+<li><p><strong>selection</strong> (<em>array of bool</em>) – Columns (rows) to include</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>numpy.ndarray result of function application</p>
+<p>If you supply a list of functions, the result will be a list of numpy arrays. This is more
+efficient than repeatedly calling map() one function at a time.</p>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2017, LinnarssonLab.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.2.0.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

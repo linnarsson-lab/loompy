@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>Loom file format specs &#8212; loompy 3.0.6 documentation</title>
+    <link rel="stylesheet" href="../_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Complete API Reference" href="../fullapi/index.html" />
+    <link rel="prev" title="Conventions" href="../conventions/index.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.11.0.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.3.7/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-light navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html"><span><img src="../_static/Loom_icon.png"></span>
+          Loom</a>
+        <span class="navbar-text navbar-version pull-left"><b>3.0</b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="http://loompy.org">loompy.org</a></li>
+                <li><a href="https://github.com/linnarsson-lab/loompy">GitHub</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">Contents <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Loompy documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/index.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../installation/index.html#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../installation/index.html#easy-installation">Easy installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../installation/index.html#from-source">From source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../installation/index.html#getting-started">Getting Started</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../semantics/index.html">Understanding the semantics of loom files</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../semantics/index.html#connecting-not-loading-and-saving">Connecting, not loading and saving</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../semantics/index.html#reading-and-writing">Reading and writing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../semantics/index.html#efficient-indexing-and-compression">Efficient indexing and compression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../semantics/index.html#matrix-and-attributes">Matrix and attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../semantics/index.html#data-types">Data types</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../kallisto/index.html">Create from fastq</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../kallisto/index.html#the-loompy-command-line-tool">The <code class="docutils literal notranslate"><span class="pre">loompy</span></code> command-line tool</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../kallisto/index.html#using-the-loompy-fromfq-command">Using the <code class="docutils literal notranslate"><span class="pre">loompy</span> <span class="pre">fromfq</span></code> command</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../apiwalkthrough/index.html">API Walkthrough</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../apiwalkthrough/index.html#creating-and-connecting">Creating and connecting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../apiwalkthrough/index.html#manipulate-data">Manipulate data</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../cookbook/index.html">Cookbook</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../cookbook/index.html#working-with-a-newly-created-file">Working with a newly created file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cookbook/index.html#loading-attributes-from-pandas">Loading attributes from Pandas</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cookbook/index.html#combining-data-using-scan-and-new">Combining data using scan() and new()</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cookbook/index.html#fitting-an-incremental-pca">Fitting an incremental PCA</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../conventions/index.html">Conventions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../conventions/index.html#single-analysis-per-file">Single analysis per file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../conventions/index.html#orientation">Orientation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../conventions/index.html#attribute-naming-conventions">Attribute naming conventions</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Loom file format specs</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#versions">Versions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#hdf5-concepts">HDF5 concepts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#standards">Standards</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#specification">Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#datatypes">Datatypes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#example">Example</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../fullapi/index.html">Complete API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../fullapi/create.html">create (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../fullapi/new.html">new (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../fullapi/create_from_fastq.html">create_from_fastq (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../fullapi/create_from_cellranger.html">create_from_cellranger (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../fullapi/connect.html">connect (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../fullapi/combine.html">combine (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../fullapi/loompy.html">LoomConnection (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../fullapi/layer_manager.html">LayerManager (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../fullapi/memory_loom_layer.html">MemoryLoomLayer (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../fullapi/loom_layer.html">LoomLayer (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../fullapi/view_manager.html">ViewManager (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../fullapi/loom_view.html">LoomView (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../fullapi/loom_validator.html">LoomValidator (class)</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+      <div class="col-md-3">
+        <div id="sidebar" class="bs-sidenav" role="complementary"><div class="list-group">
+    <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Loompy documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../semantics/index.html">Understanding the semantics of loom files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../kallisto/index.html">Create from fastq</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../apiwalkthrough/index.html">API Walkthrough</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../conventions/index.html">Conventions</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Loom file format specs</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#versions">Versions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#hdf5-concepts">HDF5 concepts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#standards">Standards</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#specification">Specification</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#main-matrix-and-layers">Main matrix and layers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#global-attributes">Global attributes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#row-and-column-attributes">Row and column attributes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#row-and-column-sparse-graphs">Row and column sparse graphs</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#datatypes">Datatypes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#example">Example</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#backwards-compatibility">Backwards compatibility</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../fullapi/index.html">Complete API Reference</a></li>
+</ul>
+
+</div>
+        </div>
+      </div>
+    <div class="body col-md-9 content" role="main">
+      
+  <div class="section" id="loom-file-format-specs">
+<span id="format"></span><h1>Loom file format specs<a class="headerlink" href="#loom-file-format-specs" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="versions">
+<h2>Versions<a class="headerlink" href="#versions" title="Permalink to this headline">¶</a></h2>
+<p>This specification defines the Loom file format version <code class="docutils literal notranslate"><span class="pre">3.0.0</span></code>.</p>
+</div>
+<div class="section" id="introduction">
+<span id="formatinfo"></span><h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>The Loom file format is designed to efficiently hold large omics
+datasets. Typically, such data takes the form of a large matrix of
+numbers, along with metadata for the rows and columns. For example,
+single-cell RNA-seq data consists of expression measurements for all
+genes (rows) in a large number of cells (columns), along with metadata
+for genes (e.g. <code class="docutils literal notranslate"><span class="pre">Chromosome</span></code>, <code class="docutils literal notranslate"><span class="pre">Strand</span></code>, <code class="docutils literal notranslate"><span class="pre">Location</span></code>, <code class="docutils literal notranslate"><span class="pre">Name</span></code>), and
+for cells (e.g. <code class="docutils literal notranslate"><span class="pre">Species</span></code>, <code class="docutils literal notranslate"><span class="pre">Sex</span></code>, <code class="docutils literal notranslate"><span class="pre">Strain</span></code>, <code class="docutils literal notranslate"><span class="pre">GFP</span> <span class="pre">positive</span></code>).</p>
+<p>We designed Loom files to represent such datasets in a way that
+treats rows and columns the same. You may want to cluster both genes and
+cells, you may want to perform PCA on both of them, and filter based on
+quality controls. SQL databases and other data storage solutions almost
+always treat data as a <em>table</em>, not a matrix, and makes it very hard to
+add arbitrary metadata to rows and columns. In contrast, Loom makes
+this very easy.</p>
+<p>Furthermore, current and future datasets can have tens of thousands of
+rows (genes) and hundreds of thousands of columns (cells). We designed
+Loom for efficient access to arbitrary rows and columns.</p>
+<p>The annotated matrix format lends itself to very natural representation
+of common analysis tasks. For example, the result of a clustering
+algorithm can be stored simply as another attribute that gives the
+cluster ID for each cell. Dimensionality reduction such as PCA or t-SNE,
+similarly, can be stored as two attributes giving the projection
+coordinates of each cell.</p>
+<p>Finally, we recognize the importance of graph-based analyses of such
+datasets. Loom supports graphs of both the rows (e.g. genes) and the
+columns (e.g. cells), and multiple graphs can be stored each file.</p>
+</div>
+<div class="section" id="hdf5-concepts">
+<span id="hd5concepts"></span><h2>HDF5 concepts<a class="headerlink" href="#hdf5-concepts" title="Permalink to this headline">¶</a></h2>
+<p>The Loom format is based on
+<a class="reference external" href="https://en.wikipedia.org/wiki/Hierarchical_Data_Format">HDF5</a>, a
+standard for storing large numerical datasets. Quoting from h5py.org:</p>
+<blockquote>
+<div><p>An HDF5 file is a container for two kinds of objects: datasets,
+which are array-like collections of data, and groups, which are
+folder-like containers that hold datasets and other groups. The most
+fundamental thing to remember when using h5py is: <em>Groups work like
+dictionaries, and datasets work like NumPy arrays</em>.</p>
+</div></blockquote>
+<p>A valid Loom file is simply an HDF5 file that contains specific
+<em>groups</em> containing the main matrix as well as row and column
+attributes. Because of this, Loom files can be created and read by
+any language that supports HDF5, including <a class="reference external" href="http://h5py.org">Python</a>,
+<a class="reference external" href="http://bioconductor.org/packages/release/bioc/html/rhdf5.html">R</a>,
+<a class="reference external" href="http://se.mathworks.com/help/matlab/low-level-functions.html">MATLAB</a>,
+<a class="reference external" href="https://reference.wolfram.com/language/ref/format/HDF5.html">Mathematica</a>,
+<a class="reference external" href="https://www.hdfgroup.org/HDF5/doc/index.html">C</a>,
+<a class="reference external" href="https://www.hdfgroup.org/HDF5/doc/cpplus_RM/">C++</a>,
+<a class="reference external" href="https://www.hdfgroup.org/products/java/">Java</a>, and
+<a class="reference external" href="https://rubygems.org/gems/hdf5/versions/0.3.5">Ruby</a>.</p>
+</div>
+<div class="section" id="standards">
+<span id="specifications"></span><h2>Standards<a class="headerlink" href="#standards" title="Permalink to this headline">¶</a></h2>
+<p>The official MIME media type for a loom file is <code class="docutils literal notranslate"><span class="pre">application/vnd.loom</span></code>, <a class="reference external" href="https://www.iana.org/assignments/media-types/application/vnd.loom">approved by IANA</a>.
+You should use this media type when requesting a file using HTTP, or if you create a server that offers Loom files for download.</p>
+<p>See the <a class="reference external" href="https://www.iana.org/assignments/media-types/application/vnd.loom">IANA record for application/vnd.loom</a> for important security considerations.</p>
+<p>The Loom file format is designated as a standard format for gene expression matrices by the <a class="reference external" href="https://www.ga4gh.org">Global Alliance for Genomics and Health (GA4GH)</a> standards body, as part of the <a class="reference external" href="https://github.com/ga4gh-rnaseq/schema/blob/master/rnaget.md">rnaget API</a>.
+The rnaget API documentation contains good examples of how to use the media type specification.</p>
+</div>
+<div class="section" id="specification">
+<h2>Specification<a class="headerlink" href="#specification" title="Permalink to this headline">¶</a></h2>
+<p>A valid Loom file conforms to the following:</p>
+<div class="section" id="main-matrix-and-layers">
+<h3>Main matrix and layers<a class="headerlink" href="#main-matrix-and-layers" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>There MUST be a single <a class="reference external" href="hdf5datasetappend">HDF5 dataset</a> at <code class="docutils literal notranslate"><span class="pre">/matrix</span></code>, of dimensions (N, M)</p></li>
+<li><p>There can OPTIONALLY be a <a class="reference external" href="https://support.hdfgroup.org/HDF5/doc/H5.intro.html#Intro-OGroups">HDF5 group</a> <code class="docutils literal notranslate"><span class="pre">/layers</span></code> containing additional
+matrices (called “layers”)</p></li>
+<li><p>Each additional layer MUST have the same (N, M) shape</p></li>
+<li><p>Each layer can have a different data type, compression, chunking etc.</p></li>
+</ul>
+</div>
+<div class="section" id="global-attributes">
+<h3>Global attributes<a class="headerlink" href="#global-attributes" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>There MUST be an HDF5 group <code class="docutils literal notranslate"><span class="pre">/attrs</span></code> containing global attributes.</p></li>
+<li><p>There MUST be a HDF5 dataset <code class="docutils literal notranslate"><span class="pre">/attrs/LOOM_SPEC_VERSION</span></code> with the value <code class="docutils literal notranslate"><span class="pre">3.0.0</span></code>.</p></li>
+</ul>
+<p>Global attributes apply semantically to the whole file, not any specific part of it.
+Such attributes are stored in the HDF5 group <code class="docutils literal notranslate"><span class="pre">/attrs</span></code> and can be any valid scalar
+or multidimensional datatype.</p>
+<p>As of Loom file format v3.0.0, only one global attribute is mandatory: the <code class="docutils literal notranslate"><span class="pre">LOOM_SPEC_VERSION</span></code>
+attribute, which is a string value giving the loom file spec version that was followed in creating
+the file. See top of this document for the current version of the spec.</p>
+<p>Note: previous versions of the loom file format stored global attributes as <a class="reference external" href="https://www.hdfgroup.org/HDF5/Tutor/crtatt.html">HDF5 attributes</a>
+on the root <code class="docutils literal notranslate"><span class="pre">/</span></code> group. However, such attributes are size-limited, which caused problems for some
+applications.</p>
+</div>
+<div class="section" id="row-and-column-attributes">
+<h3>Row and column attributes<a class="headerlink" href="#row-and-column-attributes" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>There MUST be a group <code class="docutils literal notranslate"><span class="pre">/row_attrs</span></code></p></li>
+<li><p>There can OPTIONALLY be one or more datasets at <code class="docutils literal notranslate"><span class="pre">/row_attrs/{name}</span></code>
+whose first dimension has length N</p></li>
+<li><p>There MUST be a group <code class="docutils literal notranslate"><span class="pre">/col_attrs</span></code></p></li>
+<li><p>There can OPTIONALLY be one or more datasets at <code class="docutils literal notranslate"><span class="pre">/col_attrs/{name}</span></code>
+whose first dimension has length M</p></li>
+</ul>
+<p>The datasets under <code class="docutils literal notranslate"><span class="pre">/row_attrs</span></code> should be semantically interpreted as
+row attributes, with one value per row of the main matrix, and in the
+same order. Therefore, all datasets under this group must be
+arrays with exactly N elements, where N is the number of
+rows in the main matrix.</p>
+<p>The datasets under <code class="docutils literal notranslate"><span class="pre">/col_attrs</span></code> should be semantically interpreted as
+column attributes, with one value per column of the main matrix, and in
+the same order. Therefore, all datasets under this group must be
+arrays with exactly M elements, where M is the number of
+columns in the main matrix.</p>
+</div>
+<div class="section" id="row-and-column-sparse-graphs">
+<h3>Row and column sparse graphs<a class="headerlink" href="#row-and-column-sparse-graphs" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>There MUST be a group <code class="docutils literal notranslate"><span class="pre">/col_graphs</span></code></p></li>
+<li><p>There can OPTIONALLY be one or more groups at <code class="docutils literal notranslate"><span class="pre">/col_graphs/{name}</span></code></p></li>
+<li><p>Under each <code class="docutils literal notranslate"><span class="pre">/col_graphs/{name}</span></code> group, there MUST be three one-dimensional datasets
+called <code class="docutils literal notranslate"><span class="pre">a</span></code> (integer), <code class="docutils literal notranslate"><span class="pre">b</span></code> (integer) and <code class="docutils literal notranslate"><span class="pre">w</span></code> (float). These should
+be interpreted as a sparse graph in <a class="reference external" href="https://en.wikipedia.org/wiki/Sparse_matrix">coordinate list</a>
+format. The lengths of the three datasets MUST be equal, which defines the number
+of edges in the graph. Note that the number of columns in the dataset defines
+the vertices, so an unconnected vertex is one that has no entry in <code class="docutils literal notranslate"><span class="pre">a</span></code> or <code class="docutils literal notranslate"><span class="pre">b</span></code>.</p></li>
+<li><p>There MUST be a group <code class="docutils literal notranslate"><span class="pre">/row_graphs</span></code></p></li>
+<li><p>There can OPTIONALLY be one or more groups at <code class="docutils literal notranslate"><span class="pre">/row_graphs/{name}</span></code></p></li>
+<li><p>Under each <code class="docutils literal notranslate"><span class="pre">/row_graphs/{name}</span></code> group, there MUST be three one-dimensional datasets
+called <code class="docutils literal notranslate"><span class="pre">a</span></code> (integer), <code class="docutils literal notranslate"><span class="pre">b</span></code> (integer) and <code class="docutils literal notranslate"><span class="pre">w</span></code> (float). These should
+be interpreted as a sparse graph in <a class="reference external" href="https://en.wikipedia.org/wiki/Sparse_matrix">coordinate list</a>
+format. The lengths of the three datasets MUST be equal, which defines the number
+of edges in the graph. Note that the number of rows in the dataset defines
+the vertices, so an unconnected vertex is one that has no entry in <code class="docutils literal notranslate"><span class="pre">a</span></code> or <code class="docutils literal notranslate"><span class="pre">b</span></code>.</p></li>
+<li><p>Vertex indexing is zero-based. When an entry in <code class="docutils literal notranslate"><span class="pre">a</span></code> or <code class="docutils literal notranslate"><span class="pre">b</span></code> is zero, this denotes the first column
+in the matrix. If there are N columns, then vertices are numbered from 0 to N - 1.</p></li>
+</ul>
+</div>
+</div>
+<div class="section" id="datatypes">
+<h2>Datatypes<a class="headerlink" href="#datatypes" title="Permalink to this headline">¶</a></h2>
+<p>The main matrix and additional layers MUST be two-dimensional arrays of one of these numeric types: <code class="docutils literal notranslate"><span class="pre">int8</span></code>, <code class="docutils literal notranslate"><span class="pre">int16</span></code>, <code class="docutils literal notranslate"><span class="pre">int32</span></code>, <code class="docutils literal notranslate"><span class="pre">int64</span></code>, <code class="docutils literal notranslate"><span class="pre">uint8</span></code>, <code class="docutils literal notranslate"><span class="pre">uint16</span></code>, <code class="docutils literal notranslate"><span class="pre">uint32</span></code>, <code class="docutils literal notranslate"><span class="pre">uint64</span></code>, <code class="docutils literal notranslate"><span class="pre">float16</span></code>, <code class="docutils literal notranslate"><span class="pre">float32</span></code> and <code class="docutils literal notranslate"><span class="pre">float64</span></code>. Each layer can have its own datatype.</p>
+<p>Row and column attributes are multidimensional arrays whose first dimension matches the corresponding main matrix dimension. The elements MUST be of one of the numeric datatypes <code class="docutils literal notranslate"><span class="pre">int8</span></code>, <code class="docutils literal notranslate"><span class="pre">int16</span></code>, <code class="docutils literal notranslate"><span class="pre">int32</span></code>, <code class="docutils literal notranslate"><span class="pre">int64</span></code>, <code class="docutils literal notranslate"><span class="pre">uint8</span></code>, <code class="docutils literal notranslate"><span class="pre">uint16</span></code>, <code class="docutils literal notranslate"><span class="pre">uint32</span></code>, <code class="docutils literal notranslate"><span class="pre">uint64</span></code>, <code class="docutils literal notranslate"><span class="pre">float16</span></code>, <code class="docutils literal notranslate"><span class="pre">float32</span></code> and <code class="docutils literal notranslate"><span class="pre">float64</span></code> or fixed-length ASCII strings.</p>
+<p>Global attributes are scalars or multidimensional arrays of any shape, whose elements are any of the numeric datatypes <code class="docutils literal notranslate"><span class="pre">int8</span></code>, <code class="docutils literal notranslate"><span class="pre">int16</span></code>, <code class="docutils literal notranslate"><span class="pre">int32</span></code>, <code class="docutils literal notranslate"><span class="pre">int64</span></code>, <code class="docutils literal notranslate"><span class="pre">uint8</span></code>, <code class="docutils literal notranslate"><span class="pre">uint16</span></code>, <code class="docutils literal notranslate"><span class="pre">uint32</span></code>, <code class="docutils literal notranslate"><span class="pre">uint64</span></code>, <code class="docutils literal notranslate"><span class="pre">float16</span></code>, <code class="docutils literal notranslate"><span class="pre">float32</span></code> and <code class="docutils literal notranslate"><span class="pre">float64</span></code> or fixed-length ASCII strings.</p>
+<p>Starting with v3.0.0 of the spec, all strings are stored as variable-length UTF-8 encoded.</p>
+<p>Note: in previous version, strings were stored as fixed-length null-padded 7-bit ASCII. Unicode characters outside 7-bit ASCII were stored using
+<a class="reference external" href="https://en.wikipedia.org/wiki/List_of_XML_and_HTML_character_entity_references">XML entity encoding</a>, to ensure maximum compatibility. Strings
+were decoded when read and encoded when written.</p>
+</div>
+<div class="section" id="example">
+<span id="loomexample"></span><h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<p>Here’s an example of the structure of a valid Loom file:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 22%" />
+<col style="width: 32%" />
+<col style="width: 46%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Group</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>/attrs/</p></td>
+<td><p>(subgroup)</p></td>
+<td><p>Global attribbutes</p></td>
+</tr>
+<tr class="row-odd"><td><p>/attrs/Species</p></td>
+<td><p>string</p></td>
+<td><p>Row attribute “Species” of type string</p></td>
+</tr>
+<tr class="row-even"><td><p>/matrix</p></td>
+<td><p>float32[N,M] or uint16[N,M]</p></td>
+<td><p>Main matrix of N rows and M columns</p></td>
+</tr>
+<tr class="row-odd"><td><p>/layers/</p></td>
+<td><p>(subgroup)</p></td>
+<td><p>Subgroup of additional matrix layers</p></td>
+</tr>
+<tr class="row-even"><td><p>/row_attrs/</p></td>
+<td><p>(subgroup)</p></td>
+<td><p>Subgroup of all row attributes</p></td>
+</tr>
+<tr class="row-odd"><td><p>/row_attrs/Name</p></td>
+<td><p>string[N]</p></td>
+<td><p>Row attribute “Name” of type string</p></td>
+</tr>
+<tr class="row-even"><td><p>/col_attrs/</p></td>
+<td><p>(subgroup)</p></td>
+<td><p>Subgroup of all column attributes</p></td>
+</tr>
+<tr class="row-odd"><td><p>/col_attrs/CellID</p></td>
+<td><p>float64[M]</p></td>
+<td><p>Column attribute “CellID” of type float64</p></td>
+</tr>
+<tr class="row-even"><td><p>/col_graphs/</p></td>
+<td><p>(subgroup)</p></td>
+<td><p>Subgroup of all column graphs</p></td>
+</tr>
+<tr class="row-odd"><td><p>/col_graphs/KNN</p></td>
+<td><p>(subgroup)</p></td>
+<td><p>A column graph “KNN”</p></td>
+</tr>
+<tr class="row-even"><td><p>/col_graphs/KNN/a</p></td>
+<td><p>int32[E]</p></td>
+<td><p>Vector of edge ‘from’ vertices</p></td>
+</tr>
+<tr class="row-odd"><td><p>/col_graphs/KNN/b</p></td>
+<td><p>int32[E]</p></td>
+<td><p>Vector of edge ‘to’ vertices</p></td>
+</tr>
+<tr class="row-even"><td><p>/col_graphs/KNN/w</p></td>
+<td><p>float32[E]</p></td>
+<td><p>Vector of edge weights</p></td>
+</tr>
+<tr class="row-odd"><td><p>/row_graphs/</p></td>
+<td><p>(subgroup)</p></td>
+<td><p>Subgroup of all row graphs</p></td>
+</tr>
+</tbody>
+</table>
+<div class="section" id="backwards-compatibility">
+<h3>Backwards compatibility<a class="headerlink" href="#backwards-compatibility" title="Permalink to this headline">¶</a></h3>
+<p>Loom v3.0.0 introduces two major backwards-incompatible changes (global attributes and variable-length strings; see above).</p>
+<p>A compliant Loom reader MUST check the LOOM_SPEC_VERSION and treat files consistently with their spec. For example,
+when writing a global attribute, the writer MUST write only to the <code class="docutils literal notranslate"><span class="pre">/attrs</span></code> group if <code class="docutils literal notranslate"><span class="pre">LOOM_SPEC_VERSION</span></code> is
+<code class="docutils literal notranslate"><span class="pre">3.0.0</span></code> or higher. The writer MUST write the HDF5 attributes on the root <code class="docutils literal notranslate"><span class="pre">/</span></code>
+group if <code class="docutils literal notranslate"><span class="pre">LOOM_SPEC_VERSION</span></code> is lower than <code class="docutils literal notranslate"><span class="pre">3.0.0</span></code> or if it does not exist. This is to preserve a consistent
+format for legacy files.</p>
+</div>
+</div>
+</div>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2017, LinnarssonLab.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.2.0.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

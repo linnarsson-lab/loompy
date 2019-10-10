@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>Understanding the semantics of loom files &#8212; loompy 3.0.6 documentation</title>
+    <link rel="stylesheet" href="../_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Create from fastq" href="../kallisto/index.html" />
+    <link rel="prev" title="Installation" href="../installation/index.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.11.0.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.3.7/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-light navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html"><span><img src="../_static/Loom_icon.png"></span>
+          Loom</a>
+        <span class="navbar-text navbar-version pull-left"><b>3.0</b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="http://loompy.org">loompy.org</a></li>
+                <li><a href="https://github.com/linnarsson-lab/loompy">GitHub</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">Contents <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Loompy documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/index.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../installation/index.html#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../installation/index.html#easy-installation">Easy installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../installation/index.html#from-source">From source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../installation/index.html#getting-started">Getting Started</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Understanding the semantics of loom files</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#connecting-not-loading-and-saving">Connecting, not loading and saving</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#reading-and-writing">Reading and writing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#efficient-indexing-and-compression">Efficient indexing and compression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#matrix-and-attributes">Matrix and attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#data-types">Data types</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../kallisto/index.html">Create from fastq</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../kallisto/index.html#the-loompy-command-line-tool">The <code class="docutils literal notranslate"><span class="pre">loompy</span></code> command-line tool</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../kallisto/index.html#using-the-loompy-fromfq-command">Using the <code class="docutils literal notranslate"><span class="pre">loompy</span> <span class="pre">fromfq</span></code> command</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../apiwalkthrough/index.html">API Walkthrough</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../apiwalkthrough/index.html#creating-and-connecting">Creating and connecting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../apiwalkthrough/index.html#manipulate-data">Manipulate data</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../cookbook/index.html">Cookbook</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../cookbook/index.html#working-with-a-newly-created-file">Working with a newly created file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cookbook/index.html#loading-attributes-from-pandas">Loading attributes from Pandas</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cookbook/index.html#combining-data-using-scan-and-new">Combining data using scan() and new()</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cookbook/index.html#fitting-an-incremental-pca">Fitting an incremental PCA</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../conventions/index.html">Conventions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../conventions/index.html#single-analysis-per-file">Single analysis per file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../conventions/index.html#orientation">Orientation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../conventions/index.html#attribute-naming-conventions">Attribute naming conventions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../format/index.html">Loom file format specs</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../format/index.html#versions">Versions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../format/index.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../format/index.html#hdf5-concepts">HDF5 concepts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../format/index.html#standards">Standards</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../format/index.html#specification">Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../format/index.html#datatypes">Datatypes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../format/index.html#example">Example</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../fullapi/index.html">Complete API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../fullapi/create.html">create (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../fullapi/new.html">new (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../fullapi/create_from_fastq.html">create_from_fastq (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../fullapi/create_from_cellranger.html">create_from_cellranger (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../fullapi/connect.html">connect (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../fullapi/combine.html">combine (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../fullapi/loompy.html">LoomConnection (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../fullapi/layer_manager.html">LayerManager (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../fullapi/memory_loom_layer.html">MemoryLoomLayer (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../fullapi/loom_layer.html">LoomLayer (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../fullapi/view_manager.html">ViewManager (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../fullapi/loom_view.html">LoomView (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../fullapi/loom_validator.html">LoomValidator (class)</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+      <div class="col-md-3">
+        <div id="sidebar" class="bs-sidenav" role="complementary"><div class="list-group">
+    <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Loompy documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/index.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Understanding the semantics of loom files</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#connecting-not-loading-and-saving">Connecting, not loading and saving</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#reading-and-writing">Reading and writing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#efficient-indexing-and-compression">Efficient indexing and compression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#matrix-and-attributes">Matrix and attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#data-types">Data types</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../kallisto/index.html">Create from fastq</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../apiwalkthrough/index.html">API Walkthrough</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../conventions/index.html">Conventions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../format/index.html">Loom file format specs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../fullapi/index.html">Complete API Reference</a></li>
+</ul>
+
+</div>
+        </div>
+      </div>
+    <div class="body col-md-9 content" role="main">
+      
+  <div class="section" id="understanding-the-semantics-of-loom-files">
+<span id="semantics"></span><h1>Understanding the semantics of loom files<a class="headerlink" href="#understanding-the-semantics-of-loom-files" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="connecting-not-loading-and-saving">
+<h2>Connecting, not loading and saving<a class="headerlink" href="#connecting-not-loading-and-saving" title="Permalink to this headline">¶</a></h2>
+<p>Loom files are stored on disk and are never loaded entirely. They are
+more like databases: you connect, retrieve some subset of the data,
+maybe update some attributes.</p>
+<p>When you connect, only some metadata is loaded,
+but the main matrix, additional layers, graphs and
+attribute values remain on disk. They are loaded only as
+needed when you access them through the connection object.</p>
+<p>The canonical way to connect to a Loom file is:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">loompy</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s2">&quot;filename.loom&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">ds</span><span class="p">:</span>
+    <span class="c1"># do something with the connection object ds</span>
+</pre></div>
+</div>
+<p>This ensures that the file is automatically closed when no longer needed.</p>
+<p>For interactive usage, it may be more convenient to connect directly:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ds</span> <span class="o">=</span> <span class="n">loompy</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s2">&quot;filename.loom&quot;</span><span class="p">)</span>
+<span class="c1"># do something with the connection object ds</span>
+<span class="n">ds</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>In that case, you need to close the connection explicitly.</p>
+</div>
+<div class="section" id="reading-and-writing">
+<h2>Reading and writing<a class="headerlink" href="#reading-and-writing" title="Permalink to this headline">¶</a></h2>
+<p>Loom files are based on
+<a class="reference external" href="https://en.wikipedia.org/wiki/Hierarchical_Data_Format">HDF5</a>, a
+file format suitable for large multidimensional datasets. Loom files
+are great for distribution of large datasets, and for use
+in computational pipelines. They <strong>do
+not</strong> support writing and reading concurrently. They also do not support
+journalling, so if something happens during a write, the <strong>entire file
+can be lost</strong>. Therefore, do not use loom files as your primary data
+storage. They are for working with data, not keeping it safe.</p>
+<p>Loom files do support concurrent reads, but only from separate processes
+(not threads), and (we think) only from a single compute node. On a
+compute cluster, you may encounter bugs if you try to read the same Loom
+file from different compute nodes concurrently.</p>
+</div>
+<div class="section" id="efficient-indexing-and-compression">
+<h2>Efficient indexing and compression<a class="headerlink" href="#efficient-indexing-and-compression" title="Permalink to this headline">¶</a></h2>
+<p>The main matrix is stored in <em>chunked</em> format. That is, instead of being
+stored by rows or by columns, it is stored as a sequence of little
+rectangles. As a consequence, both rows and columns (as well as
+submatrices) can be efficiently accessed.</p>
+<p>By default, chunks are compressed and decompressed for you
+automatically. This makes Loom a space-efficient format for storing
+large sparse datasets. We have found that Loom often uses the same
+amount of space as standard sparse matrix formats.</p>
+</div>
+<div class="section" id="matrix-and-attributes">
+<h2>Matrix and attributes<a class="headerlink" href="#matrix-and-attributes" title="Permalink to this headline">¶</a></h2>
+<p>Loom files represent a two-dimensional matrix with named row and column
+attributes. If the main matrix has N rows and M columns, then each column
+attribute has M elements (one per column) and vice versa.</p>
+<p>By convention, the matrix represents measurements of some property (e.g.
+gene expression), genes are stored in the rows and columns represent
+samples (e.g. cells).</p>
+<p>The file can grow by the addition of attributes and columns (but not
+rows). For this reason, it’s a good idea to put genes in the rows (since
+you will likely always work with the same gene set).</p>
+</div>
+<div class="section" id="data-types">
+<h2>Data types<a class="headerlink" href="#data-types" title="Permalink to this headline">¶</a></h2>
+<p>Loom supports the following data types:</p>
+<ul class="simple">
+<li><p>The main matrix, and any additional layers, are
+two-dimensional arrays of numbers, which can be any 8, 16, 32 or
+64-bit integer (signed or unsigned), or 16, 32 or 64-bit float.</p></li>
+<li><p>Attributes are N-dimensional arrays, and the elements can be any 8, 16, 32 or
+64-bit integer (signed or unsigned), or 16, 32 or 64-bit float,
+or string. The size of the first dimension must match the
+corresponding matrix dimension.</p></li>
+</ul>
+<p>See the file format specification for detailed information on data types,
+including a discussion on string handling, ASCII and Unicode support.</p>
+</div>
+</div>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2017, LinnarssonLab.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.2.0.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

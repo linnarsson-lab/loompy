@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>loompy.bus_file &#8212; loompy 3.0.6 documentation</title>
+    <link rel="stylesheet" href="../../_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../../_static/js/jquery-1.11.0.min.js "></script>
+<script type="text/javascript" src="../../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../../_static/bootstrap-3.3.7/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-light navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../../index.html"><span><img src="../../_static/Loom_icon.png"></span>
+          Loom</a>
+        <span class="navbar-text navbar-version pull-left"><b>3.0</b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="http://loompy.org">loompy.org</a></li>
+                <li><a href="https://github.com/linnarsson-lab/loompy">GitHub</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../../index.html">Contents <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul>
+<li class="toctree-l1"><a class="reference internal" href="../../index.html">Loompy documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/index.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../installation/index.html#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../installation/index.html#easy-installation">Easy installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../installation/index.html#from-source">From source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../installation/index.html#getting-started">Getting Started</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../semantics/index.html">Understanding the semantics of loom files</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../semantics/index.html#connecting-not-loading-and-saving">Connecting, not loading and saving</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../semantics/index.html#reading-and-writing">Reading and writing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../semantics/index.html#efficient-indexing-and-compression">Efficient indexing and compression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../semantics/index.html#matrix-and-attributes">Matrix and attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../semantics/index.html#data-types">Data types</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../kallisto/index.html">Create from fastq</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../kallisto/index.html#the-loompy-command-line-tool">The <code class="docutils literal notranslate"><span class="pre">loompy</span></code> command-line tool</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../kallisto/index.html#using-the-loompy-fromfq-command">Using the <code class="docutils literal notranslate"><span class="pre">loompy</span> <span class="pre">fromfq</span></code> command</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../apiwalkthrough/index.html">API Walkthrough</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../apiwalkthrough/index.html#creating-and-connecting">Creating and connecting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../apiwalkthrough/index.html#manipulate-data">Manipulate data</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../cookbook/index.html">Cookbook</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../cookbook/index.html#working-with-a-newly-created-file">Working with a newly created file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../cookbook/index.html#loading-attributes-from-pandas">Loading attributes from Pandas</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../cookbook/index.html#combining-data-using-scan-and-new">Combining data using scan() and new()</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../cookbook/index.html#fitting-an-incremental-pca">Fitting an incremental PCA</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../conventions/index.html">Conventions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../conventions/index.html#single-analysis-per-file">Single analysis per file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../conventions/index.html#orientation">Orientation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../conventions/index.html#attribute-naming-conventions">Attribute naming conventions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../format/index.html">Loom file format specs</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../format/index.html#versions">Versions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../format/index.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../format/index.html#hdf5-concepts">HDF5 concepts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../format/index.html#standards">Standards</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../format/index.html#specification">Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../format/index.html#datatypes">Datatypes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../format/index.html#example">Example</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../fullapi/index.html">Complete API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../fullapi/create.html">create (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../fullapi/new.html">new (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../fullapi/create_from_fastq.html">create_from_fastq (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../fullapi/create_from_cellranger.html">create_from_cellranger (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../fullapi/connect.html">connect (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../fullapi/combine.html">combine (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../fullapi/loompy.html">LoomConnection (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../fullapi/layer_manager.html">LayerManager (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../fullapi/memory_loom_layer.html">MemoryLoomLayer (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../fullapi/loom_layer.html">LoomLayer (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../fullapi/view_manager.html">ViewManager (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../fullapi/loom_view.html">LoomView (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../fullapi/loom_validator.html">LoomValidator (class)</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+      <div class="col-md-3">
+        <div id="sidebar" class="bs-sidenav" role="complementary"><div class="list-group">
+    <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../index.html">Loompy documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../semantics/index.html">Understanding the semantics of loom files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../kallisto/index.html">Create from fastq</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../apiwalkthrough/index.html">API Walkthrough</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../conventions/index.html">Conventions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../format/index.html">Loom file format specs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../fullapi/index.html">Complete API Reference</a></li>
+</ul>
+
+</div>
+        </div>
+      </div>
+    <div class="body col-md-9 content" role="main">
+      
+  <h1>Source code for loompy.bus_file</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">array</span>
+<span class="kn">import</span> <span class="nn">gzip</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sqlite3</span> <span class="k">as</span> <span class="nn">sqlite</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="kn">from</span> <span class="nn">math</span> <span class="k">import</span> <span class="n">lgamma</span>
+<span class="kn">from</span> <span class="nn">tempfile</span> <span class="k">import</span> <span class="n">TemporaryDirectory</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Generator</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">scipy.sparse</span> <span class="k">as</span> <span class="nn">sparse</span>
+<span class="kn">from</span> <span class="nn">numba</span> <span class="k">import</span> <span class="n">jit</span>
+
+<span class="kn">from</span> <span class="nn">.cell_calling</span> <span class="k">import</span> <span class="n">call_cells</span>
+<span class="kn">from</span> <span class="nn">.loompy</span> <span class="k">import</span> <span class="n">connect</span><span class="p">,</span> <span class="n">create</span>
+
+
+<span class="c1"># Copied from cytograph</span>
+<span class="nd">@jit</span><span class="p">(</span><span class="s2">&quot;float32(float64[:], float64[:])&quot;</span><span class="p">,</span> <span class="n">nopython</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">multinomial_distance</span><span class="p">(</span><span class="n">p</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">q</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+	<span class="n">N</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+	<span class="n">p_sum</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+	<span class="n">q_sum</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+	<span class="n">x</span> <span class="o">=</span> <span class="n">lgamma</span><span class="p">(</span><span class="n">N</span><span class="p">)</span> <span class="o">+</span> <span class="n">lgamma</span><span class="p">(</span><span class="n">p_sum</span> <span class="o">+</span> <span class="n">q_sum</span> <span class="o">+</span> <span class="n">N</span><span class="p">)</span> <span class="o">-</span> <span class="n">lgamma</span><span class="p">(</span><span class="n">p_sum</span> <span class="o">+</span> <span class="n">N</span><span class="p">)</span> <span class="o">-</span> <span class="n">lgamma</span><span class="p">(</span><span class="n">q_sum</span> <span class="o">+</span> <span class="n">N</span><span class="p">)</span>
+	<span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
+		<span class="n">x</span> <span class="o">+=</span> <span class="n">lgamma</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">lgamma</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">lgamma</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">lgamma</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">+</span> <span class="n">q</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+	<span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+	<span class="k">return</span> <span class="mi">1</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">x</span><span class="p">)</span>
+
+
+<span class="c1"># https://maciejkula.github.io/2015/02/22/incremental-construction-of-sparse-matrices/</span>
+<span class="k">class</span> <span class="nc">IncrementalSparseMatrixUInt16</span><span class="p">:</span>
+	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]):</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">uint16</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="n">shape</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">rows</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s1">&#39;i&#39;</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">cols</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s1">&#39;i&#39;</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s1">&#39;H&#39;</span><span class="p">)</span>
+
+	<span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">j</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+		<span class="n">m</span><span class="p">,</span> <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span>
+
+		<span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">&gt;=</span> <span class="n">m</span> <span class="ow">or</span> <span class="n">j</span> <span class="o">&gt;=</span> <span class="n">n</span><span class="p">):</span>
+			<span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Index out of bounds&#39;</span><span class="p">)</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">cols</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">j</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+
+	<span class="k">def</span> <span class="nf">tocoo</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">sparse</span><span class="o">.</span><span class="n">coo_matrix</span><span class="p">:</span>
+		<span class="n">rows</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rows</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+		<span class="n">cols</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cols</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+		<span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span>
+		<span class="k">return</span> <span class="n">sparse</span><span class="o">.</span><span class="n">coo_matrix</span><span class="p">((</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">cols</span><span class="p">)),</span> <span class="n">shape</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+	<span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+		<span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+
+<span class="n">twobit_to_dna_table</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="s2">&quot;G&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="s2">&quot;T&quot;</span><span class="p">}</span>
+<span class="n">dna_to_twobit_table</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;A&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;G&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;T&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">}</span>
+
+
+<span class="nd">@jit</span>
+<span class="k">def</span> <span class="nf">twobit_to_dna</span><span class="p">(</span><span class="n">twobit</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+	<span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+	<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">size</span><span class="p">):</span>
+		<span class="n">x</span> <span class="o">=</span> <span class="p">(</span><span class="n">twobit</span> <span class="o">&amp;</span> <span class="p">(</span><span class="mi">3</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">i</span><span class="p">))</span> <span class="o">&gt;&gt;</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">i</span>
+		<span class="k">if</span> <span class="n">x</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+			<span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">)</span>
+		<span class="k">elif</span> <span class="n">x</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+			<span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;C&quot;</span><span class="p">)</span>
+		<span class="k">elif</span> <span class="n">x</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+			<span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;G&quot;</span><span class="p">)</span>
+		<span class="k">elif</span> <span class="n">x</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+			<span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;T&quot;</span><span class="p">)</span>
+	<span class="n">result</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+	<span class="k">return</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+
+<span class="nd">@jit</span>
+<span class="k">def</span> <span class="nf">dna_to_twobit</span><span class="p">(</span><span class="n">dna</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+	<span class="n">x</span> <span class="o">=</span> <span class="mi">0</span>
+	<span class="k">for</span> <span class="n">nt</span> <span class="ow">in</span> <span class="n">dna</span><span class="p">:</span>
+		<span class="k">if</span> <span class="n">nt</span> <span class="o">==</span> <span class="s2">&quot;A&quot;</span><span class="p">:</span>
+			<span class="n">x</span> <span class="o">+=</span> <span class="mi">0</span>
+		<span class="k">elif</span> <span class="n">nt</span> <span class="o">==</span> <span class="s2">&quot;C&quot;</span><span class="p">:</span>
+			<span class="n">x</span> <span class="o">+=</span> <span class="mi">1</span>
+		<span class="k">elif</span> <span class="n">nt</span> <span class="o">==</span> <span class="s2">&quot;G&quot;</span><span class="p">:</span>
+			<span class="n">x</span> <span class="o">+=</span> <span class="mi">2</span>
+		<span class="k">elif</span> <span class="n">nt</span> <span class="o">==</span> <span class="s2">&quot;T&quot;</span><span class="p">:</span>
+			<span class="n">x</span> <span class="o">+=</span> <span class="mi">3</span>
+		<span class="n">x</span> <span class="o">&lt;&lt;=</span> <span class="mi">2</span>
+	<span class="n">x</span> <span class="o">&gt;&gt;=</span> <span class="mi">2</span>
+	<span class="k">return</span> <span class="n">x</span>
+
+
+<span class="nd">@jit</span>
+<span class="k">def</span> <span class="nf">twobit_1hamming</span><span class="p">(</span><span class="n">twobit</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+	<span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+	<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">size</span><span class="p">):</span>
+		<span class="n">x</span> <span class="o">=</span> <span class="p">(</span><span class="n">twobit</span> <span class="o">&gt;&gt;</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">size</span> <span class="o">-</span> <span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span> <span class="o">&amp;</span> <span class="mi">3</span>
+		<span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+			<span class="k">if</span> <span class="n">x</span> <span class="o">==</span> <span class="n">j</span><span class="p">:</span>
+				<span class="k">continue</span>
+			<span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">twobit</span> <span class="o">&amp;</span> <span class="o">~</span><span class="p">(</span><span class="mi">3</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">size</span> <span class="o">-</span> <span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span> <span class="o">|</span> <span class="p">(</span><span class="n">j</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">size</span> <span class="o">-</span> <span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)))</span>
+	<span class="k">return</span> <span class="n">result</span>
+
+
+<span class="k">def</span> <span class="nf">ixs_thatsort_a2b</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">check_content</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+	<span class="s2">&quot;This is super duper magic sauce to make the order of one list to be like another&quot;</span>
+	<span class="k">if</span> <span class="n">check_content</span><span class="p">:</span>
+		<span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">intersect1d</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">))</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">),</span> <span class="n">f</span><span class="s2">&quot;The two arrays are not matching&quot;</span>
+	<span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">a</span><span class="p">)[</span><span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">b</span><span class="p">))]</span>
+
+
+<span class="k">def</span> <span class="nf">load_sample_metadata</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">sample_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+	<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+		<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Samples metadata file &#39;</span><span class="si">{path}</span><span class="s2">&#39; not found.&quot;</span><span class="p">)</span>
+	<span class="k">if</span> <span class="n">path</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.db&quot;</span><span class="p">):</span>
+		<span class="c1"># sqlite3</span>
+		<span class="k">with</span> <span class="n">sqlite</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">as</span> <span class="n">db</span><span class="p">:</span>
+			<span class="n">cursor</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
+			<span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT * FROM sample WHERE name = ?&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">sample_id</span><span class="p">,))</span>
+			<span class="n">keys</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">cursor</span><span class="o">.</span><span class="n">description</span><span class="p">]</span>
+			<span class="n">vals</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+			<span class="k">if</span> <span class="n">vals</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+				<span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">keys</span><span class="p">,</span> <span class="n">vals</span><span class="p">))</span>
+			<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;SampleID &#39;</span><span class="si">{sample_id}</span><span class="s2">&#39; was not found in the samples database.&quot;</span><span class="p">)</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
+		<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+			<span class="n">headers</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">f</span><span class="o">.</span><span class="n">readline</span><span class="p">()[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">)]</span>
+			<span class="k">if</span> <span class="s2">&quot;sampleid&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">headers</span> <span class="ow">and</span> <span class="s1">&#39;name&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">headers</span><span class="p">:</span>
+				<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Required column &#39;SampleID&#39; or &#39;Name&#39; not found in sample metadata file&quot;</span><span class="p">)</span>
+			<span class="k">if</span> <span class="s2">&quot;sampleid&quot;</span> <span class="ow">in</span> <span class="n">headers</span><span class="p">:</span>
+				<span class="n">sample_metadata_key_idx</span> <span class="o">=</span> <span class="n">headers</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s2">&quot;sampleid&quot;</span><span class="p">)</span>
+			<span class="k">else</span><span class="p">:</span>
+				<span class="n">sample_metadata_key_idx</span> <span class="o">=</span> <span class="n">headers</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">)</span>
+			<span class="n">sample_found</span> <span class="o">=</span> <span class="kc">False</span>
+			<span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+				<span class="n">items</span> <span class="o">=</span> <span class="n">line</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">)</span>
+				<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">sample_metadata_key_idx</span> <span class="ow">and</span> <span class="n">items</span><span class="p">[</span><span class="n">sample_metadata_key_idx</span><span class="p">]</span> <span class="o">==</span> <span class="n">sample_id</span><span class="p">:</span>
+					<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">items</span><span class="p">):</span>
+						<span class="n">result</span><span class="p">[</span><span class="n">headers</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="n">item</span>
+					<span class="n">sample_found</span> <span class="o">=</span> <span class="kc">True</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="n">sample_found</span><span class="p">:</span>
+			<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;SampleID &#39;</span><span class="si">{sample_id}</span><span class="s2">&#39; not found in sample metadata file&quot;</span><span class="p">)</span>
+		<span class="k">return</span> <span class="n">result</span>
+
+
+<span class="k">class</span> <span class="nc">BusFile</span><span class="p">:</span>
+	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">genes_metadata_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">genes_metadata_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">fragments2genes_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">equivalence_classes_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">fragments_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">matrix</span><span class="p">:</span> <span class="n">sparse</span><span class="o">.</span><span class="n">coo_matrix</span> <span class="o">=</span> <span class="kc">None</span>
+		<span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading gene metadata&quot;</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">genes</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># Keys are Accessions, values are lists of attribute values</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">gene_metadata_attributes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># Attribute names</span>
+		<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">genes_metadata_file</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+			<span class="n">line</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">gene_metadata_attributes</span> <span class="o">=</span> <span class="n">line</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">)</span>
+			<span class="k">if</span> <span class="n">genes_metadata_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">gene_metadata_attributes</span><span class="p">:</span>
+				<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Metadata key &#39;</span><span class="si">{genes_metadata_key}</span><span class="s2">&#39; not found in gene metadata file&quot;</span><span class="p">)</span>
+			<span class="n">key_col</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gene_metadata_attributes</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">genes_metadata_key</span><span class="p">)</span>
+			<span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+				<span class="n">items</span> <span class="o">=</span> <span class="n">line</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">)</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">genes</span><span class="p">[</span><span class="n">items</span><span class="p">[</span><span class="n">key_col</span><span class="p">]]</span> <span class="o">=</span> <span class="n">items</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">accessions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">genes</span><span class="o">.</span><span class="n">keys</span><span class="p">()])</span>
+		<span class="n">accession_idx</span> <span class="o">=</span> <span class="p">{</span><span class="n">acc</span><span class="p">:</span> <span class="n">i</span> <span class="k">for</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">acc</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accessions</span><span class="p">)}</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">n_genes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accessions</span><span class="p">)</span>
+
+		<span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading fragments-to-gene mappings&quot;</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">gene_for_fragment</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+		<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">fragments2genes_file</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+			<span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+				<span class="n">transcript_id</span><span class="p">,</span> <span class="n">accession</span> <span class="o">=</span> <span class="n">line</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">)</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">gene_for_fragment</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">accession</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">gene_for_fragment</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gene_for_fragment</span><span class="p">)</span>
+
+		<span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Indexing genes&quot;</span><span class="p">)</span>
+		<span class="c1"># Array of indices into self.accessions for each gene in gene_for_transcript</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">gene_for_fragment_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gene_for_fragment</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;int32&quot;</span><span class="p">)</span>
+		<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gene_for_fragment</span><span class="p">)):</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">gene_for_fragment_idx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">accession_idx</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">gene_for_fragment</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+
+		<span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading equivalence classes&quot;</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">equivalence_classes</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+		<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">equivalence_classes_file</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+			<span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+				<span class="n">ec</span><span class="p">,</span> <span class="n">trs</span> <span class="o">=</span> <span class="n">line</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">)</span>
+				<span class="c1"># Each equivalence class is a set of fragments (transcripts)</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">equivalence_classes</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">ec</span><span class="p">)]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">trs</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)])</span>
+		<span class="c1"># But we want each equivalence class mapped to a gene (or -1 if multimapping)</span>
+		<span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Mapping equivalence classes to genes&quot;</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">gene_for_ec</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+		<span class="k">for</span> <span class="n">eqc</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">equivalence_classes</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+			<span class="n">gene</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+			<span class="k">for</span> <span class="n">tid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">equivalence_classes</span><span class="p">[</span><span class="n">eqc</span><span class="p">]:</span>
+				<span class="k">if</span> <span class="n">gene</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+					<span class="n">gene</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gene_for_fragment_idx</span><span class="p">[</span><span class="n">tid</span><span class="p">]</span>
+					<span class="k">continue</span>
+				<span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">gene_for_fragment_idx</span><span class="p">[</span><span class="n">tid</span><span class="p">]</span> <span class="o">!=</span> <span class="n">gene</span><span class="p">:</span>
+					<span class="n">gene</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>  <span class="c1"># Multimapping UMI</span>
+					<span class="k">break</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">gene_for_ec</span><span class="p">[</span><span class="n">eqc</span><span class="p">]</span> <span class="o">=</span> <span class="n">gene</span>
+
+		<span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading fragment IDs&quot;</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">fragments</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+		<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">fragments_file</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+			<span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">fragments</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">line</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">fragments</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fragments</span><span class="p">)</span>
+
+		<span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading BUS records&quot;</span><span class="p">)</span>
+		<span class="n">fsize</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+		<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fb</span><span class="p">:</span>
+			<span class="c1"># Read the header</span>
+			<span class="n">magic</span> <span class="o">=</span> <span class="n">fb</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+			<span class="k">if</span> <span class="n">magic</span> <span class="o">!=</span> <span class="sa">b</span><span class="s2">&quot;BUS</span><span class="se">\0</span><span class="s2">&quot;</span><span class="p">:</span>
+				<span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s2">&quot;Not a valid BUS file (four leading magic bytes are missing)&quot;</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">version</span> <span class="o">=</span> <span class="nb">int</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="n">fb</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">4</span><span class="p">),</span> <span class="n">byteorder</span><span class="o">=</span><span class="s2">&quot;little&quot;</span><span class="p">,</span> <span class="n">signed</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">barcode_length</span> <span class="o">=</span> <span class="nb">int</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="n">fb</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">4</span><span class="p">),</span> <span class="n">byteorder</span><span class="o">=</span><span class="s2">&quot;little&quot;</span><span class="p">,</span> <span class="n">signed</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">umi_length</span> <span class="o">=</span> <span class="nb">int</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="n">fb</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">4</span><span class="p">),</span> <span class="n">byteorder</span><span class="o">=</span><span class="s2">&quot;little&quot;</span><span class="p">,</span> <span class="n">signed</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+			<span class="n">tlen</span> <span class="o">=</span> <span class="nb">int</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="n">fb</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">4</span><span class="p">),</span> <span class="n">byteorder</span><span class="o">=</span><span class="s2">&quot;little&quot;</span><span class="p">,</span> <span class="n">signed</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">header</span> <span class="o">=</span> <span class="n">fb</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">tlen</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>  <span class="c1"># BUS does not specify an encoding, but let&#39;s assume UTF8</span>
+
+			<span class="c1"># Read the records</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">n_records</span> <span class="o">=</span> <span class="p">(</span><span class="n">fsize</span> <span class="o">-</span> <span class="n">tlen</span> <span class="o">-</span> <span class="mi">20</span><span class="p">)</span> <span class="o">//</span> <span class="mi">32</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">bus</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="n">fb</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="p">[</span>
+				<span class="p">(</span><span class="s2">&quot;barcode&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">),</span>
+				<span class="p">(</span><span class="s2">&quot;UMI&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">),</span>
+				<span class="p">(</span><span class="s2">&quot;equivalence_class&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">),</span>
+				<span class="p">(</span><span class="s2">&quot;count&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">),</span>
+				<span class="p">(</span><span class="s2">&quot;flags&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">),</span>
+				<span class="p">(</span><span class="s2">&quot;padding&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+			<span class="p">],</span> <span class="n">count</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_records</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">bus_gene</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">gene_for_ec</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="p">[</span><span class="s2">&quot;equivalence_class&quot;</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">bus_valid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bus_gene</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span>
+
+		<span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Sorting cell IDs&quot;</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">cell_ids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="p">[</span><span class="s2">&quot;barcode&quot;</span><span class="p">])</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">cell_ids</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">n_cells</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cell_ids</span><span class="p">)</span>  <span class="c1"># This will change after error correction</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">sparse</span><span class="o">.</span><span class="n">coo_matrix</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># Dict of layer name -&gt; sparse matrix</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">ambient_umis</span> <span class="o">=</span> <span class="mi">0</span>
+
+	<span class="k">def</span> <span class="nf">correct</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">whitelist_file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+		<span class="k">if</span> <span class="n">whitelist_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+			<span class="n">size</span> <span class="o">=</span> <span class="mi">0</span>
+			<span class="n">whitelist</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+			<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">whitelist_file</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+				<span class="k">for</span> <span class="n">bc</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+					<span class="n">size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">bc</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>  <span class="c1"># Don&#39;t count the newline</span>
+					<span class="n">whitelist</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dna_to_twobit</span><span class="p">(</span><span class="n">bc</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+			<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">bc</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="p">[</span><span class="s2">&quot;barcode&quot;</span><span class="p">]):</span>
+				<span class="k">if</span> <span class="n">bc</span> <span class="ow">in</span> <span class="n">whitelist</span><span class="p">:</span>
+					<span class="k">continue</span>
+				<span class="n">corrected</span> <span class="o">=</span> <span class="kc">False</span>
+				<span class="k">for</span> <span class="n">mut</span> <span class="ow">in</span> <span class="n">twobit_1hamming</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">bc</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">):</span>
+					<span class="k">if</span> <span class="n">mut</span> <span class="ow">in</span> <span class="n">whitelist</span><span class="p">:</span>
+						<span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="p">[</span><span class="s2">&quot;barcode&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">mut</span>
+						<span class="n">corrected</span> <span class="o">=</span> <span class="kc">True</span>
+						<span class="k">break</span>
+				<span class="k">if</span> <span class="ow">not</span> <span class="n">corrected</span><span class="p">:</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">bus_valid</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">cell_ids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="p">[</span><span class="s2">&quot;barcode&quot;</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">bus_valid</span><span class="p">])</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">cell_ids</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">cell_for_barcode_idx</span> <span class="o">=</span> <span class="p">{</span><span class="n">bc</span><span class="p">:</span> <span class="n">i</span> <span class="k">for</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">bc</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cell_ids</span><span class="p">)}</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">n_cells</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cell_ids</span><span class="p">)</span>
+
+	<span class="k">def</span> <span class="nf">deduplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+		<span class="c1"># Sort by barcode, then by UMI, then by gene</span>
+		<span class="n">ordering</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">lexsort</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">bus_gene</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="p">[</span><span class="s2">&quot;UMI&quot;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="p">[</span><span class="s2">&quot;barcode&quot;</span><span class="p">]))</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">bus</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="p">[</span><span class="n">ordering</span><span class="p">]</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">bus_gene</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bus_gene</span><span class="p">[</span><span class="n">ordering</span><span class="p">]</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">bus_valid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bus_valid</span><span class="p">[</span><span class="n">ordering</span><span class="p">]</span>
+		<span class="n">dupes</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="p">[</span><span class="s2">&quot;barcode&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">:]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="p">[</span><span class="s2">&quot;barcode&quot;</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">&amp;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="p">[</span><span class="s2">&quot;UMI&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">:]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="p">[</span><span class="s2">&quot;UMI&quot;</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">&amp;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bus_gene</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">bus_gene</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">bus_valid</span><span class="p">[</span><span class="mi">1</span><span class="p">:][</span><span class="n">dupes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+
+	<span class="k">def</span> <span class="nf">count</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">sparse</span><span class="o">.</span><span class="n">coo_matrix</span><span class="p">:</span>
+		<span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Counting pseudoalignments for main matrix&quot;</span><span class="p">)</span>
+		<span class="n">genes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bus_gene</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">bus_valid</span><span class="p">]</span>
+		<span class="n">cells</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">cell_for_barcode_idx</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="p">[</span><span class="s2">&quot;barcode&quot;</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">bus_valid</span><span class="p">]]</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">matrix</span> <span class="o">=</span> <span class="n">sparse</span><span class="o">.</span><span class="n">coo_matrix</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">genes</span><span class="p">),</span> <span class="p">(</span><span class="n">genes</span><span class="p">,</span> <span class="n">cells</span><span class="p">)),</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_genes</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_cells</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">total_umis</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">matrix</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">matrix</span>
+
+	<span class="k">def</span> <span class="nf">remove_empty_beads</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_n_cells</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+		<span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Calling cells&quot;</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">ambient_umis</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ambient_pvalue</span> <span class="o">=</span> <span class="n">call_cells</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">matrix</span><span class="o">.</span><span class="n">tocsc</span><span class="p">(),</span> <span class="n">expected_n_cells</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">valid_cells</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ambient_pvalue</span> <span class="o">&lt;</span> <span class="mf">0.01</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">total_umis</span> <span class="o">&gt;</span> <span class="mi">1500</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">matrix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">matrix</span><span class="o">.</span><span class="n">tocsr</span><span class="p">()[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_cells</span><span class="p">]</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">cell_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cell_ids</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">valid_cells</span><span class="p">]</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">n_cells</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_cells</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+		<span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">tocsc</span><span class="p">()[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_cells</span><span class="p">]</span>
+		<span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Found </span><span class="si">{self.n_cells}</span><span class="s2"> valid cells and ~{int(self.ambient_umis)} ambient UMIs.&quot;</span><span class="p">)</span>
+
+	<span class="k">def</span> <span class="nf">count_layer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">layer_fragments_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">sparse</span><span class="o">.</span><span class="n">coo_matrix</span><span class="p">:</span>
+		<span class="n">fragments_idx</span> <span class="o">=</span> <span class="p">{</span><span class="n">f</span><span class="p">:</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fragments</span><span class="p">)}</span>
+		<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">layer_fragments_file</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+			<span class="n">include_fragments</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">fragments_idx</span><span class="p">[</span><span class="n">x</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()])</span>
+		<span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Counting pseudoalignments for layer &#39;</span><span class="si">{layer_name}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+		<span class="c1"># Figure out which of the equivalence classes are relevant</span>
+		<span class="n">include_ec</span> <span class="o">=</span> <span class="p">{}</span>
+		<span class="k">for</span> <span class="n">ec</span><span class="p">,</span> <span class="n">tids</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">equivalence_classes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+			<span class="k">if</span> <span class="nb">any</span><span class="p">([</span><span class="n">tid</span> <span class="ow">in</span> <span class="n">include_fragments</span> <span class="k">for</span> <span class="n">tid</span> <span class="ow">in</span> <span class="n">tids</span><span class="p">]):</span>
+				<span class="n">include_ec</span><span class="p">[</span><span class="n">ec</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+			<span class="k">else</span><span class="p">:</span>
+				<span class="n">include_ec</span><span class="p">[</span><span class="n">ec</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+		<span class="n">m</span> <span class="o">=</span> <span class="n">IncrementalSparseMatrixUInt16</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n_genes</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_cells</span><span class="p">))</span>
+		<span class="k">for</span> <span class="n">ix</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_records</span><span class="p">):</span>
+			<span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">bus_valid</span><span class="p">[</span><span class="n">ix</span><span class="p">]:</span>
+				<span class="k">continue</span>
+			<span class="n">gene</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bus_gene</span><span class="p">[</span><span class="n">ix</span><span class="p">]</span>
+			<span class="k">if</span> <span class="n">include_ec</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="p">[</span><span class="s2">&quot;equivalence_class&quot;</span><span class="p">][</span><span class="n">ix</span><span class="p">]]:</span>
+				<span class="n">m</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gene</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cell_for_barcode_idx</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="p">[</span><span class="s2">&quot;barcode&quot;</span><span class="p">][</span><span class="n">ix</span><span class="p">]],</span> <span class="mi">1</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="n">layer_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">tocoo</span><span class="p">()</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="n">layer_name</span><span class="p">]</span>
+
+	<span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">out_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">sample_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">samples_metadata_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+		<span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Saving&quot;</span><span class="p">)</span>
+		<span class="n">row_attrs</span> <span class="o">=</span> <span class="p">{}</span>
+		<span class="c1"># Transpose the gene metadata</span>
+		<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">attr</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gene_metadata_attributes</span><span class="p">):</span>
+			<span class="n">row_attrs</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">genes</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+
+		<span class="c1"># Create cell attributes</span>
+		<span class="n">col_attrs</span> <span class="o">=</span> <span class="p">{</span>
+			<span class="s2">&quot;CellID&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">sample_id</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="n">twobit_to_dna</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">cid</span><span class="p">),</span> <span class="mi">16</span><span class="p">)</span> <span class="k">for</span> <span class="n">cid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cell_ids</span><span class="p">],</span>
+			<span class="s2">&quot;TotalUMIs&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_umis</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">valid_cells</span><span class="p">]</span>
+		<span class="p">}</span>
+
+		<span class="c1"># Load sample metadata</span>
+		<span class="n">metadata</span> <span class="o">=</span> <span class="n">load_sample_metadata</span><span class="p">(</span><span class="n">samples_metadata_file</span><span class="p">,</span> <span class="n">sample_id</span><span class="p">)</span>
+		<span class="n">global_attrs</span> <span class="o">=</span> <span class="p">{</span>
+			<span class="o">**</span><span class="p">{</span>
+				<span class="s2">&quot;SampleID&quot;</span><span class="p">:</span> <span class="n">sample_id</span><span class="p">,</span>
+				<span class="s2">&quot;AmbientUMIs&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">ambient_umis</span><span class="p">,</span>
+				<span class="s2">&quot;RedundantReadFraction&quot;</span><span class="p">:</span> <span class="mi">1</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">bus_valid</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_records</span><span class="p">,</span>
+				<span class="s2">&quot;AmbientPValue&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">ambient_pvalue</span><span class="p">,</span>
+				<span class="s2">&quot;BarcodeTotalUMIs&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_umis</span><span class="p">,</span>
+				<span class="s2">&quot;CellBarcodes&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_cells</span>
+			<span class="p">},</span> <span class="o">**</span><span class="n">metadata</span><span class="p">}</span>
+
+		<span class="n">layers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+		<span class="n">layers</span><span class="p">[</span><span class="s2">&quot;&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">matrix</span>
+		<span class="n">create</span><span class="p">(</span><span class="n">out_file</span><span class="p">,</span> <span class="n">layers</span><span class="p">,</span> <span class="n">row_attrs</span><span class="p">,</span> <span class="n">col_attrs</span><span class="p">,</span> <span class="n">file_attrs</span><span class="o">=</span><span class="n">global_attrs</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="n">cmd</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">synchronous</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">:</span>
+	<span class="k">if</span> <span class="n">synchronous</span><span class="p">:</span>
+		<span class="k">yield</span> <span class="n">os</span><span class="o">.</span><span class="n">popen</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cmd</span><span class="p">))</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="n">popen</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">STDOUT</span><span class="p">,</span> <span class="n">universal_newlines</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+		<span class="k">for</span> <span class="n">stdout_line</span> <span class="ow">in</span> <span class="nb">iter</span><span class="p">(</span><span class="n">popen</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">readline</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">):</span>
+			<span class="k">yield</span> <span class="n">stdout_line</span>
+		<span class="n">popen</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+		<span class="n">return_code</span> <span class="o">=</span> <span class="n">popen</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+		<span class="k">if</span> <span class="n">return_code</span><span class="p">:</span>
+			<span class="k">raise</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">CalledProcessError</span><span class="p">(</span><span class="n">return_code</span><span class="p">,</span> <span class="n">cmd</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="create_from_fastq"><a class="viewcode-back" href="../../fullapi/create_from_fastq.html#loompy.create_from_fastq">[docs]</a><span class="k">def</span> <span class="nf">create_from_fastq</span><span class="p">(</span><span class="n">out_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">sample_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">fastqs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">index_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">samples_metadata_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">n_threads</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">temp_folder</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">synchronous</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	Args:</span>
+<span class="sd">		technology			String like &quot;10xv2&quot; or None to read the technology from the sample metadata file</span>
+<span class="sd">		expected_n_cells	Expected number of cells captured in the sample, or None to read the number from the sample metadata file</span>
+<span class="sd">		samples_metadata_file	Path to tab-delimited file with one header row OR path to sqlite database with one table called &quot;sample&quot;</span>
+<span class="sd">	</span>
+<span class="sd">	Remarks:</span>
+<span class="sd">		Samples metadata table should contain these columns:</span>
+<span class="sd">			name			Sample name (i.e. sample id)</span>
+<span class="sd">			chemistry		10x chemistry version (v1, v2 or v3)</span>
+<span class="sd">			targetnumcells	Number of cells expected in the sample</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="n">manifest_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">index_path</span><span class="p">,</span> <span class="s2">&quot;manifest.json&quot;</span><span class="p">)</span>
+	<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">manifest_file</span><span class="p">):</span>
+		<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Manifest file &#39;manifest.json&#39; was missing from index at &#39;</span><span class="si">{index_path}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+	<span class="k">for</span> <span class="n">fastq</span> <span class="ow">in</span> <span class="n">fastqs</span><span class="p">:</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">fastq</span><span class="p">):</span>
+			<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Fastq file &#39;</span><span class="si">{fastq}</span><span class="s2">&#39; was not found&quot;</span><span class="p">)</span>
+	<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">samples_metadata_file</span><span class="p">):</span>
+		<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Samples metadata file not found&quot;</span><span class="p">)</span>
+	<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">manifest_file</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+		<span class="n">manifest</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+	
+	<span class="n">metadata</span> <span class="o">=</span> <span class="n">load_sample_metadata</span><span class="p">(</span><span class="n">samples_metadata_file</span><span class="p">,</span> <span class="n">sample_id</span><span class="p">)</span>
+
+	<span class="k">if</span> <span class="p">((</span><span class="s2">&quot;technology&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">metadata</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="s2">&quot;chemistry&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">metadata</span><span class="p">))</span> <span class="ow">or</span> <span class="p">(</span><span class="s2">&quot;targetnumcells&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">metadata</span><span class="p">):</span>
+		<span class="nb">print</span><span class="p">(</span><span class="n">metadata</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+		<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Samples metadata must contain columns &#39;targetnumcells&#39; and either &#39;chemistry&#39; or &#39;technology&#39;&quot;</span><span class="p">)</span>
+	<span class="k">if</span> <span class="s2">&quot;technology&quot;</span> <span class="ow">in</span> <span class="n">metadata</span><span class="p">:</span>
+		<span class="n">technology</span> <span class="o">=</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;technology&quot;</span><span class="p">]</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="n">technology</span> <span class="o">=</span> <span class="s2">&quot;10x&quot;</span> <span class="o">+</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;chemistry&quot;</span><span class="p">]</span>
+	<span class="k">try</span><span class="p">:</span>
+		<span class="n">expected_n_cells</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;targetnumcells&quot;</span><span class="p">])</span>
+	<span class="k">except</span><span class="p">:</span>
+		<span class="n">expected_n_cells</span> <span class="o">=</span> <span class="mi">5000</span>
+
+	<span class="n">whitelist_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">index_path</span><span class="p">,</span> <span class="n">f</span><span class="s2">&quot;</span><span class="si">{technology}</span><span class="s2">_whitelist.txt&quot;</span><span class="p">)</span>
+	<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">whitelist_file</span><span class="p">):</span>  <span class="c1"># type: ignore</span>
+		<span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Barcode whitelist file </span><span class="si">{whitelist_file}</span><span class="s2"> not found in index folder at &#39;</span><span class="si">{index_path}</span><span class="s2">&#39;; barcode correction will be skipped.&quot;</span><span class="p">)</span>
+		<span class="n">whitelist_file</span> <span class="o">=</span> <span class="kc">None</span>
+
+	<span class="k">with</span> <span class="n">TemporaryDirectory</span><span class="p">()</span> <span class="k">as</span> <span class="n">d</span><span class="p">:</span>
+		<span class="k">if</span> <span class="n">temp_folder</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+			<span class="n">d</span> <span class="o">=</span> <span class="n">temp_folder</span>
+			<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">d</span><span class="p">):</span>
+				<span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+		<span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;kallisto&quot;</span><span class="p">,</span> <span class="s2">&quot;bus&quot;</span><span class="p">,</span> <span class="s2">&quot;-i&quot;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">index_path</span><span class="p">,</span> <span class="n">manifest</span><span class="p">[</span><span class="s2">&quot;index_file&quot;</span><span class="p">]),</span> <span class="s2">&quot;-o&quot;</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="s2">&quot;-x&quot;</span><span class="p">,</span> <span class="n">technology</span><span class="p">,</span> <span class="s2">&quot;-t&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">n_threads</span><span class="p">)]</span> <span class="o">+</span> <span class="n">fastqs</span>
+		<span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cmd</span><span class="p">))</span>
+		<span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">execute</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">synchronous</span><span class="p">):</span>
+			<span class="k">if</span> <span class="n">line</span> <span class="o">!=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">:</span>
+				<span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">line</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+		<span class="n">run_info</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+		<span class="k">try</span><span class="p">:</span>
+			<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="s2">&quot;run_info.json&quot;</span><span class="p">))</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+				<span class="n">run_info</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+		<span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+			<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="s2">&quot;run_info.json&quot;</span><span class="p">))</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+				<span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+					<span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+			<span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Error decoding run_info.json: </span><span class="si">{e}</span><span class="s2">&quot;</span><span class="p">)</span>
+		<span class="n">bus</span> <span class="o">=</span> <span class="n">BusFile</span><span class="p">(</span>
+			<span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="s2">&quot;output.bus&quot;</span><span class="p">),</span>
+			<span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">index_path</span><span class="p">,</span> <span class="n">manifest</span><span class="p">[</span><span class="s2">&quot;gene_metadata_file&quot;</span><span class="p">]),</span>
+			<span class="n">manifest</span><span class="p">[</span><span class="s2">&quot;gene_metadata_key&quot;</span><span class="p">],</span>
+			<span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">index_path</span><span class="p">,</span> <span class="n">manifest</span><span class="p">[</span><span class="s2">&quot;fragments_to_genes_file&quot;</span><span class="p">]),</span>
+			<span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="s2">&quot;matrix.ec&quot;</span><span class="p">),</span>
+			<span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="s2">&quot;transcripts.txt&quot;</span><span class="p">)</span>
+		<span class="p">)</span>
+		<span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Found </span><span class="si">{bus.n_records:,}</span><span class="s2"> records for </span><span class="si">{bus.n_genes:,}</span><span class="s2"> genes and </span><span class="si">{bus.n_cells:,}</span><span class="s2"> uncorrected cell barcodes.&quot;</span><span class="p">)</span>
+		<span class="k">if</span> <span class="n">whitelist_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+			<span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Not correcting barcodes, because whitelist file was not provided.&quot;</span><span class="p">)</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Correcting cell barcodes&quot;</span><span class="p">)</span>
+		<span class="n">bus</span><span class="o">.</span><span class="n">correct</span><span class="p">(</span><span class="n">whitelist_file</span><span class="p">)</span>
+		<span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Found </span><span class="si">{bus.n_cells:,}</span><span class="s2"> corrected cell barcodes.&quot;</span><span class="p">)</span>
+		<span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Removing redundant reads using UMIs&quot;</span><span class="p">)</span>
+		<span class="n">bus</span><span class="o">.</span><span class="n">deduplicate</span><span class="p">()</span>
+		<span class="n">seq_sat</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">bus</span><span class="o">.</span><span class="n">bus_valid</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">bus</span><span class="o">.</span><span class="n">n_records</span>
+		<span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;{int(seq_sat * 100)}</span><span class="si">% s</span><span class="s2">equencing saturation.&quot;</span><span class="p">)</span>
+		<span class="n">bus</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+		<span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Found {bus.matrix.count_nonzero():,} UMIs.&quot;</span><span class="p">)</span>
+		<span class="k">for</span> <span class="n">layer</span><span class="p">,</span> <span class="n">layer_def</span> <span class="ow">in</span> <span class="n">manifest</span><span class="p">[</span><span class="s2">&quot;layers&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+			<span class="n">bus</span><span class="o">.</span><span class="n">count_layer</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">index_path</span><span class="p">,</span> <span class="n">layer_def</span><span class="p">))</span>
+			<span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Found {bus.layers[layer].count_nonzero():,} UMIs.&quot;</span><span class="p">)</span>
+		<span class="n">bus</span><span class="o">.</span><span class="n">remove_empty_beads</span><span class="p">(</span><span class="n">expected_n_cells</span><span class="p">)</span>
+		<span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Creating loom file &#39;</span><span class="si">{out_file}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+		<span class="n">bus</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">out_file</span><span class="p">,</span> <span class="n">sample_id</span><span class="p">,</span> <span class="n">samples_metadata_file</span><span class="p">)</span>
+		<span class="k">with</span> <span class="n">connect</span><span class="p">(</span><span class="n">out_file</span><span class="p">)</span> <span class="k">as</span> <span class="n">ds</span><span class="p">:</span>
+			<span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">Species</span> <span class="o">=</span> <span class="n">manifest</span><span class="p">[</span><span class="s2">&quot;species&quot;</span><span class="p">]</span>
+			<span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">Saturation</span> <span class="o">=</span> <span class="n">seq_sat</span>
+			<span class="k">if</span> <span class="n">run_info</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+				<span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">NumReadsProcessed</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">run_info</span><span class="p">[</span><span class="s2">&quot;n_processed&quot;</span><span class="p">])</span>
+				<span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">NumPseudoaligned</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">run_info</span><span class="p">[</span><span class="s2">&quot;n_pseudoaligned&quot;</span><span class="p">])</span>
+				<span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">KallistoCommand</span> <span class="o">=</span> <span class="n">run_info</span><span class="p">[</span><span class="s2">&quot;call&quot;</span><span class="p">]</span>
+				<span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">KallistoVersion</span> <span class="o">=</span> <span class="n">run_info</span><span class="p">[</span><span class="s2">&quot;kallisto_version&quot;</span><span class="p">]</span></div>
+</pre></div>
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2017, LinnarssonLab.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.2.0.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

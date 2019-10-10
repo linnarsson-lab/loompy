@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>Cookbook &#8212; loompy 3.0.6 documentation</title>
+    <link rel="stylesheet" href="../_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Conventions" href="../conventions/index.html" />
+    <link rel="prev" title="API Walkthrough" href="../apiwalkthrough/index.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.11.0.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.3.7/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-light navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html"><span><img src="../_static/Loom_icon.png"></span>
+          Loom</a>
+        <span class="navbar-text navbar-version pull-left"><b>3.0</b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="http://loompy.org">loompy.org</a></li>
+                <li><a href="https://github.com/linnarsson-lab/loompy">GitHub</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">Contents <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Loompy documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/index.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../installation/index.html#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../installation/index.html#easy-installation">Easy installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../installation/index.html#from-source">From source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../installation/index.html#getting-started">Getting Started</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../semantics/index.html">Understanding the semantics of loom files</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../semantics/index.html#connecting-not-loading-and-saving">Connecting, not loading and saving</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../semantics/index.html#reading-and-writing">Reading and writing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../semantics/index.html#efficient-indexing-and-compression">Efficient indexing and compression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../semantics/index.html#matrix-and-attributes">Matrix and attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../semantics/index.html#data-types">Data types</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../kallisto/index.html">Create from fastq</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../kallisto/index.html#the-loompy-command-line-tool">The <code class="docutils literal notranslate"><span class="pre">loompy</span></code> command-line tool</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../kallisto/index.html#using-the-loompy-fromfq-command">Using the <code class="docutils literal notranslate"><span class="pre">loompy</span> <span class="pre">fromfq</span></code> command</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../apiwalkthrough/index.html">API Walkthrough</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../apiwalkthrough/index.html#creating-and-connecting">Creating and connecting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../apiwalkthrough/index.html#manipulate-data">Manipulate data</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Cookbook</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#working-with-a-newly-created-file">Working with a newly created file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#loading-attributes-from-pandas">Loading attributes from Pandas</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#combining-data-using-scan-and-new">Combining data using scan() and new()</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#fitting-an-incremental-pca">Fitting an incremental PCA</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../conventions/index.html">Conventions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../conventions/index.html#single-analysis-per-file">Single analysis per file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../conventions/index.html#orientation">Orientation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../conventions/index.html#attribute-naming-conventions">Attribute naming conventions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../format/index.html">Loom file format specs</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../format/index.html#versions">Versions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../format/index.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../format/index.html#hdf5-concepts">HDF5 concepts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../format/index.html#standards">Standards</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../format/index.html#specification">Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../format/index.html#datatypes">Datatypes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../format/index.html#example">Example</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../fullapi/index.html">Complete API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../fullapi/create.html">create (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../fullapi/new.html">new (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../fullapi/create_from_fastq.html">create_from_fastq (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../fullapi/create_from_cellranger.html">create_from_cellranger (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../fullapi/connect.html">connect (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../fullapi/combine.html">combine (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../fullapi/loompy.html">LoomConnection (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../fullapi/layer_manager.html">LayerManager (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../fullapi/memory_loom_layer.html">MemoryLoomLayer (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../fullapi/loom_layer.html">LoomLayer (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../fullapi/view_manager.html">ViewManager (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../fullapi/loom_view.html">LoomView (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../fullapi/loom_validator.html">LoomValidator (class)</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+      <div class="col-md-3">
+        <div id="sidebar" class="bs-sidenav" role="complementary"><div class="list-group">
+    <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Loompy documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../semantics/index.html">Understanding the semantics of loom files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../kallisto/index.html">Create from fastq</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../apiwalkthrough/index.html">API Walkthrough</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Cookbook</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#working-with-a-newly-created-file">Working with a newly created file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#loading-attributes-from-pandas">Loading attributes from Pandas</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#combining-data-using-scan-and-new">Combining data using scan() and new()</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#fitting-an-incremental-pca">Fitting an incremental PCA</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../conventions/index.html">Conventions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../format/index.html">Loom file format specs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../fullapi/index.html">Complete API Reference</a></li>
+</ul>
+
+</div>
+        </div>
+      </div>
+    <div class="body col-md-9 content" role="main">
+      
+  <div class="section" id="cookbook">
+<span id="id1"></span><h1>Cookbook<a class="headerlink" href="#cookbook" title="Permalink to this headline">¶</a></h1>
+<p>In this section, we will show by example how to complete common tasks with idiomatic use of loompy.</p>
+<div class="section" id="working-with-a-newly-created-file">
+<h2>Working with a newly created file<a class="headerlink" href="#working-with-a-newly-created-file" title="Permalink to this headline">¶</a></h2>
+<p>Loompy 2 changes the behaviour of <code class="docutils literal notranslate"><span class="pre">loompy.create</span></code>: it no longer returns a value. Thus in order to work with a newly created file you have to do this:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">loompy</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s2">&quot;filename.loom&quot;</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">row_attrs</span><span class="p">,</span> <span class="n">col_attrs</span><span class="p">)</span>
+<span class="k">with</span> <span class="n">loompy</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s2">&quot;filename.loom&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">ds</span><span class="p">:</span>
+    <span class="o">....</span><span class="n">do</span> <span class="n">something</span> <span class="k">with</span> <span class="n">ds</span>
+<span class="c1"># File closes automatically</span>
+</pre></div>
+</div>
+<p>The reason for the change is that we would often create files without closing the returned file handle, which causes issues especially in multi-process scenarios.</p>
+<p>Note: if you simply want to create the file, and not access it, there is no need to use a <code class="docutils literal notranslate"><span class="pre">with</span></code> statement:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">loompy</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s2">&quot;filename.loom&quot;</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">row_attrs</span><span class="p">,</span> <span class="n">col_attrs</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This will leave the file closed.</p>
+</div>
+<div class="section" id="loading-attributes-from-pandas">
+<h2>Loading attributes from Pandas<a class="headerlink" href="#loading-attributes-from-pandas" title="Permalink to this headline">¶</a></h2>
+<p>If you have your metadata in a Pandas DataFrame, you can easily use it to create a Loom file. You will
+need one DataFrame for the column metadata and one for the row metadata. Convert each DataFrame into a dictionary
+of lists:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">df_row_metadata</span> <span class="o">=</span> <span class="o">...</span> <span class="c1"># A pandas DataFrame holding row metadata</span>
+<span class="n">df_col_metadata</span> <span class="o">=</span> <span class="o">...</span> <span class="c1"># A pandas DataFrame holding column metadata</span>
+<span class="n">data</span> <span class="o">=</span> <span class="o">...</span> <span class="c1"># A numpy ndarray holding the main dataset</span>
+
+<span class="n">loompy</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">df_row_metadata</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="s2">&quot;list&quot;</span><span class="p">),</span> <span class="n">df_col_metadata</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="s2">&quot;list&quot;</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="combining-data-using-scan-and-new">
+<h2>Combining data using scan() and new()<a class="headerlink" href="#combining-data-using-scan-and-new" title="Permalink to this headline">¶</a></h2>
+<p>We often want to scan through a number of input files (for example, raw
+data files from multiple experiments), select a subset of the columns (e.g. cells passing QC)
+and write them to a new file. This can be accomplished by creating an empty file using <code class="docutils literal notranslate"><span class="pre">loompy.new()</span></code> and
+then filling it up using the <code class="docutils literal notranslate"><span class="pre">scan()</span></code> method.</p>
+<p>For example, let’s select cells that have more than 500 detected UMIs in each of several files:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">loompy</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">out_file</span><span class="p">)</span> <span class="k">as</span> <span class="n">dsout</span><span class="p">:</span>  <span class="c1"># Create a new, empty, loom file</span>
+  <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">input_files</span><span class="p">:</span>
+    <span class="k">with</span> <span class="n">loompy</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">as</span> <span class="n">ds</span><span class="p">:</span>
+      <span class="n">totals</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">map</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+      <span class="n">cells</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">totals</span> <span class="o">&gt;</span> <span class="mi">500</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="c1"># Select the cells that passed QC (totals &gt; 500)</span>
+      <span class="k">for</span> <span class="p">(</span><span class="n">ix</span><span class="p">,</span> <span class="n">selection</span><span class="p">,</span> <span class="n">view</span><span class="p">)</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="n">items</span><span class="o">=</span><span class="n">cells</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">dsout</span><span class="o">.</span><span class="n">add_columns</span><span class="p">(</span><span class="n">view</span><span class="o">.</span><span class="n">layers</span><span class="p">,</span> <span class="n">col_attrs</span><span class="o">=</span><span class="n">view</span><span class="o">.</span><span class="n">ca</span><span class="p">,</span> <span class="n">row_attrs</span><span class="o">=</span><span class="n">view</span><span class="o">.</span><span class="n">ra</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Note that by using <code class="docutils literal notranslate"><span class="pre">new()</span></code> we will first be creating the new file, then appending columns to it.</p>
+<p>But what if the input files do not have their rows in the same order? <code class="docutils literal notranslate"><span class="pre">scan()</span></code> accepts a <code class="docutils literal notranslate"><span class="pre">key</span></code> argument
+to designate a primary key; each view is then returned sorted on the primary key on the <em>other axis</em>.
+For example, if you’re scanning across columns, you should provide a row attribute as key, and each view will be sorted
+on that attribute.</p>
+<p>Here’s the same example, but this time we provide the <code class="docutils literal notranslate"><span class="pre">key=&quot;Accession&quot;</span></code> argument to ensure that the input files
+are sorted on the accession identifier along rows:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">loompy</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">out_file</span><span class="p">)</span> <span class="k">as</span> <span class="n">dsout</span><span class="p">:</span>  <span class="c1"># Create a new, empty, loom file</span>
+  <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">input_files</span><span class="p">:</span>
+    <span class="k">with</span> <span class="n">loompy</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">as</span> <span class="n">ds</span><span class="p">:</span>
+      <span class="n">totals</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">map</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+      <span class="n">cells</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">totals</span> <span class="o">&gt;</span> <span class="mi">500</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="c1"># Select the cells that passed QC (totals &gt; 500)</span>
+      <span class="k">for</span> <span class="p">(</span><span class="n">ix</span><span class="p">,</span> <span class="n">selection</span><span class="p">,</span> <span class="n">view</span><span class="p">)</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="n">items</span><span class="o">=</span><span class="n">cells</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;Accession&quot;</span><span class="p">):</span>
+        <span class="n">dsout</span><span class="o">.</span><span class="n">add_columns</span><span class="p">(</span><span class="n">view</span><span class="o">.</span><span class="n">layers</span><span class="p">,</span> <span class="n">col_attrs</span><span class="o">=</span><span class="n">view</span><span class="o">.</span><span class="n">ca</span><span class="p">,</span> <span class="n">row_attrs</span><span class="o">=</span><span class="n">view</span><span class="o">.</span><span class="n">ra</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="fitting-an-incremental-pca">
+<h2>Fitting an incremental PCA<a class="headerlink" href="#fitting-an-incremental-pca" title="Permalink to this headline">¶</a></h2>
+<p>Incremental algorithms are a powerful way of working with datasets that won’t fit in RAM. For
+example, we can use incremental PCA to learn a PCA transform by batch-wise partial fits:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sklearn.decomposition</span> <span class="kn">import</span> <span class="n">IncrementalPCA</span>
+<span class="n">genes</span> <span class="o">=</span> <span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">Selected</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">pca</span> <span class="o">=</span> <span class="n">IncrementalPCA</span><span class="p">(</span><span class="n">n_components</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+  <span class="k">for</span> <span class="p">(</span><span class="n">ix</span><span class="p">,</span> <span class="n">selection</span><span class="p">,</span> <span class="n">view</span><span class="p">)</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">pca</span><span class="o">.</span><span class="n">partial_fit</span><span class="p">(</span><span class="n">view</span><span class="p">[</span><span class="n">genes</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">transpose</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2017, LinnarssonLab.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.2.0.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

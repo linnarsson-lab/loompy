@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>create (function) &#8212; loompy 3.0.6 documentation</title>
+    <link rel="stylesheet" href="../_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="new (function)" href="new.html" />
+    <link rel="prev" title="Complete API Reference" href="index.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.11.0.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.3.7/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-light navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html"><span><img src="../_static/Loom_icon.png"></span>
+          Loom</a>
+        <span class="navbar-text navbar-version pull-left"><b>3.0</b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="http://loompy.org">loompy.org</a></li>
+                <li><a href="https://github.com/linnarsson-lab/loompy">GitHub</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">Contents <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Loompy documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/index.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../installation/index.html#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../installation/index.html#easy-installation">Easy installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../installation/index.html#from-source">From source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../installation/index.html#getting-started">Getting Started</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../semantics/index.html">Understanding the semantics of loom files</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../semantics/index.html#connecting-not-loading-and-saving">Connecting, not loading and saving</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../semantics/index.html#reading-and-writing">Reading and writing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../semantics/index.html#efficient-indexing-and-compression">Efficient indexing and compression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../semantics/index.html#matrix-and-attributes">Matrix and attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../semantics/index.html#data-types">Data types</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../kallisto/index.html">Create from fastq</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../kallisto/index.html#the-loompy-command-line-tool">The <code class="docutils literal notranslate"><span class="pre">loompy</span></code> command-line tool</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../kallisto/index.html#using-the-loompy-fromfq-command">Using the <code class="docutils literal notranslate"><span class="pre">loompy</span> <span class="pre">fromfq</span></code> command</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../apiwalkthrough/index.html">API Walkthrough</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../apiwalkthrough/index.html#creating-and-connecting">Creating and connecting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../apiwalkthrough/index.html#manipulate-data">Manipulate data</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../cookbook/index.html">Cookbook</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../cookbook/index.html#working-with-a-newly-created-file">Working with a newly created file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cookbook/index.html#loading-attributes-from-pandas">Loading attributes from Pandas</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cookbook/index.html#combining-data-using-scan-and-new">Combining data using scan() and new()</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cookbook/index.html#fitting-an-incremental-pca">Fitting an incremental PCA</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../conventions/index.html">Conventions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../conventions/index.html#single-analysis-per-file">Single analysis per file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../conventions/index.html#orientation">Orientation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../conventions/index.html#attribute-naming-conventions">Attribute naming conventions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../format/index.html">Loom file format specs</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../format/index.html#versions">Versions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../format/index.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../format/index.html#hdf5-concepts">HDF5 concepts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../format/index.html#standards">Standards</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../format/index.html#specification">Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../format/index.html#datatypes">Datatypes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../format/index.html#example">Example</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Complete API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">create (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="new.html">new (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="create_from_fastq.html">create_from_fastq (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="create_from_cellranger.html">create_from_cellranger (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="connect.html">connect (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="combine.html">combine (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="loompy.html">LoomConnection (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="layer_manager.html">LayerManager (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="memory_loom_layer.html">MemoryLoomLayer (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="loom_layer.html">LoomLayer (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="view_manager.html">ViewManager (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="loom_view.html">LoomView (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="loom_validator.html">LoomValidator (class)</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+      <div class="col-md-3">
+        <div id="sidebar" class="bs-sidenav" role="complementary"><div class="list-group">
+    <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Loompy documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../semantics/index.html">Understanding the semantics of loom files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../kallisto/index.html">Create from fastq</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../apiwalkthrough/index.html">API Walkthrough</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../conventions/index.html">Conventions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../format/index.html">Loom file format specs</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Complete API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">create (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="new.html">new (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="create_from_fastq.html">create_from_fastq (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="create_from_cellranger.html">create_from_cellranger (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="connect.html">connect (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="combine.html">combine (function)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="loompy.html">LoomConnection (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="layer_manager.html">LayerManager (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="memory_loom_layer.html">MemoryLoomLayer (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="loom_layer.html">LoomLayer (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="view_manager.html">ViewManager (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="loom_view.html">LoomView (class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="loom_validator.html">LoomValidator (class)</a></li>
+</ul>
+</li>
+</ul>
+
+</div>
+        </div>
+      </div>
+    <div class="body col-md-9 content" role="main">
+      
+  <div class="section" id="create-function">
+<h1>create (function)<a class="headerlink" href="#create-function" title="Permalink to this headline">¶</a></h1>
+<p>Create a new Loom file.</p>
+<dl class="function">
+<dt id="loompy.create">
+<code class="sig-prename descclassname">loompy.</code><code class="sig-name descname">create</code><span class="sig-paren">(</span><em class="sig-param">filename: str, layers: Union[numpy.ndarray, Dict[str, numpy.ndarray], loompy.layer_manager.LayerManager], row_attrs: Union[loompy.attribute_manager.AttributeManager, Dict[str, numpy.ndarray]], col_attrs: Union[loompy.attribute_manager.AttributeManager, Dict[str, numpy.ndarray]], *, file_attrs: Dict[str, str] = None</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="../_modules/loompy/loompy.html#create"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#loompy.create" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new Loom file from the given data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – The filename (typically using a <code class="docutils literal notranslate"><span class="pre">.loom</span></code> file extension)</p></li>
+<li><p><strong>layers</strong> – <p>One of the following:</p>
+<ul>
+<li><p>Two-dimensional (N-by-M) numpy ndarray of float values</p></li>
+<li><p>Sparse matrix (e.g. <a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csr_matrix.html#scipy.sparse.csr_matrix" title="(in SciPy v1.3.1)"><code class="xref py py-class docutils literal notranslate"><span class="pre">scipy.sparse.csr_matrix</span></code></a>)</p></li>
+<li><p>Dictionary of named layers, each an N-by-M ndarray or sparse matrix</p></li>
+<li><p>A <a class="reference internal" href="layer_manager.html#loompy.LayerManager" title="loompy.LayerManager"><code class="xref py py-class docutils literal notranslate"><span class="pre">LayerManager</span></code></a>, with each layer an N-by-M ndarray</p></li>
+</ul>
+</p></li>
+<li><p><strong>row_attrs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – Row attributes, where keys are attribute names and values
+are numpy arrays (float or string) of length N</p></li>
+<li><p><strong>col_attrs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – Column attributes, where keys are attribute names and
+values are numpy arrays (float or string) of length M</p></li>
+<li><p><strong>file_attrs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – Global attributes, where keys are attribute names and
+values are strings</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Nothing</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Remarks:</dt><dd><p>If the file exists, it will be overwritten.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<p>In order to work with a newly created file you have to connect to it:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">loompy</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s2">&quot;filename.loom&quot;</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">row_attrs</span><span class="p">,</span> <span class="n">col_attrs</span><span class="p">)</span>
+<span class="k">with</span> <span class="n">loompy</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s2">&quot;filename.loom&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">ds</span><span class="p">:</span>
+    <span class="o">....</span><span class="n">do</span> <span class="n">something</span> <span class="k">with</span> <span class="n">ds</span>
+<span class="c1"># File closes automatically</span>
+</pre></div>
+</div>
+<p>Note: if you simply want to create the file, and not access it, there is no need to use a <code class="docutils literal notranslate"><span class="pre">with</span></code> statement:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">loompy</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s2">&quot;filename.loom&quot;</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">row_attrs</span><span class="p">,</span> <span class="n">col_attrs</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This will leave the file closed.</p>
+</div>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2017, LinnarssonLab.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.2.0.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>
