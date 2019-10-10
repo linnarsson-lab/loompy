@@ -79,7 +79,7 @@ class LoomConnection:
 		if validate:
 			lv = loompy.LoomValidator()
 			if not lv.validate(filename):
-				raise ValueError("\n".join(lv.errors) + f"\n{filename} does not appead to be a valid Loom file according to Loom spec version '{lv.version}'")
+				raise ValueError("\n".join(lv.errors) + f"\n{filename} does not appear to be a valid Loom file according to Loom spec version '{lv.version}'")
 
 		self._file = h5py.File(filename, mode)
 		self._closed = False

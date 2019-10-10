@@ -105,7 +105,7 @@ Global attributes
 ^^^^^^^^^^^^^^^^^
 
 -  There MUST be an HDF5 group ``/attrs`` containing global attributes.
--  There MUST be a HDF5 dataset ``/attrs/LOOM_SPEC_VERSION`` with the value ``v3.0.0``.
+-  There MUST be a HDF5 dataset ``/attrs/LOOM_SPEC_VERSION`` with the value ``3.0.0``.
 
 Global attributes apply semantically to the whole file, not any specific part of it. 
 Such attributes are stored in the HDF5 group ``/attrs`` and can be any valid scalar
