@@ -316,6 +316,7 @@ class LoomConnection:
 				self.shape = (self.ra[k].shape[0], self.shape[1])
 			if len(self.ca) == 0:
 				for k, v in col_attrs.items():
+					v = np.array(v)
 					self.ca[k] = np.zeros(0, v.dtype)
 
 		layers_dict: Dict[str, np.ndarray] = {}
@@ -388,6 +389,7 @@ class LoomConnection:
 			self.shape = (self.shape[0], n_cols)
 			todel = []
 			for key, vals in col_attrs.items():
+				vals = np.array(vals)
 				if vals.shape[1:] != self.col_attrs[key].shape[1:]:
 					logging.debug(f"Removing attribute {key} because shape {vals.shape} did not match existing shape {self.col_attrs[key].shape} beyond first dimension")
 					todel.append(key)

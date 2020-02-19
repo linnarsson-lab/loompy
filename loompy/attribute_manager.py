@@ -153,13 +153,11 @@ class AttributeManager:
 				if self.ds._file[a].__contains__(name):
 					del self.ds._file[a + name]
 
-				chunk_size = min(values.shape[0], 1000)
 				self.ds._file.create_dataset(
 					a + name,
 					data=values,
 					dtype=h5py.special_dtype(vlen=str) if values.dtype == np.object_ else values.dtype,
 					maxshape=(values.shape[0], ) if len(values.shape) == 1 else (values.shape[0], None),
-					chunks=(chunk_size, ) if len(values.shape) == 1 else (chunk_size , 1),
 					fletcher32=False,
 					compression="gzip",
 					shuffle=False,
