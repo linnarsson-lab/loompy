@@ -381,7 +381,7 @@ Layers support the same pythonic API as attributes:
   a = ds.layers["spliced"][:, 10] # Assign the 10th column of layer "spliced" to the variable a
   del ds.layers["spliced"]     # Delete the "spliced" layer
 
-The main matrix is availabe as a layer named "" (the empty string). It cannot be deleted but
+The main matrix is available as a layer named "" (the empty string). It cannot be deleted but
 otherwise supports the same operations as any other layer.
 
 As a convenience, layers are also available directly on the connection object. The above
