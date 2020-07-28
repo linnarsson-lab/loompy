@@ -147,7 +147,7 @@ class LayerManager:
 				# Fill the matrix with sparse data
 				if sparse.issparse(val):
 					m = val.tocsc()
-					window = 6400
+					window = max(1, 1024**3 // 8 * m.shape[0])
 					ix = 0
 					while ix < val.shape[1]:
 						window = min(window, m.shape[1] - ix)
@@ -155,7 +155,7 @@ class LayerManager:
 							break
 						self.ds._file[path][:, ix:ix + window] = m[:, ix: ix + window].toarray()
 						ix += window
-					
+
 				self.ds._file.flush()
 			else:
 				self.__dict__["storage"][name] = val
