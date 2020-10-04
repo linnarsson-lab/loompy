@@ -894,6 +894,8 @@ class LoomConnection:
 						if np.issubdtype(type(val), np.str_):
 							valnew = val.replace("/", "-")  # Slashes are not allowed in attribute names
 							valnew = valnew.replace(".", "_")  # Nor are periods
+						else:
+							valnew = val
 						ca[key + "_" + str(valnew)] = npg.aggregate(zero_strt_sort_noholes_lbls, (self.ca[key] == val).astype('int'), func="sum", fill_value=0)
 				elif func == "mode":
 					def mode(x):  # type: ignore
