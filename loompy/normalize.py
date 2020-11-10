@@ -16,7 +16,7 @@ def normalize_attr_strings(a: np.ndarray) -> np.ndarray:
 		elif np.all([type(x) is np.string_ for x in a]) or np.all([type(x) is np.bytes_ for x in a]):
 			return a.astype("string_")
 		else:
-			logging.warn(f"Attribute contains mixed object types ({np.unique([str(type(x)) for x in a])}); casting all to string")
+			logging.debug(f"Attribute contains mixed object types ({np.unique([str(type(x)) for x in a])}); casting all to string")
 			return np.array([str(x) for x in a], dtype="string_")
 	elif np.issubdtype(a.dtype, np.string_) or np.issubdtype(a.dtype, np.object_):
 		return a
@@ -47,7 +47,7 @@ def normalize_attr_array(a: Any) -> np.ndarray:
 		raise ValueError("Argument must be a list, tuple, numpy matrix, numpy ndarray or sparse matrix.")
 
 
-def normalize_attr_values(a: Any) -> np.ndarray:
+def normalize_attr_values(a: Any, use_object_strings: bool = False) -> np.ndarray:
 	"""
 	Take all kinds of input values and validate/normalize them.
 	
@@ -70,7 +70,10 @@ def normalize_attr_values(a: Any) -> np.ndarray:
 	if np.issubdtype(arr.dtype, np.integer) or np.issubdtype(arr.dtype, np.floating):
 		pass  # We allow all these types
 	elif np.issubdtype(arr.dtype, np.character) or np.issubdtype(arr.dtype, np.object_):
-		arr = normalize_attr_strings(arr)
+		if use_object_strings:
+			arr = np.array([str(elm) for elm in a], dtype=object)
+		else:
+			arr = normalize_attr_strings(arr)
 	elif np.issubdtype(arr.dtype, np.bool_):
 		arr = arr.astype('ubyte')
 	if scalar:

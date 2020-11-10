@@ -5,10 +5,10 @@ from unittest import TestCase
 import h5py
 import numpy as np
 
-from loompy import FileAttributeManager
+from loompy import GlobalAttributeManager
 
 
-class FileAttributeManagerTests(TestCase):
+class GlobalAttributeManagerTests(TestCase):
 	VALUE_IN_FILE = np.arange(3)
 
 	def setUp(self):
@@ -23,7 +23,7 @@ class FileAttributeManagerTests(TestCase):
 		os.remove(self.filename)
 
 	def test_get(self):
-		m = FileAttributeManager(self.file)
+		m = GlobalAttributeManager(self.file)
 		default = np.arange(2, 5)
 
 		val = m.get("arr")

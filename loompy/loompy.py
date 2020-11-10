@@ -22,23 +22,20 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import numpy as np
-from typing import *
-import warnings
-import os.path
-from scipy.io import mmread
-import scipy.sparse
-from shutil import copyfile
-import logging
-import time
 import gzip
+import logging
+import os.path
+from shutil import copyfile
+from typing import Tuple, Union, Any, Dict, List, Iterable, Callable, Optional
+
+import h5py
+import numpy as np
+import numpy_groupies.aggregate_numpy as npg
+import scipy.sparse
+from scipy.io import mmread
+
 import loompy
 from loompy import deprecated, timestamp
-import pandas as pd
-import warnings
-with warnings.catch_warnings():
-	warnings.simplefilter("ignore")
-	import h5py
 
 
 class LoomConnection:
@@ -58,7 +55,7 @@ class LoomConnection:
 	Inside the ``with`` block, you can access the dataset (here using the variable ``ds``). When execution
 	leaves the ``with`` block, the connection is automatically closed, freeing up resources.
 	'''
-	def __init__(self, filename: str, mode: str = 'r+', *, validate: bool = True, spec_version: str = "2.0.1") -> None:
+	def __init__(self, filename: str, mode: str = 'r+', *, validate: bool = True) -> None:
 		"""
 		Establish a connection to a Loom file.
 
@@ -80,9 +77,9 @@ class LoomConnection:
 
 		# Validate the file
 		if validate:
-			lv = loompy.LoomValidator(version=spec_version)
+			lv = loompy.LoomValidator()
 			if not lv.validate(filename):
-				raise ValueError("\n".join(lv.errors) + f"\n{filename} does not appead to be a valid Loom file according to Loom spec version '{spec_version}'")
+				raise ValueError("\n".join(lv.errors) + f"\n{filename} does not appear to be a valid Loom file according to Loom spec version '{lv.version}'")
 
 		self._file = h5py.File(filename, mode)
 		self._closed = False
@@ -94,7 +91,7 @@ class LoomConnection:
 		self.view = loompy.ViewManager(self)  #: Create a view of the file by slicing this attribute, like ``ds.view[:100, :100]``
 		self.ra = loompy.AttributeManager(self, axis=0)  #: Row attributes, dict-like with np.ndarray values
 		self.ca = loompy.AttributeManager(self, axis=1)  #: Column attributes, dict-like with np.ndarray values
-		self.attrs = loompy.FileAttributeManager(self._file)  #: Global attributes
+		self.attrs = loompy.GlobalAttributeManager(self._file)  #: Global attributes
 		self.row_graphs = loompy.GraphManager(self, axis=0)  #: Row graphs, dict-like with values that are :class:`scipy.sparse.coo_matrix` objects
 		self.col_graphs = loompy.GraphManager(self, axis=1)  #: Column graphs, dict-like with values that are :class:`scipy.sparse.coo_matrix` objects
 
@@ -319,6 +316,7 @@ class LoomConnection:
 				self.shape = (self.ra[k].shape[0], self.shape[1])
 			if len(self.ca) == 0:
 				for k, v in col_attrs.items():
+					v = np.array(v)
 					self.ca[k] = np.zeros(0, v.dtype)
 
 		layers_dict: Dict[str, np.ndarray] = {}
@@ -359,7 +357,7 @@ class LoomConnection:
 		for key in todel:
 			del col_attrs[key]
 		if did_remove:
-			logging.warn("Some column attributes were removed: " + ",".join(todel))
+			logging.debug("Some column attributes were removed: " + ",".join(todel))
 
 		todel = []
 		did_remove = False
@@ -377,7 +375,7 @@ class LoomConnection:
 		for key in todel:
 			del self.ca[key]  # delete_attr(key, axis=1)
 		if did_remove:
-			logging.warn("Some column attributes were removed: " + ",".join(todel))
+			logging.debug("Some column attributes were removed: " + ",".join(todel))
 
 		if is_new:
 			for k, v in layers_dict.items():
@@ -389,8 +387,16 @@ class LoomConnection:
 			old_n_cols = self.shape[1]
 			# Must set new shape here, otherwise the attribute manager will complain
 			self.shape = (self.shape[0], n_cols)
+			todel = []
 			for key, vals in col_attrs.items():
-				self.ca[key] = np.concatenate([self.ca[key], vals])
+				vals = np.array(vals)
+				if vals.shape[1:] != self.col_attrs[key].shape[1:]:
+					logging.debug(f"Removing attribute {key} because shape {vals.shape} did not match existing shape {self.col_attrs[key].shape} beyond first dimension")
+					todel.append(key)
+				else:
+					self.ca[key] = np.concatenate([self.ca[key], vals])
+			for key in todel:
+				del self.ca[key]
 
 			# Add the columns layerwise
 			for key in self.layers.keys():
@@ -398,7 +404,7 @@ class LoomConnection:
 				self.layers[key][:, old_n_cols:n_cols] = layers_dict[key]
 		self._file.flush()
 
-	def add_loom(self, other_file: str, key: str = None, fill_values: Dict[str, np.ndarray] = None, batch_size: int = 1000, convert_attrs: bool = False) -> None:
+	def add_loom(self, other_file: str, key: str = None, fill_values: Dict[str, np.ndarray] = None, batch_size: int = 1000, convert_attrs: bool = False, include_graphs: bool = False) -> None:
 		"""
 		Add the content of another loom file
 
@@ -408,60 +414,71 @@ class LoomConnection:
 			fill_values:     default values to use for missing attributes (or None to drop missing attrs, or 'auto' to fill with sensible defaults)
 			batch_size:       the batch size used by batchscan (limits the number of rows/columns read in memory)
 			convert_attrs:   convert file attributes that differ between files into column attributes
+			include_graphs:  if true, include all the column graphs from other_file that are also present in this file
 
 		Returns:
 			Nothing, but adds the loom file. Note that the other loom file must have exactly the same
 			number of rows, and must have exactly the same column attributes.
-			The all the contents including layers but ignores layers in `other_file` that are not already present in self
+			Adds all the contents including layers but ignores layers in `other_file` that are not already present in self
+			Note that graphs are normally not added, unless include_graphs == True, in which case column graphs are added
 		"""
 		if self._file.mode != "r+":
 			raise IOError("Cannot add data when connected in read-only mode")
 		# Connect to the loom files
-		other = connect(other_file)
-		# Verify that the row keys can be aligned
-		ordering = None
-		if key is not None:
-			# This was original Sten's version but it creates a 400M entries array in memory
-			# ordering = np.where(other.row_attrs[key][None, :] == self.row_attrs[key][:, None])[1]
+		with loompy.connect(other_file) as other:
+			# Verify that the row keys can be aligned
+			ordering = None
+			if key is not None:
+				# This was original Sten's version but it creates a 400M entries array in memory
+				# ordering = np.where(other.row_attrs[key][None, :] == self.row_attrs[key][:, None])[1]
 
-			def ixs_thatsort_a2b(a: np.ndarray, b: np.ndarray, check_content: bool = True) -> np.ndarray:
-				"This is super duper magic sauce to make the order of one list to be like another"
-				if check_content:
-					assert len(np.intersect1d(a, b)) == len(a), "The two arrays are not matching"
-				return np.argsort(a)[np.argsort(np.argsort(b))]
+				def ixs_thatsort_a2b(a: np.ndarray, b: np.ndarray, check_content: bool = True) -> np.ndarray:
+					"This is super duper magic sauce to make the order of one list to be like another"
+					if check_content:
+						assert len(np.intersect1d(a, b)) == len(a), "The two arrays are not matching"
+					return np.argsort(a)[np.argsort(np.argsort(b))]
 
-			ordering = ixs_thatsort_a2b(a=other.row_attrs[key], b=self.row_attrs[key])
-			pk1 = sorted(other.row_attrs[key])
-			pk2 = sorted(self.row_attrs[key])
-			for ix, val in enumerate(pk1):
-				if pk2[ix] != val:
-					raise ValueError("Primary keys are not 1-to-1 alignable!")
-		diff_layers = set(self.layers.keys()) - set(other.layers.keys())
-		if len(diff_layers) > 0:
-			raise ValueError("%s is missing a layer, cannot merge with current file. layers missing:%s" % (other_file, diff_layers))
+				ordering = ixs_thatsort_a2b(a=other.row_attrs[key], b=self.row_attrs[key])
+				pk1 = sorted(other.row_attrs[key])
+				pk2 = sorted(self.row_attrs[key])
+				for ix, val in enumerate(pk1):
+					if pk2[ix] != val:
+						raise ValueError("Primary keys are not 1-to-1 alignable!")
+			diff_layers = set(self.layers.keys()) - set(other.layers.keys())
+			if len(diff_layers) > 0:
+				raise ValueError("%s is missing a layer, cannot merge with current file. layers missing:%s" % (other_file, diff_layers))
 
-		if convert_attrs:
-			# Prepare to replace any global attribute that differ between looms or is missing in either loom with a column attribute.
-			globalkeys = set(self.attrs)
-			globalkeys.update(other.attrs)
-			for globalkey in globalkeys:
-				if globalkey in self.attrs and globalkey in other.attrs and self.attrs[globalkey] == other.attrs[globalkey]:
-					continue
-				if globalkey not in self.col_attrs:
-					self_value = self.attrs[globalkey] if globalkey in self.attrs else np.zeros(1, dtype=other.attrs[globalkey].dtype)[0]
-					self.col_attrs[globalkey] = np.array([self_value] * self.shape[1])
-				if globalkey not in other.col_attrs:
-					other_value = other.attrs[globalkey] if globalkey in other.attrs else np.zeros(1, dtype=self.attrs[globalkey].dtype)[0]
-					other.col_attrs[globalkey] = np.array([other_value] * other.shape[1])
-				if globalkey in self.attrs:
-					delattr(self.attrs, globalkey)
+			if convert_attrs:
+				# Prepare to replace any global attribute that differ between looms or is missing in either loom with a column attribute.
+				globalkeys = set(self.attrs)
+				globalkeys.update(other.attrs)
+				for globalkey in globalkeys:
+					if globalkey in self.attrs and globalkey in other.attrs and self.attrs[globalkey] == other.attrs[globalkey]:
+						continue
+					if globalkey not in self.col_attrs:
+						self_value = self.attrs[globalkey] if globalkey in self.attrs else np.zeros(1, dtype=other.attrs[globalkey].dtype)[0]
+						self.col_attrs[globalkey] = np.array([self_value] * self.shape[1])
+					if globalkey not in other.col_attrs:
+						other_value = other.attrs[globalkey] if globalkey in other.attrs else np.zeros(1, dtype=self.attrs[globalkey].dtype)[0]
+						other.col_attrs[globalkey] = np.array([other_value] * other.shape[1])
+					if globalkey in self.attrs:
+						delattr(self.attrs, globalkey)
 
-		for (ix, selection, vals) in other.batch_scan_layers(axis=1, layers=self.layers.keys(), batch_size=batch_size):
-			ca = {key: v[selection] for key, v in other.col_attrs.items()}
-			if ordering is not None:
-				vals = {key: val[ordering, :] for key, val in vals.items()}
-			self.add_columns(vals, ca, fill_values=fill_values)
-		other.close()
+			for (ix, selection, vals) in other.batch_scan_layers(axis=1, layers=self.layers.keys(), batch_size=batch_size):
+				ca = {key: v[selection] for key, v in other.col_attrs.items()}
+				if ordering is not None:
+					vals = {key: val[ordering, :] for key, val in vals.items()}
+				self.add_columns(vals, ca, fill_values=fill_values)  # type: ignore
+			
+			if include_graphs:
+				for gname in self.col_graphs.keys():
+					if gname in other.col_graphs:
+						g1 = self.col_graphs[gname]
+						g2 = other.col_graphs[gname]
+						n = self.shape[1]
+						m = other.shape[1]
+						g3 = scipy.sparse.coo_matrix((np.concatenate([g1.data, g2.data]), (np.concatenate([g1.row, g2.row + n]), np.concatenate([g1.col, g2.col + n]))), shape=(n + m, n + m))
+						self.col_graphs[gname] = g3
 
 	def delete_attr(self, name: str, axis: int = 0) -> None:
 		"""
@@ -524,7 +541,7 @@ class LoomConnection:
 		else:
 			raise ValueError("axis must be 0 (rows) or 1 (columns)")
 
-	def scan(self, *, items: np.ndarray = None, axis: int = None, layers: Iterable = None, key: str = None, batch_size: int = 8 * 64) -> Iterable[Tuple[int, np.ndarray, loompy.LoomView]]:
+	def scan(self, *, items: np.ndarray = None, axis: int = None, layers: Iterable = None, key: str = None, batch_size: int = 8 * 64, what: List[str] = ["col_attrs", "row_attrs", "layers", "col_graphs", "row_graphs"]) -> Iterable[Tuple[int, np.ndarray, loompy.LoomView]]:
 		"""
 		Scan across one axis and return batches of rows (columns) as LoomView objects
 
@@ -556,6 +573,8 @@ class LoomConnection:
 		view: LoomView
 			a view corresponding to the current chunk
 		"""
+		if "layers" not in what:
+			raise ValueError("Layers must be included in 'what' parameter (but you can select specific layers using 'layers')")
 		if axis is None:
 			raise ValueError("Axis must be given (0 = rows, 1 = cols)")
 		if layers is None:
@@ -566,13 +585,14 @@ class LoomConnection:
 		if (items is not None) and (np.issubdtype(items.dtype, np.bool_)):
 			items = np.where(items)[0]
 
-		ordering: np.ndarray = None
+		ordering: Union[np.ndarray, slice] = None
 		vals: Dict[str, loompy.MemoryLoomLayer] = {}
 		if axis == 1:
 			if key is not None:
 				ordering = np.argsort(self.ra[key])
 			else:
-				ordering = np.arange(self.shape[0])
+				# keep everything in original order
+				ordering = slice(None)
 			if items is None:
 				items = np.fromiter(range(self.shape[1]), dtype='int')
 			cols_per_chunk = batch_size
@@ -586,23 +606,47 @@ class LoomConnection:
 					ix += cols_per_chunk
 					continue
 
+				if selection.shape[0] == cols_per_chunk:
+					selection = None  # Meaning, select all columns
+
 				# Load the whole chunk from the file, then extract genes and cells using fancy indexing
 				for layer in layers:
 					temp = self.layers[layer][:, ix:ix + cols_per_chunk]
 					temp = temp[ordering, :]
-					temp = temp[:, selection]
+					if selection is not None:
+						temp = temp[:, selection]
 					vals[layer] = loompy.MemoryLoomLayer(layer, temp)
 				lm = loompy.LayerManager(None)
 				for key, layer in vals.items():
 					lm[key] = loompy.MemoryLoomLayer(key, layer)
-				view = loompy.LoomView(lm, self.ra[ordering], self.ca[ix + selection], self.row_graphs[ordering], self.col_graphs[ix + selection], filename=self.filename, file_attrs=self.attrs)
-				yield (ix, ix + selection, view)
+				ra = self.ra[ordering] if "row_attrs" in what else {}
+				if "col_attrs" in what:
+					if selection is not None:
+						ca = self.ca[ix + selection]
+					else:
+						ca = self.ca[ix: ix + cols_per_chunk]
+				else:
+					ca = {}
+				rg = self.row_graphs[ordering] if "row_graphs" in what else None
+				if "col_graphs" in what:
+					if selection is not None:
+						cg = self.col_graphs[ix + selection]
+					else:
+						cg = self.col_graphs[ix: ix + cols_per_chunk]
+				else:
+					cg = None
+				view = loompy.LoomView(lm, ra, ca, rg, cg, filename=self.filename, file_attrs=self.attrs)
+				if selection is not None:
+					yield (ix, ix + selection, view)
+				else:
+					yield (ix, ix + np.arange(cols_per_chunk), view)
 				ix += cols_per_chunk
 		elif axis == 0:
 			if key is not None:
 				ordering = np.argsort(self.ca[key])
 			else:
-				ordering = np.arange(self.shape[1])
+				# keep everything in original order
+				ordering = slice(None)
 			if items is None:
 				items = np.fromiter(range(self.shape[0]), dtype='int')
 			rows_per_chunk = batch_size
@@ -616,17 +660,41 @@ class LoomConnection:
 					ix += rows_per_chunk
 					continue
 
+				if selection.shape[0] == rows_per_chunk:
+					selection = None  # Meaning, select all rows
+
 				# Load the whole chunk from the file, then extract genes and cells using fancy indexing
 				for layer in layers:
 					temp = self.layers[layer][ix:ix + rows_per_chunk, :]
 					temp = temp[:, ordering]
-					temp = temp[selection, :]
+					if selection is not None:
+						temp = temp[selection, :]
 					vals[layer] = loompy.MemoryLoomLayer(layer, temp)
 				lm = loompy.LayerManager(None)
 				for key, layer in vals.items():
 					lm[key] = loompy.MemoryLoomLayer(key, layer)
-				view = loompy.LoomView(lm, self.ra[ix + selection], self.ca[ordering], self.row_graphs[ix + selection], self.col_graphs[ordering], filename=self.filename, file_attrs=self.attrs)
-				yield (ix, ix + selection, view)
+				
+				if "row_attrs" in what:
+					if selection is not None:
+						ra = self.ra[ix + selection]
+					else:
+						ra = self.ra[ix: ix + rows_per_chunk]
+				else:
+					ra = {}
+				ca = self.ca[ordering] if "col_attrs" in what else {}
+				if "row_graphs" in what:
+					if selection is not None:
+						rg = self.row_graphs[ix + selection]
+					else:
+						rg = self.row_graphs[ix: ix + rows_per_chunk]
+				else:
+					rg = None
+				cg = self.col_graphs[ordering] if "col_graphs" in what else None
+				view = loompy.LoomView(lm, ra, ca, rg, cg, filename=self.filename, file_attrs=self.attrs)
+				if selection is not None:
+					yield (ix, ix + selection, view)
+				else:
+					yield (ix, ix + np.arange(rows_per_chunk), view)
 				ix += rows_per_chunk
 		else:
 			raise ValueError("axis must be 0 or 1")
@@ -783,70 +851,70 @@ class LoomConnection:
 			self.col_attrs._permute(ordering)
 			self.col_graphs._permute(ordering)
 
-	def pandas(self, row_attr: str = None, selector: Union[List, Tuple, np.ndarray, slice] = None, columns: List[str] = None) -> pd.DataFrame:
+	def aggregate(self, out_file: str = None, select: np.ndarray = None, group_by: Union[str, np.ndarray] = "Clusters", aggr_by: str = "mean", aggr_ca_by: Dict[str, str] = None) -> np.ndarray:
 		"""
-		Create a Pandas DataFrame corresponding to (selected parts of) the Loom file.
+		Aggregate the Loom file by applying aggregation functions to the main matrix as well as to the column attributes
 
 		Args:
-			row_attr:	Name of the row attribute to use for selecting rows to include (or None to omit row data)
-			selector:	A list, a tuple, a numpy.ndarray or a slice; used to select rows (or None to include all rows)
-			columns:	A list of column attributes to include, or None to include all
+			out_file	The name of the output Loom file (will be appended to if it exists)
+			select		Bool array giving the columns to include (or None, to include all)
+			group_by	The column attribute to group by, or an np.ndarray of integer group labels
+			aggr_by 	The aggregation function for the main matrix
+			aggr_ca_by	A dictionary of aggregation functions for the column attributes (or None to skip)
 
 		Returns:
-			Pandas DataFrame
+			m			Aggregated main matrix
 
 		Remarks:
-			The method returns a Pandas DataFrame with one column per row of the Loom file (i.e. transposed), which is usually
-			what is required for plotting and statistical analysis. By default, all column attributes and no rows are included.
-			To include row data, provide a ``row_attr`` and a ``selector``. The selector is matched against values of the given
-			row attribute, and matching rows are included.
+			aggr_by gives the aggregation function for the main matrix
+			aggr_ca_by is a dictionary with column attributes as keys and aggregation functionas as values
+			
+			Aggregation functions can be any valid aggregation function from here: https://github.com/ml31415/numpy-groupies
 
-		Examples:
-			.. highlight:: python
-			.. code-block:: python
-
-				import loompy
-				with loompy.connect("mydata.loom") as ds:
-					# Include all column attributes, and rows where attribute "Gene" matches one of the given genes
-					df1 = ds.pandas("Gene", ["Actb", "Npy", "Vip", "Pvalb"])
-					# Include the top 100 rows and name them after values of the "Gene" attribute
-					df2 = ds.pandas("Gene", :100)
-					# Include the entire dataset, and name the rows after values of the "Accession" attribute
-					df3 = ds.pandas("Accession")
-
+			In addition, you can specify:
+				"tally" to count the number of occurences of each value of a categorical attribute
+		
 		"""
-		if columns is None:
-			columns = [x for x in self.ca.keys()]
+		ca = {}  # type: Dict[str, np.ndarray]
+		if select is not None:
+			raise ValueError("The 'select' argument is deprecated")
+		if isinstance(group_by, np.ndarray):
+			labels = group_by
+		else:
+			labels = (self.ca[group_by]).astype('int')
+		_, zero_strt_sort_noholes_lbls = np.unique(labels, return_inverse=True)
+		n_groups = len(set(labels))
+		if aggr_ca_by is not None:
+			for key in self.ca.keys():
+				if key not in aggr_ca_by:
+					continue
+				func = aggr_ca_by[key]
+				if func == "tally":
+					for val in set(self.ca[key]):
+						if np.issubdtype(type(val), np.str_):
+							valnew = val.replace("/", "-")  # Slashes are not allowed in attribute names
+							valnew = valnew.replace(".", "_")  # Nor are periods
+						else:
+							valnew = val
+						ca[key + "_" + str(valnew)] = npg.aggregate(zero_strt_sort_noholes_lbls, (self.ca[key] == val).astype('int'), func="sum", fill_value=0)
+				elif func == "mode":
+					def mode(x):  # type: ignore
+						return scipy.stats.mode(x)[0][0]
+					ca[key] = npg.aggregate(zero_strt_sort_noholes_lbls, self.ca[key], func=mode, fill_value=0).astype('str')
+				elif func == "mean":
+					ca[key] = npg.aggregate(zero_strt_sort_noholes_lbls, self.ca[key], func=func, fill_value=0)
+				elif func == "first":
+					ca[key] = npg.aggregate(zero_strt_sort_noholes_lbls, self.ca[key], func=func, fill_value=self.ca[key][0])
 
-		data: Dict[str, np.ndarray] = {}
-		for col in columns:
-			vals = self.ca[col]
-			if vals.ndim >= 2:
-				for i in range(vals.ndim):
-					data[col + f".{i+1}"] = vals[:, 0]
-			else:
-				data[col] = self.ca[col]
-		if row_attr is not None:  # Pick out some rows (genes)
-			if selector is None:  # Actually, pick all the rows
-				names = self.ra[row_attr]
-				vals = self[:, :]
-				for ix, name in enumerate(names):
-					data[name] = vals[ix, :][0]
-			else:  # Pick some specific rows
-				if type(selector) is slice:  # Based on a slice
-					names = self.ra[row_attr][selector]
-					vals = self[selector, :]
-					for ix, name in enumerate(names):
-						data[name] = vals[ix, :][0]
-				# Based on specific string values
-				elif all([type(s) is str for s in selector]):  # type: ignore
-					names = self.ra[row_attr][np.in1d(self.ra[row_attr], selector)]
-					for name in names:
-						vals = self[self.ra[row_attr] == name, :][0]
-						data[name] = vals
-				else:  # Give up
-					raise ValueError("Invalid selector")
-		return pd.DataFrame(data)
+		m = np.empty((self.shape[0], n_groups))
+		for (_, selection, view) in self.scan(axis=0, layers=[""]):
+			vals_aggr = npg.aggregate(zero_strt_sort_noholes_lbls, view[:, :], func=aggr_by, axis=1, fill_value=0)
+			m[selection, :] = vals_aggr
+
+		if out_file is not None:
+			loompy.create(out_file, m, self.ra, ca)
+
+		return m
 
 	def export(self, out_file: str, layer: str = None, format: str = "tab") -> None:
 		"""
@@ -917,6 +985,7 @@ def new(filename: str, *, file_attrs: Optional[Dict[str, str]] = None) -> LoomCo
 	# Create the file (empty).
 	# Yes, this might cause an exception, which we prefer to send to the caller
 	f = h5py.File(name=filename, mode='w')
+	f.create_group('/attrs')  # v3.0.0
 	f.create_group('/layers')
 	f.create_group('/row_attrs')
 	f.create_group('/col_attrs')
@@ -927,9 +996,11 @@ def new(filename: str, *, file_attrs: Optional[Dict[str, str]] = None) -> LoomCo
 
 	ds = connect(filename, validate=False)
 	for vals in file_attrs:
-		ds.attrs[vals] = file_attrs[vals]
+		if file_attrs[vals] is None:
+			ds.attrs[vals] = "None"
+		else:
+			ds.attrs[vals] = file_attrs[vals]
 	# store creation date
-	currentTime = time.localtime(time.time())
 	ds.attrs['CreationDate'] = timestamp()
 	ds.attrs["LOOM_SPEC_VERSION"] = loompy.loom_spec_version
 	return ds
@@ -980,15 +1051,18 @@ def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loomp
 		if layer.shape != shape:  # type: ignore
 			raise ValueError(f"Layer '{name}' is not the same shape as the main matrix")
 	for name, ra in row_attrs.items():
-		if ra.shape[0] != shape[0]:
+		if len(ra) != shape[0]:
 			raise ValueError(f"Row attribute '{name}' is not the same length ({ra.shape[0]}) as number of rows in main matrix ({shape[0]})")
 	for name, ca in col_attrs.items():
-		if ca.shape[0] != shape[1]:
+		if len(ca) != shape[1]:
 			raise ValueError(f"Column attribute '{name}' is not the same length ({ca.shape[0]}) as number of columns in main matrix ({shape[1]})")
 
 	try:
 		with new(filename, file_attrs=file_attrs) as ds:
+			ds.layer[""] = layers[""]
 			for key, vals in layers.items():
+				if key == "":
+					continue
 				ds.layer[key] = vals
 
 			for key, vals in row_attrs.items():
@@ -998,10 +1072,10 @@ def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loomp
 				ds.ca[key] = vals
 
 	except ValueError as ve:
-		#ds.close(suppress_warning=True) # ds does not exist here
 		if os.path.exists(filename):
 			os.remove(filename)
 		raise ve
+
 
 def create_from_cellranger(indir: str, outdir: str = None, genome: str = None) -> str:
 	"""
@@ -1026,16 +1100,16 @@ def create_from_cellranger(indir: str, outdir: str = None, genome: str = None) -
 		if genome is None:
 			genome = [f for f in os.listdir(matrix_folder) if not f.startswith(".")][0]
 		matrix_folder = os.path.join(matrix_folder, genome)
-		matrix = mmread(os.path.join(matrix_folder, "matrix.mtx")).astype("float32").todense()
+		matrix = mmread(os.path.join(matrix_folder, "matrix.mtx")).todense()
 		genelines = open(os.path.join(matrix_folder, "genes.tsv"), "r").readlines()
 		bclines = open(os.path.join(matrix_folder, "barcodes.tsv"), "r").readlines()
-	else: # cellranger V3 file locations
+	else:  # cellranger V3 file locations
 		if genome is None:
-			genome = "" # Genome is not visible from V3 folder
+			genome = ""  # Genome is not visible from V3 folder
 		matrix_folder = os.path.join(indir, 'outs', 'filtered_feature_bc_matrix')
-		matrix = mmread(os.path.join(matrix_folder, "matrix.mtx.gz")).astype("float32").todense()
-		genelines = [ l.decode() for l in gzip.open(os.path.join(matrix_folder, "features.tsv.gz"), "r").readlines() ]
-		bclines = [ l.decode() for l in gzip.open(os.path.join(matrix_folder, "barcodes.tsv.gz"), "r").readlines() ]
+		matrix = mmread(os.path.join(matrix_folder, "matrix.mtx.gz")).todense()
+		genelines = [l.decode() for l in gzip.open(os.path.join(matrix_folder, "features.tsv.gz"), "r").readlines()]
+		bclines = [l.decode() for l in gzip.open(os.path.join(matrix_folder, "barcodes.tsv.gz"), "r").readlines()]
 
 	accession = np.array([x.split("\t")[0] for x in genelines]).astype("str")
 	gene = np.array([x.split("\t")[1].strip() for x in genelines]).astype("str")
@@ -1063,6 +1137,85 @@ def create_from_cellranger(indir: str, outdir: str = None, genome: str = None) -
 	return path
 
 
+def create_from_matrix_market(out_file: str, sample_id: str, layer_paths: Dict[str, str], row_metadata_path: str, column_metadata_path: str, delim: str = "\t", skip_row_headers: bool = False, skip_colums_headers: bool = False, file_attrs: Dict[str, str] = None, matrix_transposed: bool = False) -> None:
+	"""
+	Create a .loom file from .mtx matrix market format
+
+	Args:
+		out_file:				path to the newly created .loom file (will be overwritten if it exists)
+		sample_id:				string to use as prefix for cell IDs
+		layer_paths:			dict mapping layer names to paths to the corresponding matrix file (usually with .mtx extension)
+		row_metadata_path:		path to the row (usually genes) metadata file
+		column_metadata_path:	path to the column (usually cells) metadata file
+		delim:					delimiter used for metadata (default: "\t")
+		skip_row_headers:		if true, skip first line in rows metadata file
+		skip_column_headers: 	if true, skip first line in columns metadata file
+		file_attrs:				dict of global file attributes, or None
+		matrix_transposed:		if true, the main matrix is transposed
+	
+	Remarks:
+		layer_paths should typically map the empty string to a matrix market file: {"": "path/to/filename.mtx"}.
+		To create a multilayer loom file, map multiple named layers {"": "path/to/layer1.mtx", "layer2": "path/to/layer2.mtx"}
+		Note: the created file MUST have a main layer named "". If no such layer is given, BUT all given layers are the same
+		datatype, then a main layer will be created as the sum of the other layers. For example, {"spliced": "spliced.mtx", "unspliced": "unspliced.mtx"}
+		will create three layers, "", "spliced", and "unspliced", where "" is the sum of the other two.
+	"""
+	layers: Dict[str, Union[np.ndarray, scipy.sparse.coo_matrix]] = {}
+
+	for name, path in layer_paths.items():
+		matrix = mmread(path)
+		if matrix_transposed:
+			matrix = matrix.T
+		layers[name] = matrix
+	if "" not in layers:
+		main_matrix = None
+		for name, matrix in layers.items():
+			if main_matrix is None:
+				main_matrix = matrix.copy()
+			else:
+				main_matrix = main_matrix + matrix
+		layers[""] = main_matrix
+
+	genelines = open(row_metadata_path, "r").readlines()
+	bclines = open(column_metadata_path, "r").readlines()
+
+	accession = np.array([x.split("\t")[0] for x in genelines]).astype("str")
+	if(len(genelines[0].split("\t")) > 1):
+		gene = np.array([x.split("\t")[1].strip() for x in genelines]).astype("str")
+		row_attrs = {"Accession": accession, "Gene": gene}
+	else:
+		row_attrs = {"Accession": accession}
+
+	cellids = np.array([sample_id + ":" + x.strip() for x in bclines]).astype("str")
+	col_attrs = {"CellID": cellids}
+
+	create(out_file, layers[""], row_attrs, col_attrs, file_attrs=file_attrs)
+
+	if len(layers) > 1:
+		with loompy.connect(out_file) as ds:
+			for name, layer in layers.items():
+				if name == "":
+					continue
+				ds[name] = layer
+
+
+def create_from_kallistobus(out_file: str, in_dir: str, tr2g_file: str, whitelist_file: str, file_attrs: Dict[str, str] = None, layers: Dict[str, str] = None):
+	"""
+	Create a loom file from a kallisto-bus output folder.
+
+	Args:
+		out_file				Full path to the loom file to be created
+		in_dir					Full path to the kallisto-bus directory (containing output.bus, matrix.ec and transcripts.txt)
+		whitelist_file			Full path to the barcode whitelist file (e.g. 10xv2_whitelist.txt)
+		file_attrs				Optional dictionary of global attributes
+		layers					Dict of {layer_name: capture_file_path} to define extra layers
+	"""
+
+	pass
+
+	# def import(file: str, key: str)
+	# def demote()
+		
 def combine(files: List[str], output_file: str, key: str = None, file_attrs: Dict[str, str] = None, batch_size: int = 1000, convert_attrs: bool = False) -> None:
 	"""
 	Combine two or more loom files and save as a new loom file
@@ -1077,11 +1230,9 @@ def combine(files: List[str], output_file: str, key: str = None, file_attrs: Dic
 
 	Returns:
 		Nothing, but creates a new loom file combining the input files.
-
 		Note that the loom files must have exactly the same
 		number of rows, and must have exactly the same column attributes.
 		Named layers not present in the first file are discarded.
-
 
 		.. warning::
 			If you don't give a ``key`` argument, the files will be combined without changing
@@ -1090,7 +1241,7 @@ def combine(files: List[str], output_file: str, key: str = None, file_attrs: Dic
 
 		To guard against this issue, you are strongly advised to provide a ``key`` argument,
 		which is used to sort files while merging. The ``key`` should be the name of a row
-		atrribute that contains a unique value for each row. For example, to order rows by
+		attribute that contains a unique value for each row. For example, to order rows by
 		the attribute ``Accession``:
 
 		.. highlight:: python
@@ -1118,7 +1269,102 @@ def combine(files: List[str], output_file: str, key: str = None, file_attrs: Dic
 	ds.close()
 
 
-def connect(filename: str, mode: str = 'r+', *, validate: bool = True, spec_version: str = "2.0.1") -> LoomConnection:
+def combine_faster(files: List[str], output_file: str, file_attrs: Dict[str, str] = None, selections: List[np.ndarray] = None, key: str = None, skip_attrs: List[str] = None) -> None:
+	"""
+	Combine loom files and save as a new loom file
+
+	Args:
+		files (list of str):    the list of input files (full paths)
+		output_file (str):      full path of the output loom file
+		file_attrs (dict):      file attributes (title, description, url, etc.)
+		selections:				list of indicator arrays (one per file; or None to include all cells for the file) determining which columns to include from each file, or None to include all cells from all files
+		key:					row attribute to use as key for ordering the rows, or None to skip ordering
+		skip_attrs:				list of column attributes that should not be included in the output
+
+	Returns:
+		Nothing, but creates a new loom file combining the input files.
+
+		Note that the loom files must have exactly the same
+		number of rows, in exactly the same order, and must have exactly the same column attributes.
+		Values in layers missing from one or more files will be replaced by zeros
+
+		.. warning::
+			The files will be combined without changing
+			the ordering of rows or columns. Row attributes will be taken from the first file.
+			Hence, if rows are not in the same order in all files, the result may be meaningless.
+	
+	Remarks:
+		This version assumes that the individual files will fit in memory. If you run out of memory, try the standard combine() method.
+	"""
+	if file_attrs is None:
+		file_attrs = {}
+	if skip_attrs is None:
+		skip_attrs = []
+
+	if len(files) == 0:
+		raise ValueError("The input file list was empty")
+
+	if selections is None:
+		selections = [None for _ in files]  # None means take all cells from the file
+
+	n_cells = 0
+	n_genes = 0
+	for f, s in zip(files, selections):
+		with loompy.connect(f, "r") as ds:
+			if n_genes == 0:
+				n_genes = ds.shape[0]
+			elif n_genes != ds.shape[0]:
+				raise ValueError(f"All files must have exactly the same number of rows, but {f} had {ds.shape[0]} rows while previous files had {n_genes}")
+			if s is None:
+				n_cells += ds.shape[1]
+			else:
+				n_cells += s.sum()
+
+	col_attrs: Dict[str, np.ndarray] = {}
+	ix = 0
+	with loompy.new(output_file, file_attrs=file_attrs) as dsout:
+		for f, s in zip(files, selections):
+			with loompy.connect(f, "r") as ds:
+				if key is not None:
+					ordering = np.argsort(ds.ra[key])
+				dsout.shape = (ds.shape[0], n_cells)  # Not really necessary to set this for each file, but no harm either; needed in order to make sure the first layer added will be the right shape
+				n_selected = s.sum() if s is not None else ds.shape[1]
+				j = 0
+				batch_size = 500_000_000 // ds.shape[0] // 4
+				for (_, _, view) in ds.scan(items=s, axis=1, key=key, what=["layers"], batch_size=batch_size):
+					logging.debug(j)
+					for layer in ds.layers.keys():
+						# Create the layer if it doesn't exist
+						if layer not in dsout.layers:
+							dsout[layer] = ds[layer].dtype.name
+						# Make sure the dtype didn't change between files
+						if dsout.layers[layer].dtype != ds[layer].dtype:
+							raise ValueError(f"Each layer must be same datatype in all files, but {layer} of type {ds[layer].dtype} in {f} differs from previous files where it was {dsout[layer].dtype}")
+						dsout[layer][:, ix + j: ix + j + view.shape[1]] = view[layer][:, :]
+					j += view.shape[1]
+				for attr, vals in ds.ca.items():
+					if attr in skip_attrs:
+						continue
+					if attr in col_attrs:
+						if col_attrs[attr].dtype != vals.dtype:
+							raise ValueError(f"Each column attribute must be same datatype in all files, but {attr} is {vals.dtype} in {f} but was {col_attrs[attr].dtype} in previous files")
+					else:
+						shape = list(vals.shape)
+						shape[0] = n_cells
+						col_attrs[attr] = np.zeros(shape, dtype=vals.dtype)
+					col_attrs[attr][ix: ix + n_selected] = vals[s]
+				for attr, vals in ds.ra.items():
+					if attr not in dsout.ra:
+						if key is None:
+							dsout.ra[attr] = vals
+						else:
+							dsout.ra[attr] = vals[ordering]
+			ix = ix + n_selected
+		for attr, vals in col_attrs.items():
+			dsout.ca[attr] = vals
+
+
+def connect(filename: str, mode: str = 'r+', *, validate: bool = True, spec_version: str = "3.0.0") -> LoomConnection:
 	"""
 	Establish a connection to a .loom file.
 
@@ -1144,4 +1390,4 @@ def connect(filename: str, mode: str = 'r+', *, validate: bool = True, spec_vers
 
 		Note: if validation is requested, an exception is raised if validation fails.
 	"""
-	return LoomConnection(filename, mode, validate=validate, spec_version=spec_version)
+	return LoomConnection(filename, mode, validate=validate)

@@ -4,19 +4,19 @@ import logging
 import numpy as np
 import loompy
 
+from .utils import get_loom_spec_version
+
 
 class LoomValidator:
-	def __init__(self, version: str = "2.0.1") -> None:
+	def __init__(self, version: str = None) -> None:
 		"""
 		Args:
-			version: 		The Loom file format version to validate against ("2.0.1" or "old")
+			version: 		The Loom file format version to validate against ("3.0.0", "2.0.1", "old"), or None to infer from file
 		
 		Remarks:
 			"old" version will accept files that lack the "row_graphs" and "col_graphs" groups
 		"""
 		self.version = version  #: Version of the spec to validate against
-		if version != "2.0.1" and version != 'old':
-			raise ValueError("This validator can only validate against Loom specs '2.0.1' or 'old'")
 		self.errors: List[str] = []  #: Errors found during validation
 		self.warnings: List[str] = []  #: Warnings triggered during validation
 		self.summary: List[str] = []  #: Summary of the file structure
@@ -45,14 +45,16 @@ class LoomValidator:
 			assessed relative to attribute name and data type conventions given at http://linnarssonlab.org/loompy/conventions/.
 		"""
 		valid1 = True
-		with h5py.File(path) as f:
+		with h5py.File(path, mode="r") as f:
+			if self.version == None:
+				self.version = get_loom_spec_version(f)
 			valid1 = self.validate_spec(f)
 			if not valid1:
 				self.errors.append("For help, see http://linnarssonlab.org/loompy/format/")
 
 		valid2 = True
 		if strictness == "conventions":
-			with loompy.connect(path) as ds:
+			with loompy.connect(path, mode="r") as ds:
 				valid2 = self.validate_conventions(ds)
 				if not valid2:
 					self.errors.append("For help, see http://linnarssonlab.org/loompy/conventions/")
@@ -182,10 +184,13 @@ class LoomValidator:
 		width_ca = 0
 		width_globals = 0
 		if self._check("row_attrs" in file, "'row_attrs' group is missing"):
-			width_ra = max([len(x) for x in (file["row_attrs"].keys())])
+			width_ra = max([len(x) for x in (file["row_attrs"].keys())], default=0)
 		if self._check("col_attrs" in file, "'col_attrs' group is missing"):
-			width_ca = max([len(x) for x in (file["col_attrs"].keys())])
-		if len(file.attrs) > 0:
+			width_ca = max([len(x) for x in (file["col_attrs"].keys())], default=0)
+		if self.version == "3.0.0":
+			if self._check("attrs" in file, "Global attributes missing"):
+				width_globals = max([len(x) for x in (file["attrs"].keys())], default=0)
+		elif len(file.attrs) > 0:
 			width_globals = max([len(x) for x in file.attrs.keys()])
 		width_layers = 0
 		if "layers" in file and len(file["layers"]) > 0:
@@ -194,15 +199,23 @@ class LoomValidator:
 		width = max(width_ca, width_ra, width_globals)
 
 		delay_print("Global attributes:")
-		for key, value in file.attrs.items():
-			if type(value) is str:
-				self.warnings.append(f"Global attribute '{key}' has dtype string, which will be deprecated in future Loom versions")
-				delay_print(f"{key: >{width}} string")
-			elif type(value) is bytes:
-				self.warnings.append(f"Global attribute '{key}' has dtype bytes, which will be deprecated in future Loom versions")
-				delay_print(f"{key: >{width}} bytes")
-			else:
-				delay_print(f"{key: >{width}} {dt(file.attrs[key].dtype)}")
+		if self.version == "3.0.0":
+			self._check("attrs" in file, "Global attributes missing")
+			for attr in file["attrs"]:
+				if type(attr) is np.ndarray:
+					delay_print(f"{attr: >{width}} {attr.dtype} {attr.shape}")
+				else:
+					delay_print(f"{attr: >{width}} {type(attr).__name__} (scalar)")
+		else:
+			for key, value in file.attrs.items():
+				if type(value) is str:
+					self.warnings.append(f"Global attribute '{key}' has dtype string, which will be deprecated in future Loom versions")
+					delay_print(f"{key: >{width}} string")
+				elif type(value) is bytes:
+					self.warnings.append(f"Global attribute '{key}' has dtype bytes, which will be deprecated in future Loom versions")
+					delay_print(f"{key: >{width}} bytes")
+				else:
+					delay_print(f"{key: >{width}} {dt(file.attrs[key].dtype)}")
 				
 		if self._check("matrix" in file, "Main matrix missing"):
 			self._check(file["matrix"].dtype in matrix_types, f"Main matrix dtype={file['matrix'].dtype} is not allowed")
@@ -216,11 +229,15 @@ class LoomValidator:
 				self._check(file["layers"][layer].dtype in matrix_types, f"Layer '{layer}' dtype={file['layers'][layer].dtype} is not allowed")
 				delay_print(f"{layer: >{width}} {file['layers'][layer].dtype}")
 
+		if self.version == "3.0.0":
+			expected_dtype = np.object_
+		else:
+			expected_dtype = np.string_
 		delay_print("Row attributes:")
 		if self._check("row_attrs" in file, "'row_attrs' group is missing"):
 			for ra in file["row_attrs"]:
 				self._check(file["row_attrs"][ra].shape[0] == shape[0], f"Row attribute '{ra}' shape {file['row_attrs'][ra].shape[0]} first dimension does not match row dimension {shape}")
-				self._check(file["row_attrs"][ra].dtype in matrix_types or np.issubdtype(file['row_attrs'][ra].dtype, np.string_), f"Row attribute '{ra}' dtype {file['row_attrs'][ra].dtype} is not allowed")
+				self._check(file["row_attrs"][ra].dtype in matrix_types or np.issubdtype(file['row_attrs'][ra].dtype, expected_dtype), f"Row attribute '{ra}' dtype {file['row_attrs'][ra].dtype} is not allowed")
 				ra_shape = file['row_attrs'][ra].shape
 				delay_print(f"{ra: >{width}} {dt(file['row_attrs'][ra].dtype)} {ra_shape if len(ra_shape) > 1 else ''}")
 			if len(file["row_attrs"]) == 0:
@@ -230,7 +247,7 @@ class LoomValidator:
 		if self._check("col_attrs" in file, "'col_attrs' group is missing"):
 			for ca in file["col_attrs"]:
 				self._check(file["col_attrs"][ca].shape[0] == shape[1], f"Column attribute '{ca}' shape {file['col_attrs'][ca].shape[0]} first dimension does not match column dimension {shape}")
-				self._check(file["col_attrs"][ca].dtype in matrix_types or np.issubdtype(file["col_attrs"][ca].dtype, np.string_), f"Column attribute '{ca}' dtype {file['col_attrs'][ca].dtype} is not allowed")
+				self._check(file["col_attrs"][ca].dtype in matrix_types or np.issubdtype(file["col_attrs"][ca].dtype, expected_dtype), f"Column attribute '{ca}' dtype {file['col_attrs'][ca].dtype} is not allowed")
 				ca_shape = file['col_attrs'][ca].shape
 				delay_print(f"{ca: >{width}} {dt(file['col_attrs'][ca].dtype)} {ca_shape if len(ca_shape) > 1 else ''}")
 			if len(file["col_attrs"]) == 0:
@@ -238,7 +255,7 @@ class LoomValidator:
 
 		delay_print("Row graphs:")
 		if "row_graphs" in file:
-			if self.version == "2.0.1":
+			if self.version == "2.0.1" or self.version == "3.0.0":
 				self._check("row_graphs" in file, "'row_graphs' group is missing (try spec_version='old')")
 			for g in file["row_graphs"]:
 				self._check("a" in file["row_graphs"][g], f"Row graph '{g}' is missing vector 'a', denoting start vertices")
@@ -253,8 +270,8 @@ class LoomValidator:
 				delay_print("    (none)")
 
 		delay_print("Column graphs:")
-		if "#col_graphs" in file:
-			if self.version == "2.0.1":
+		if "col_graphs" in file:
+			if self.version == "2.0.1" or self.version == "3.0.0":
 				self._check("col_graphs" in file, "'col_graphs' group is missing (try spec_version='old')")
 			for g in file["col_graphs"]:
 				self._check("a" in file["col_graphs"][g], f"Column graph '{g}' is missing vector 'a', denoting start vertices")

@@ -101,6 +101,13 @@ class LoomLayer():
 			self.ds._file.flush()
 
 	def sparse(self, rows: np.ndarray = None, cols: np.ndarray = None) -> scipy.sparse.coo_matrix:
+		if rows is not None:
+			if np.issubdtype(rows.dtype, np.bool_):
+				rows = np.where(rows)[0]
+		if cols is not None:
+			if np.issubdtype(cols.dtype, np.bool_):
+				cols = np.where(cols)[0]
+				
 		n_genes = self.ds.shape[0] if rows is None else rows.shape[0]
 		n_cells = self.ds.shape[1] if cols is None else cols.shape[0]
 
@@ -108,16 +115,16 @@ class LoomLayer():
 		row: List[np.ndarray] = []
 		col: List[np.ndarray] = []
 		i = 0
-		for (ix, selection, view) in self.ds.scan(items=cols, axis=1, layers=[self.name]):
+		for (ix, selection, view) in self.ds.scan(items=cols, axis=1, layers=[self.name], what=["layers"]):
 			if rows is not None:
 				vals = view.layers[self.name][rows, :]
 			else:
 				vals = view.layers[self.name][:, :]
-			nonzeros = np.where(vals > 0)
+			nonzeros = np.where(vals != 0)
 			data.append(vals[nonzeros])
 			row.append(nonzeros[0])
 			col.append(nonzeros[1] + i)
-			i+= selection.shape[0]
+			i += selection.shape[0]
 		return scipy.sparse.coo_matrix((np.concatenate(data), (np.concatenate(row), np.concatenate(col))), shape=(n_genes, n_cells))
 
 	def _resize(self, size: Tuple[int, int], axis: int = None) -> None:

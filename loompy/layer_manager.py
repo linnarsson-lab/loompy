@@ -17,7 +17,8 @@ class LayerManager:
 		storage: Dict[str, np.ndarray] = {}
 		setattr(self, "!storage", storage)
 		if ds is not None:
-			self.__dict__["storage"][""] = None
+			if "matrix" in ds._file:
+				self.__dict__["storage"][""] = None
 			if "layers" in ds._file:
 				for key in self.ds._file["layers"].keys():
 					self.__dict__["storage"][key] = None
@@ -145,8 +146,8 @@ class LayerManager:
 
 				# Fill the matrix with sparse data
 				if sparse.issparse(val):
-					m = val.tocsr()
-					window = 6400
+					m = val.tocsc()
+					window = max(1, 1024**3 // 8 * m.shape[0])
 					ix = 0
 					while ix < val.shape[1]:
 						window = min(window, m.shape[1] - ix)
@@ -154,7 +155,7 @@ class LayerManager:
 							break
 						self.ds._file[path][:, ix:ix + window] = m[:, ix: ix + window].toarray()
 						ix += window
-					
+
 				self.ds._file.flush()
 			else:
 				self.__dict__["storage"][name] = val

@@ -7,7 +7,7 @@ class LoomView:
 	"""
 	An in-memory loom dataset
 	"""
-	def __init__(self, layers: loompy.LayerManager, row_attrs: loompy.AttributeManager, col_attrs: loompy.AttributeManager, row_graphs: loompy.GraphManager, col_graphs: loompy.GraphManager, *, filename: str, file_attrs: loompy.FileAttributeManager) -> None:
+	def __init__(self, layers: loompy.LayerManager, row_attrs: loompy.AttributeManager, col_attrs: loompy.AttributeManager, row_graphs: loompy.GraphManager, col_graphs: loompy.GraphManager, *, filename: str = "", file_attrs: loompy.GlobalAttributeManager = None) -> None:
 		self.filename = filename
 		self.view = loompy.ViewManager(self)
 		self.layers = layers
@@ -55,12 +55,14 @@ class LoomView:
 		for layer in self.layers.values():
 			layer._permute(ordering, axis=axis)
 		if axis == 0:
-			for g in self.row_graphs.values():
-				g._permute(ordering)
+			if self.row_graphs is not None:
+				for g in self.row_graphs.values():
+					g._permute(ordering)
 			for a in self.row_attrs.values():
 				a._permute(ordering)
 		elif axis == 1:
-			for g in self.col_graphs.values():
-				g._permute(ordering)
+			if self.col_graphs is not None:
+				for g in self.col_graphs.values():
+					g._permute(ordering)
 			for a in self.col_attrs.values():
 				a._permute(ordering)

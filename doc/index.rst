@@ -49,6 +49,7 @@ including `Python <http://h5py.org>`__,
    self
    installation/index
    semantics/index
+   kallisto/index
    apiwalkthrough/index
    cookbook/index
    conventions/index
