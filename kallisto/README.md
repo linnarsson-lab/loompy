@@ -10,16 +10,16 @@ These instructions work on Linux (tested on CentOS7).
   - bedtools from https://bedtools.readthedocs.io/en/latest/content/installation.html
   - kallisto from https://pachterlab.github.io/kallisto/download.html
 
-2. Create your working directory and put the files above there.
+2. Create your working directory, 'cd' there, and put the files above there.
 
 3. Download and preprocess input files:
 
 `bash mouse_download.sh`
 
-  This will create a directory "inputs" and put some files there as well as in the currecnt directory.
+  This will create a directory "inputs" and put some files there as well as in the current directory.
 
 4. Download "BrowseTF  TcoF-DB.xlsx" from https://tools.sschmeier.com/tcof/browse/?type=tcof&species=mouse&class=all# by clicking the "Excel" button. (Main page is https://tools.sschmeier.com/tcof/home/).
-  Open the file in Excel and save tab-separated as "inputs/TcoF-Db.tsv". The inputs/ directory was created by the mouse_download.sh script.
+  Open the file in Excel and save tab-separated as "inputs/TcoF-DB.tsv".
 
 5. You need to download some annotations for Mouse GRCm38 from BioMart (https://m.ensembl.org/biomart) Open this link in a new browser tab:
 
