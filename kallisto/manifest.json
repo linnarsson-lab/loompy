@@ -1,0 +1,11 @@
+{
+    "species": "Mus musculus",
+    "index_file": "gencode.vM23.fragments.idx",
+    "gene_metadata_file": "gencode.vM23.metadata.tab",
+    "gene_metadata_key": "AccessionVersion",
+    "fragments_to_genes_file": "fragments2genes.txt",
+    "layers": {
+        "unspliced": "unspliced_fragments.txt",
+        "spliced": "spliced_fragments.txt"
+    }
+}
