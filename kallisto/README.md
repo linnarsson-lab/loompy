@@ -14,10 +14,10 @@ These instructions work on Linux (tested on CentOS7).
 
 `bash mouse_download.sh`
 
-   This will create a directory "inputs" and put some files there as well as in the currecnt directory.
+  This will create a directory "inputs" and put some files there as well as in the currecnt directory.
 
 2. Download "BrowseTF  TcoF-DB.xlsx" from https://tools.sschmeier.com/tcof/browse/?type=tcof&species=mouse&class=all# by clicking the "Excel" button. (Main page is https://tools.sschmeier.com/tcof/home/).
-   Open the file in Excel and save tab-separated as "inputs/TcoF-Db.tsv". The inputs/ directory was created by the mouse_download.sh script.
+  Open the file in Excel and save tab-separated as "inputs/TcoF-Db.tsv". The inputs/ directory was created by the mouse_download.sh script.
 
 3. You need to download some annotations for Mouse GRCm38 from BioMart (https://m.ensembl.org/biomart) Open this link in a new browser tab:
 
@@ -37,7 +37,7 @@ http://www.ensembl.org/biomart/martview/7c9b283e3eca26cb81449ec518f4fc14?VIRTUAL
 `python mouse_build.py`
 
 5. Create the "manifest.json" file with this contents:
-
+```
 {
     "species": "Mus musculus",
     "index_file": "gencode.vM23.fragments.idx",
@@ -49,6 +49,7 @@ http://www.ensembl.org/biomart/martview/7c9b283e3eca26cb81449ec518f4fc14?VIRTUAL
         "spliced": "spliced_fragments.txt"
     }
 }
+```
 
 6. Run the fragment generator script:
 
