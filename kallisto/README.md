@@ -6,20 +6,22 @@ For the human genome see the notebook subdirectory.
 
 These instructions work on Linux (tested on CentOS7).
 
-0. Make sure packages bedtools and kallisto are installed on the system.
-    bedtools from https://bedtools.readthedocs.io/en/latest/content/installation.html
-    kallisto from https://pachterlab.github.io/kallisto/download.html
+1. Make sure packages bedtools and kallisto are installed on the system.
+  - bedtools from https://bedtools.readthedocs.io/en/latest/content/installation.html
+  - kallisto from https://pachterlab.github.io/kallisto/download.html
 
-1. Download and preprocess input files:
+2. Create your working directory and put the files above there.
+
+3. Download and preprocess input files:
 
 `bash mouse_download.sh`
 
   This will create a directory "inputs" and put some files there as well as in the currecnt directory.
 
-2. Download "BrowseTF  TcoF-DB.xlsx" from https://tools.sschmeier.com/tcof/browse/?type=tcof&species=mouse&class=all# by clicking the "Excel" button. (Main page is https://tools.sschmeier.com/tcof/home/).
+4. Download "BrowseTF  TcoF-DB.xlsx" from https://tools.sschmeier.com/tcof/browse/?type=tcof&species=mouse&class=all# by clicking the "Excel" button. (Main page is https://tools.sschmeier.com/tcof/home/).
   Open the file in Excel and save tab-separated as "inputs/TcoF-Db.tsv". The inputs/ directory was created by the mouse_download.sh script.
 
-3. You need to download some annotations for Mouse GRCm38 from BioMart (https://m.ensembl.org/biomart) Open this link in a new browser tab:
+5. You need to download some annotations for Mouse GRCm38 from BioMart (https://m.ensembl.org/biomart) Open this link in a new browser tab:
 
 http://www.ensembl.org/biomart/martview/7c9b283e3eca26cb81449ec518f4fc14?VIRTUALSCHEMANAME=default&ATTRIBUTES=mmusculus_gene_ensembl.default.feature_page.ensembl_gene_id|mmusculus_gene_ensembl.default.feature_page.ensembl_gene_id_version|mmusculus_gene_ensembl.default.feature_page.ensembl_transcript_id|mmusculus_gene_ensembl.default.feature_page.ensembl_transcript_id_version|mmusculus_gene_ensembl.default.feature_page.ucsc|mmusculus_gene_ensembl.default.feature_page.vega_translation|mmusculus_gene_ensembl.default.feature_page.ccds&FILTERS=&VISIBLEPANEL=resultspanel
 
@@ -32,11 +34,11 @@ http://www.ensembl.org/biomart/martview/7c9b283e3eca26cb81449ec518f4fc14?VIRTUAL
   *  Select Attributes as in columns above: First 4 should be auto-selected. Select the following 3 from the "EXTERNAL" section, clicking the 3 boxes in the order above.
   * Click "Results", export using "Go" button, and save to "inputs/mart_export.txt". 
 
-4. Run the annotation assembly script:
+6. Run the annotation assembly script:
 
 `python mouse_build.py`
 
-5. Create the "manifest.json" file with this contents:
+7. Create the "manifest.json" file or use the one supplied above. It should contain:
 ```
 {
     "species": "Mus musculus",
@@ -51,10 +53,12 @@ http://www.ensembl.org/biomart/martview/7c9b283e3eca26cb81449ec518f4fc14?VIRTUAL
 }
 ```
 
-6. Run the fragment generator script:
+8. Run the fragment generator script:
 
 `python mouse_generate_fragments.py`
 
-7. Build the kallisto index:
+9. Build the kallisto index:
 
 `kallisto index -i gencode.vM23.fragments.idx -k 31 inputs/gencode.vM23.fragments.fa`
+
+10. Refer to the notebook for human for more info on the output.
