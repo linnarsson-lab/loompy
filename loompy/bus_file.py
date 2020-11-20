@@ -325,11 +325,11 @@ class BusFile:
 		row_attrs = {}
 		# Transpose the gene metadata
 		for i, attr in enumerate(self.gene_metadata_attributes):
-			row_attrs[attr] = [v[i] for v in self.genes.values()]
+			row_attrs[attr] = np.array([v[i] for v in self.genes.values()])
 
 		# Create cell attributes
 		col_attrs = {
-			"CellID": [sample_id + "_" + twobit_to_dna(int(cid), 16) for cid in self.cell_ids],
+			"CellID": np.array([sample_id + "_" + twobit_to_dna(int(cid), 16) for cid in self.cell_ids]),
 			"TotalUMIs": self.total_umis[self.valid_cells]
 		}
 
