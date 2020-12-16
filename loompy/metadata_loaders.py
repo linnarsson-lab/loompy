@@ -50,9 +50,10 @@ def make_row_attrs_from_gene_metadata(gtf_file : str, ordered_features : Iterabl
 	geneid2annots = load_gene_metadata(gtf_file)
 	first_annot = next(iter(geneid2annots.values()))
 	ra_attrs = list(first_annot.keys())
+	n_genes = len(ordered_features)
 	for ra_attr in ra_attrs:
 		ra[ra_attr] = np.zeros((n_genes,), dtype = object)
-	for idx, geneid in enumerate(features):
+	for idx, geneid in enumerate(ordered_features):
 		annots = geneid2annots[geneid]
 		for ra_attr in ra_attrs:
 			ra[ra_attr][idx] = annots[ra_attr]

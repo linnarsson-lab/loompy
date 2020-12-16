@@ -1262,7 +1262,7 @@ def create_from_star(indir : str, outfile : str, sample_id : str, \
 			ca[key] = np.full(n_valid_cells, value)
 
 	if gtf_file:
-		ra = make_row_attrs_from_gene_metadata(gtf_file)
+		ra = make_row_attrs_from_gene_metadata(gtf_file, features)
 	else:
 		ra = { "Gene": np.array(features) }
 
