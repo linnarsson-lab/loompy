@@ -1233,7 +1233,7 @@ def create_from_star(indir : str, outfile : str, sample_id : str, \
 	allambiguous = sparse.coo_matrix((mtx[:,4], (mtx[:,0]-1, mtx[:,1]-1)), shape = mtxshape)
 	total_umis = np.array(allspliced.sum(axis=0))[0]
 	if cell_filter == "emptydrops":
-		ambient_umis, ambient_pvalue = lp.call_cells(allspliced.tocsc(), expected_n_cells)
+		ambient_umis, ambient_pvalue = call_cells(allspliced.tocsc(), expected_n_cells)
 		valid_cells = (ambient_pvalue <= ambient_pthreshold) | (total_umis >= min_total_umis)
 	elif cell_filter == "none":
 		ambient_umis = 0
@@ -1267,7 +1267,7 @@ def create_from_star(indir : str, outfile : str, sample_id : str, \
 		ra = { "Gene": np.array(features) }
 
 	layers = { '': spliced, 'Unspliced': unspliced, 'Ambiguous': ambiguous }
-	lp.create(filename=outfile, layers=layers, row_attrs=ra, col_attrs=ca)
+	create(filename=outfile, layers=layers, row_attrs=ra, col_attrs=ca)
 
 def create_from_kallistobus(out_file: str, in_dir: str, tr2g_file: str, whitelist_file: str, file_attrs: Dict[str, str] = None, layers: Dict[str, str] = None):
 	"""
