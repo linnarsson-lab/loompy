@@ -8,7 +8,7 @@ from .loom_view import LoomView
 from .loom_layer import MemoryLoomLayer, LoomLayer
 from .to_html import to_html
 from .view_manager import ViewManager
-from .loompy import connect, create, create_append, combine, create_from_cellranger, LoomConnection, new, combine_faster, create_from_matrix_market
+from .loompy import connect, create, create_append, combine, create_from_cellranger, LoomConnection, new, combine_faster, create_from_matrix_market, create_from_star
 from .loom_validator import LoomValidator
 from ._version import __version__, loom_spec_version
 from .bus_file import create_from_fastq

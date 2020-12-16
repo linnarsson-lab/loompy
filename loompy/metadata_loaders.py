@@ -1,14 +1,17 @@
-from typing import Dict, Union
+from typing import Dict, Union, Iterable
 import os.path, re
 import sqlite3 as sqlite
+import numpy as np
 
 def load_gene_metadata(gtf_file : str) -> Dict[str, Dict[str, Union[int, str]]]:
         """
         Read gene metadata from a GTF file.
+
         Args:
-          indir (str):             path to GTF file
+          gtf_file (str):             path to GTF file
+
         Returns:
-              A Dict with each GeneId pointing to a Dict of metadata keys -> values
+          A Dict with each GeneId pointing to a Dict of metadata keys -> values
         """
         if not os.path.exists(gtf_file):
         	raise ValueError(f"Gene metadata file '{gtf_file}' not found.")
@@ -32,14 +35,39 @@ def load_gene_metadata(gtf_file : str) -> Dict[str, Dict[str, Union[int, str]]]:
         		                          "Chromosome": chrid, "Start": start, "End": end }
         return geneid2annots
 
+def make_row_attrs_from_gene_metadata(gtf_file : str, ordered_features : Iterable[str]) -> Dict[str, np.ndarray]:
+	"""
+        Read gene metadata from a GTF file and construct loom row attributes corresponding to ordered_features.
+
+	Args:
+	  gtf_file (str):             path to GTF file
+          ordered_features (str):     the features (gene ids) in matrix row order
+
+	Returns:
+          A row attribute object ready to assign to a Loom object.
+	"""
+	ra = {}
+	geneid2annots = load_gene_metadata(gtf_file)
+	first_annot = next(iter(geneid2annots.values()))
+	ra_attrs = list(first_annot.keys())
+	for ra_attr in ra_attrs:
+		ra[ra_attr] = np.zeros((n_genes,), dtype = object)
+	for idx, geneid in enumerate(features):
+		annots = geneid2annots[geneid]
+		for ra_attr in ra_attrs:
+			ra[ra_attr][idx] = annots[ra_attr]
+	return ra
+
 def load_sample_metadata(path: str, sample_id: str) -> Dict[str, str]:
         """
         Read sample metadata from either an sqlite '.db' database or a tab-delimited file.
         The tab-file has to have  one sample per line and a header with a column
         labelled 'Name' or 'SampleId' in which a match to function argument sample_id should be found.
+
         Args:
           path (str):             path to sqlite database (.db) or tab-delimited metadata file
           sample_id (str):        Id of sample to annotate
+
         Returns:
               A Dict of metadata keys -> values
         """

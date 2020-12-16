@@ -117,6 +117,8 @@ def ixs_thatsort_a2b(a: np.ndarray, b: np.ndarray, check_content: bool = True) -
 	return np.argsort(a)[np.argsort(np.argsort(b))]
 
 
+# TODO: This function is a copy of the same function in loompy.metadata_loaders, call that one instead
+
 def load_sample_metadata(path: str, sample_id: str) -> Dict[str, str]:
 	if not os.path.exists(path):
 		raise ValueError(f"Samples metadata file '{path}' not found.")

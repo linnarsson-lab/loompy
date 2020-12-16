@@ -25,6 +25,7 @@
 import gzip
 import logging
 import os.path
+import re
 from shutil import copyfile
 from typing import Tuple, Union, Any, Dict, List, Iterable, Callable, Optional
 
@@ -33,9 +34,12 @@ import numpy as np
 import numpy_groupies.aggregate_numpy as npg
 import scipy.sparse
 from scipy.io import mmread
+import scipy.sparse as sparse
 
 import loompy
 from loompy import deprecated, timestamp
+from loompy.metadata_loaders import make_row_attrs_from_gene_metadata, load_sample_metadata
+from .cell_calling import call_cells
 
 
 class LoomConnection:
@@ -1199,6 +1203,72 @@ def create_from_matrix_market(out_file: str, sample_id: str, layer_paths: Dict[s
 				ds[name] = layer
 
 
+def create_from_star(indir : str, outfile : str, sample_id : str, \
+                     cell_filter : str, expected_n_cells : int, min_total_umis : int, ambient_pthreshold : float, \
+                     sample_metadata_file : str = None, gtf_file : str = None):
+	"""
+		Create a .loom file from STARsolo output
+		Args:
+			  indir (str):	              path to STARsolo output folder (the one that contains 'Solo.out')
+			  outfile (str):              path and name of the new loom file
+			  sample_id (str):            sample_id (typically 10Xxxx_x)
+			  cell_filter (str):          'emptydrops', 'star', or 'none'
+			                              emptydrops: with parameters expected_n_cells, min_total_umis, and ambient_pthreshold
+			                              star: uses the barcodes from 'Solo.out/filtered' subdir of indir
+			                              none: all cells are kept
+			  sample_metadata_file (str): file of sample metadata or path to sqlite3 database. Used for gene annotation.
+			  gtf_file (str):             path to gtf file used by STARsolo. Used for cell annotations.
+		Returns:
+		           nothing
+
+	"""
+	star_rawdir = os.path.join(indir, "Solo.out", "Velocyto", "raw")
+	features = [ l.split('\t')[0] for l in open(os.path.join(star_rawdir, "features.tsv")).readlines() ]
+	barcodes = [ l.strip() for l in open(os.path.join(star_rawdir, "barcodes.tsv")).readlines() ]
+	n_genes = len(features)
+	mtxshape = (n_genes, len(barcodes))
+	mtx = np.loadtxt(os.path.join(star_rawdir, "matrix.mtx"), skiprows=3, delimiter=' ')
+	allspliced = sparse.coo_matrix((mtx[:,2], (mtx[:,0]-1, mtx[:,1]-1)), shape = mtxshape)
+	allunspliced = sparse.coo_matrix((mtx[:,3], (mtx[:,0]-1, mtx[:,1]-1)), shape = mtxshape)
+	allambiguous = sparse.coo_matrix((mtx[:,4], (mtx[:,0]-1, mtx[:,1]-1)), shape = mtxshape)
+	total_umis = np.array(allspliced.sum(axis=0))[0]
+	if cell_filter == "emptydrops":
+		ambient_umis, ambient_pvalue = lp.call_cells(allspliced.tocsc(), expected_n_cells)
+		valid_cells = (ambient_pvalue <= ambient_pthreshold) | (total_umis >= min_total_umis)
+	elif cell_filter == "none":
+		ambient_umis = 0
+		valid_cells = np.full(len(total_umis), True)
+	elif cell_filter == "star":
+		ambient_umis = 0
+		fbcs = [ l.strip() for l in open(os.path.join(indir, "Solo.out", "Gene", "filtered", "barcodes.tsv")).readlines() ]
+		valid_cells = np.isin(np.array(barcodes), fbcs)
+	else:
+		print (f"Unknown cell_filter type: {cell_filter}")
+
+	n_valid_cells = valid_cells.sum()
+	valid_barcodes = np.array(barcodes)[valid_cells]
+	valid_umis = total_umis[valid_cells]
+	valid_pvalue = ambient_pvalue[valid_cells]
+	spliced = allspliced.tocsr()[:, valid_cells]
+	unspliced = allunspliced.tocsr()[:, valid_cells]
+	ambiguous = allambiguous.tocsr()[:, valid_cells]
+
+	valid_cellids = np.array([f"{sample_id}:{v_bc}" for v_bc in valid_barcodes])
+	ca = { "CellID": valid_cellids, "AmbientPValue": valid_pvalue, "BarcodeTotalUMIs":  valid_umis }
+	ca["AmbientUMIs"] = np.full(n_valid_cells, ambient_umis)
+	if sample_metadata_file:
+		sample_metadata = load_sample_metadata(sample_metadata_file, sample_id)
+		for key, value in sample_metadata.items():
+			ca[key] = np.full(n_valid_cells, value)
+
+	if gtf_file:
+		ra = make_row_attrs_from_gene_metadata(gtf_file)
+	else:
+		ra = { "Gene": np.array(features) }
+
+	layers = { '': spliced, 'Unspliced': unspliced, 'Ambiguous': ambiguous }
+	lp.create(filename=outfile, layers=layers, row_attrs=ra, col_attrs=ca)
+
 def create_from_kallistobus(out_file: str, in_dir: str, tr2g_file: str, whitelist_file: str, file_attrs: Dict[str, str] = None, layers: Dict[str, str] = None):
 	"""
 	Create a loom file from a kallisto-bus output folder.
@@ -1391,3 +1461,4 @@ def connect(filename: str, mode: str = 'r+', *, validate: bool = True, spec_vers
 		Note: if validation is requested, an exception is raised if validation fails.
 	"""
 	return LoomConnection(filename, mode, validate=validate)
+
