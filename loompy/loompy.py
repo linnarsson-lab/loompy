@@ -1204,7 +1204,7 @@ def create_from_matrix_market(out_file: str, sample_id: str, layer_paths: Dict[s
 
 
 def create_from_star(indir : str, outfile : str, sample_id : str, \
-                     cell_filter : str, expected_n_cells : int, min_total_umis : int = 0, ambient_pthreshold : float = 1.0, \
+                     cell_filter : str, expected_n_cells : int = 0, min_total_umis : int = 0, ambient_pthreshold : float = 1.0, \
                      sample_metadata_file : str = None, gtf_file : str = None):
 	"""
 		Create a .loom file from STARsolo output
@@ -1222,24 +1222,37 @@ def create_from_star(indir : str, outfile : str, sample_id : str, \
 		           nothing
 
 	"""
-	star_rawdir = os.path.join(indir, "Solo.out", "Velocyto", "raw")
-	features = [ l.split('\t')[0] for l in open(os.path.join(star_rawdir, "features.tsv")).readlines() ]
-	barcodes = [ l.strip() for l in open(os.path.join(star_rawdir, "barcodes.tsv")).readlines() ]
-	n_genes = len(features)
+	subdir = "raw" if cell_filter == "none" else "filtered"
+	velodir = os.path.join(indir, "Solo.out", "Velocyto", subdir)
+	totaldir = os.path.join(indir, "Solo.out", "Gene", subdir)
+	accessions = [ l.split('\t')[0] for l in open(os.path.join(velodir, "features.tsv")).readlines() ]
+	genes = [ l.split('\t')[1] for l in open(os.path.join(velodir, "features.tsv")).readlines() ]
+	barcodes = [ l.strip() for l in open(os.path.join(velodir, "barcodes.tsv")).readlines() ]
+	n_genes = len(accessions)
 	mtxshape = (n_genes, len(barcodes))
-	mtx = np.loadtxt(os.path.join(star_rawdir, "matrix.mtx"), skiprows=3, delimiter=' ')
-	allspliced = sparse.coo_matrix((mtx[:,2], (mtx[:,0]-1, mtx[:,1]-1)), shape = mtxshape)
-	allunspliced = sparse.coo_matrix((mtx[:,3], (mtx[:,0]-1, mtx[:,1]-1)), shape = mtxshape)
-	allambiguous = sparse.coo_matrix((mtx[:,4], (mtx[:,0]-1, mtx[:,1]-1)), shape = mtxshape)
+	total_mtx = os.path.join(totaldir, "matrix.mtx")
+	mtx = np.loadtxt(total_mtx, skiprows=3, delimiter=' ')
+	total = sparse.coo_matrix((mtx[:,2], (mtx[:,0]-1, mtx[:,1]-1)), shape = mtxshape)
+	common_mtx = os.path.join(velodir, "matrix.mtx")
+	if os.path.exists(common_mtx):
+		mtx = np.loadtxt(common_mtx, skiprows=3, delimiter=' ')
+		allspliced = sparse.coo_matrix((mtx[:,2], (mtx[:,0]-1, mtx[:,1]-1)), shape = mtxshape)
+		allunspliced = sparse.coo_matrix((mtx[:,3], (mtx[:,0]-1, mtx[:,1]-1)), shape = mtxshape)
+		allambiguous = sparse.coo_matrix((mtx[:,4], (mtx[:,0]-1, mtx[:,1]-1)), shape = mtxshape)
+	else: # STAR >= 2.7.9
+		mtx = np.loadtxt(os.path.join(velodir, "spliced.mtx"), skiprows=3, delimiter=' ')
+		allspliced = sparse.coo_matrix((mtx[:,2], (mtx[:,0]-1, mtx[:,1]-1)), shape = mtxshape)
+		mtx = np.loadtxt(os.path.join(velodir, "unspliced.mtx"), skiprows=3, delimiter=' ')
+		allunspliced = sparse.coo_matrix((mtx[:,2], (mtx[:,0]-1, mtx[:,1]-1)), shape = mtxshape)
+		mtx = np.loadtxt(os.path.join(velodir, "ambiguous.mtx"), skiprows=3, delimiter=' ')
+		allambiguous = sparse.coo_matrix((mtx[:,2], (mtx[:,0]-1, mtx[:,1]-1)), shape = mtxshape)
 	total_umis = np.array(allspliced.sum(axis=0))[0]
 	if cell_filter == "emptydrops":
 		ambient_umis, ambient_pvalue = call_cells(allspliced.tocsc(), expected_n_cells)
 		valid_cells = (ambient_pvalue <= ambient_pthreshold) | (total_umis >= min_total_umis)
 	elif cell_filter == "none":
-		ambient_umis = 0
 		valid_cells = np.full(len(total_umis), True)
 	elif cell_filter == "star":
-		ambient_umis = 0
 		fbcs = [ l.strip() for l in open(os.path.join(indir, "Solo.out", "Gene", "filtered", "barcodes.tsv")).readlines() ]
 		valid_cells = np.isin(np.array(barcodes), fbcs)
 	else:
@@ -1248,25 +1261,26 @@ def create_from_star(indir : str, outfile : str, sample_id : str, \
 	n_valid_cells = valid_cells.sum()
 	valid_barcodes = np.array(barcodes)[valid_cells]
 	valid_umis = total_umis[valid_cells]
-	valid_pvalue = ambient_pvalue[valid_cells]
 	spliced = allspliced.tocsr()[:, valid_cells]
 	unspliced = allunspliced.tocsr()[:, valid_cells]
 	ambiguous = allambiguous.tocsr()[:, valid_cells]
 
 	valid_cellids = np.array([f"{sample_id}:{v_bc}" for v_bc in valid_barcodes])
-	ca = { "CellID": valid_cellids, "AmbientPValue": valid_pvalue, "BarcodeTotalUMIs":  valid_umis }
-	ca["AmbientUMIs"] = np.full(n_valid_cells, ambient_umis)
+	ca = { "CellID": valid_cellids, "BarcodeTotalUMIs":  valid_umis }
+	if cell_filter == "emptydrops":
+		valid_pvalue = ambient_pvalue[valid_cells]
+		ca["AmbientPValue"] = valid_pvalue
+		ca["AmbientUMIs"] = np.full(n_valid_cells, ambient_umis)
 	if sample_metadata_file:
 		sample_metadata = load_sample_metadata(sample_metadata_file, sample_id)
 		for key, value in sample_metadata.items():
 			ca[key] = np.full(n_valid_cells, value)
 
 	if gtf_file:
-		ra = make_row_attrs_from_gene_metadata(gtf_file, features)
+		ra = make_row_attrs_from_gene_metadata(gtf_file, genes)
 	else:
-		ra = { "Gene": np.array(features) }
-
-	layers = { '': spliced, 'Unspliced': unspliced, 'Ambiguous': ambiguous }
+		ra = { "Gene": np.array(genes), "Accession": np.array(accessions) }
+	layers = { '': total, 'spliced': spliced, 'unspliced': unspliced, 'ambiguous': ambiguous }
 	create(filename=outfile, layers=layers, row_attrs=ra, col_attrs=ca)
 
 def create_from_kallistobus(out_file: str, in_dir: str, tr2g_file: str, whitelist_file: str, file_attrs: Dict[str, str] = None, layers: Dict[str, str] = None):

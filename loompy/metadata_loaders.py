@@ -4,36 +4,37 @@ import sqlite3 as sqlite
 import numpy as np
 
 def load_gene_metadata(gtf_file : str) -> Dict[str, Dict[str, Union[int, str]]]:
-        """
-        Read gene metadata from a GTF file.
+	"""
+	Read gene metadata from a GTF file.
 
-        Args:
-          gtf_file (str):             path to GTF file
+	Args:
+	  gtf_file (str):             path to GTF file
 
-        Returns:
-          A Dict with each GeneId pointing to a Dict of metadata keys -> values
-        """
-        if not os.path.exists(gtf_file):
-        	raise ValueError(f"Gene metadata file '{gtf_file}' not found.")
-        regex_genetype = re.compile('gene_biotype "([^"]+)"')
-        regex_geneid = re.compile('gene_id "([^"]+)"')
-        regex_genename = re.compile('gene_name "([^"]+)"')
-        geneid2annots = {}
-        for line in open(gtf_file).readlines():
-        	if line.startswith('#'):
-        		continue
-        	fields = line.rstrip().split('\t')
-        	chrom, feature_class, feature_type, start_str, end_str, junk, strand, junk, tags = fields
-        	if feature_type == "gene":
-        		genename = geneid = regex_geneid.search(tags).group(1)
-        		_genename_search = regex_genename.search(tags)
-        		if _genename_search:
-        			genename = _genename_search.group(1)
-        		genetype = regex_genetype.search(tags).group(1)
-        		chrid, start, end = fields[0], int(fields[3]), int(fields[4])
-        		geneid2annots[geneid] = { "Gene:": genename, "Accession": geneid, "Biotype": genetype, \
-        		                          "Chromosome": chrid, "Start": start, "End": end }
-        return geneid2annots
+	Returns:
+	  A Dict with each GeneId pointing to a Dict of metadata keys -> values
+	"""
+	if not os.path.exists(gtf_file):
+		raise ValueError(f"Gene metadata file '{gtf_file}' not found.")
+	regex_genetype = re.compile('gene_biotype "([^"]+)"')
+	regex_geneid = re.compile('gene_id "([^"]+)"')
+	regex_genename = re.compile('gene_name "([^"]+)"')
+	geneid2annots = {}
+	for line in open(gtf_file).readlines():
+		if line.startswith('#'):
+			continue
+		fields = line.rstrip().split('\t')
+		chrom, feature_class, feature_type, start_str, end_str, junk, strand, junk, tags = fields
+		if feature_type == "gene":
+			genename = geneid = regex_geneid.search(tags).group(1)
+			_genename_search = regex_genename.search(tags)
+			if _genename_search:
+				genename = _genename_search.group(1)
+			_genetype_search = regex_genetype.search(tags)
+			genetype = _genetype_search.group(1) if _genetype_search else "n/a"
+			chrid, start, end = fields[0], int(fields[3]), int(fields[4])
+			geneid2annots[geneid] = { "Gene": genename, "Accession": geneid, "Biotype": genetype, \
+			                          "Chromosome": chrid, "Start": start, "End": end }
+	return geneid2annots
 
 def make_row_attrs_from_gene_metadata(gtf_file : str, ordered_features : Iterable[str]) -> Dict[str, np.ndarray]:
 	"""
@@ -54,7 +55,10 @@ def make_row_attrs_from_gene_metadata(gtf_file : str, ordered_features : Iterabl
 	for ra_attr in ra_attrs:
 		ra[ra_attr] = np.zeros((n_genes,), dtype = object)
 	for idx, geneid in enumerate(ordered_features):
-		annots = geneid2annots[geneid]
+		try:
+			annots = geneid2annots[geneid]
+		except KeyError:
+			annots = { "Gene": geneid, "Accession": geneid, "Biotype": "n/a", "Chromosome": "Un", "Start": "0", "End": "0" }
 		for ra_attr in ra_attrs:
 			ra[ra_attr][idx] = annots[ra_attr]
 	return ra
