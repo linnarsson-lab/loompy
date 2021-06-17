@@ -1204,7 +1204,7 @@ def create_from_matrix_market(out_file: str, sample_id: str, layer_paths: Dict[s
 
 
 def create_from_star(indir : str, outfile : str, sample_id : str, \
-                     cell_filter : str, expected_n_cells : int, min_total_umis : int, ambient_pthreshold : float, \
+                     cell_filter : str, expected_n_cells : int, min_total_umis : int = 0, ambient_pthreshold : float = 1.0, \
                      sample_metadata_file : str = None, gtf_file : str = None):
 	"""
 		Create a .loom file from STARsolo output
