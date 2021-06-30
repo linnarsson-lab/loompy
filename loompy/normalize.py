@@ -95,7 +95,11 @@ def materialize_attr_values(a: np.ndarray) -> np.ndarray:
 		else:
 			temp = a
 		# Then unescape XML entities and convert to unicode
-		result = np.array([html.unescape(x) for x in temp.astype(str)], dtype=object)
+		try:
+			result = np.array([html.unescape(x) for x in temp.astype(str)], dtype=object)
+		except:  # Dirty hack to handle UTF-8 non-break-space in scalar strings. TODO: Rewrite this whole method completely!
+			if type(a[0]) == np.bytes_:
+				result = [ a[0].replace(b'\xc2\xa0', b'') ]
 	elif np.issubdtype(a.dtype, np.str_) or np.issubdtype(a.dtype, np.unicode_):
 		result = np.array(a.astype(str), dtype=object)
 	else:
