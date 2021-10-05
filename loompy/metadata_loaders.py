@@ -32,8 +32,10 @@ def load_gene_metadata(gtf_file : str) -> Dict[str, Dict[str, Union[int, str]]]:
 			_genetype_search = regex_genetype.search(tags)
 			genetype = _genetype_search.group(1) if _genetype_search else "n/a"
 			chrid, start, end = fields[0], int(fields[3]), int(fields[4])
-			geneid2annots[geneid] = { "Gene": genename, "Accession": geneid, "Biotype": genetype, \
-			                          "Chromosome": chrid, "Start": start, "End": end }
+			attrs = { "Gene": genename, "Accession": geneid, "Biotype": genetype, \
+                                                  "Chromosome": chrid, "Start": start, "End": end }
+			geneid2annots[geneid] = attrs
+			geneid2annots[genename] = attrs
 	return geneid2annots
 
 def make_row_attrs_from_gene_annotations(acc2annots : Dict[str, Dict[str, Union[int, str]]], ordered_features : Iterable[str]) -> Dict[str, np.ndarray]:
@@ -41,21 +43,21 @@ def make_row_attrs_from_gene_annotations(acc2annots : Dict[str, Dict[str, Union[
          Construct loom row attributes corresponding to ordered_features from load_gene_metadata output.
 
 	Args:
-	  acc2annots (Dict):             output from load_gene_metadata
+	  acc2annots (Dict):          output from load_gene_metadata
           ordered_features (str):     the accessions (should match the gtf "gene_id") in matrix row order
 
 	Returns:
           A row attribute dictionary of attr->numpy arrays to assign to a Loom object.
 	"""
 	ra = {}
-	first_annot = next(iter(geneid2annots.values()))
+	first_annot = next(iter(acc2annots.values()))
 	ra_attrs = list(first_annot.keys())
 	n_genes = len(ordered_features)
 	for ra_attr in ra_attrs:
 		ra[ra_attr] = np.zeros((n_genes,), dtype = object)
 	for idx, geneid in enumerate(ordered_features):
 		try:
-			annots = geneid2annots[geneid]
+			annots = acc2annots[geneid]
 		except KeyError:
 			annots = { "Gene": geneid, "Accession": geneid, "Biotype": "n/a", "Chromosome": "Un", "Start": "0", "End": "0" }
 		for ra_attr in ra_attrs:
