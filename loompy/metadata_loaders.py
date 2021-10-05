@@ -36,19 +36,18 @@ def load_gene_metadata(gtf_file : str) -> Dict[str, Dict[str, Union[int, str]]]:
 			                          "Chromosome": chrid, "Start": start, "End": end }
 	return geneid2annots
 
-def make_row_attrs_from_gene_metadata(gtf_file : str, ordered_features : Iterable[str]) -> Dict[str, np.ndarray]:
+def make_row_attrs_from_gene_annotations(acc2annots : Dict[str, Dict[str, Union[int, str]]], ordered_features : Iterable[str]) -> Dict[str, np.ndarray]:
 	"""
-        Read gene metadata from a GTF file and construct loom row attributes corresponding to ordered_features.
+         Construct loom row attributes corresponding to ordered_features from load_gene_metadata output.
 
 	Args:
-	  gtf_file (str):             path to GTF file
+	  acc2annots (Dict):             output from load_gene_metadata
           ordered_features (str):     the accessions (should match the gtf "gene_id") in matrix row order
 
 	Returns:
-          A row attribute object ready to assign to a Loom object.
+          A row attribute dictionary of attr->numpy arrays to assign to a Loom object.
 	"""
 	ra = {}
-	geneid2annots = load_gene_metadata(gtf_file)
 	first_annot = next(iter(geneid2annots.values()))
 	ra_attrs = list(first_annot.keys())
 	n_genes = len(ordered_features)
@@ -62,6 +61,20 @@ def make_row_attrs_from_gene_metadata(gtf_file : str, ordered_features : Iterabl
 		for ra_attr in ra_attrs:
 			ra[ra_attr][idx] = annots[ra_attr]
 	return ra
+
+def make_row_attrs_from_gene_metadata(gtf_file : str, ordered_features : Iterable[str]) -> Dict[str, np.ndarray]:
+	"""
+        Read gene metadata from a GTF file and construct loom row attributes corresponding to ordered_features.
+
+	Args:
+	  gtf_file (str):             path to GTF file
+          ordered_features (str):     the accessions (should match the gtf "gene_id") in matrix row order
+
+	Returns:
+          A row attribute object ready to assign to a Loom object.
+	"""
+	geneid2annots = load_gene_metadata(gtf_file)
+	return make_row_attrs_from_gene_annotations(gene2annots, ordered_features)
 
 def load_sample_metadata(path: str, sample_id: str) -> Dict[str, str]:
         """
