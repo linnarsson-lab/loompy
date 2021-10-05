@@ -13,3 +13,4 @@ from .loom_validator import LoomValidator
 from ._version import __version__, loom_spec_version
 from .bus_file import create_from_fastq
 from .cell_calling import call_cells
+from .metadata_loaders import load_gene_metadata, make_row_attrs_from_gene_annotations, make_row_attrs_from_gene_metadata, load_sample_metadata
