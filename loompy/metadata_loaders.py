@@ -11,7 +11,7 @@ def load_gene_metadata(gtf_file : str) -> Dict[str, Dict[str, Union[int, str]]]:
 	  gtf_file (str):             path to GTF file
 
 	Returns:
-	  A Dict with each GeneId pointing to a Dict of metadata keys -> values
+	  A Dict with each Accession (gtf "gene_id") pointing to a Dict of metadata keys -> values
 	"""
 	if not os.path.exists(gtf_file):
 		raise ValueError(f"Gene metadata file '{gtf_file}' not found.")
@@ -42,7 +42,7 @@ def make_row_attrs_from_gene_metadata(gtf_file : str, ordered_features : Iterabl
 
 	Args:
 	  gtf_file (str):             path to GTF file
-          ordered_features (str):     the features (gene ids) in matrix row order
+          ordered_features (str):     the accessions (should match the gtf "gene_id") in matrix row order
 
 	Returns:
           A row attribute object ready to assign to a Loom object.
