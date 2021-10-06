@@ -75,8 +75,8 @@ def make_row_attrs_from_gene_metadata(gtf_file : str, ordered_features : Iterabl
 	Returns:
           A row attribute object ready to assign to a Loom object.
 	"""
-	geneid2annots = load_gene_metadata(gtf_file)
-	return make_row_attrs_from_gene_annotations(gene2annots, ordered_features)
+	acc2annots = load_gene_metadata(gtf_file)
+	return make_row_attrs_from_gene_annotations(acc2annots, ordered_features)
 
 def load_sample_metadata(path: str, sample_id: str) -> Dict[str, str]:
         """
