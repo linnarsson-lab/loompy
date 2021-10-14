@@ -1230,22 +1230,22 @@ def create_from_star(indir : str, outfile : str, sample_id : str, \
 	barcodes = [ l.strip() for l in open(os.path.join(velodir, "barcodes.tsv")).readlines() ]
 	n_genes = len(accessions)
 	mtxshape = (n_genes, len(barcodes))
-	total_mtx = os.path.join(totaldir, "matrix.mtx")
-	mtx = np.loadtxt(total_mtx, skiprows=3, delimiter=' ')
-	total = sparse.coo_matrix((mtx[:,2], (mtx[:,0]-1, mtx[:,1]-1)), shape = mtxshape)
+	#total_mtx = os.path.join(totaldir, "matrix.mtx")
+	#mtx = np.loadtxt(total_mtx, skiprows=3, delimiter=' ')
+	#total = sparse.coo_matrix((mtx[:,2], (mtx[:,0]-1, mtx[:,1]-1)), shape = mtxshape)
 	common_mtx = os.path.join(velodir, "matrix.mtx")
 	if os.path.exists(common_mtx):
 		mtx = np.loadtxt(common_mtx, skiprows=3, delimiter=' ')
-		allspliced = sparse.coo_matrix((mtx[:,2], (mtx[:,0]-1, mtx[:,1]-1)), shape = mtxshape)
-		allunspliced = sparse.coo_matrix((mtx[:,3], (mtx[:,0]-1, mtx[:,1]-1)), shape = mtxshape)
-		allambiguous = sparse.coo_matrix((mtx[:,4], (mtx[:,0]-1, mtx[:,1]-1)), shape = mtxshape)
+		allspliced = sparse.csr_matrix((mtx[:,2], (mtx[:,0]-1, mtx[:,1]-1)), shape = mtxshape)
+		allunspliced = sparse.csr_matrix((mtx[:,3], (mtx[:,0]-1, mtx[:,1]-1)), shape = mtxshape)
+		allambiguous = sparse.csr_matrix((mtx[:,4], (mtx[:,0]-1, mtx[:,1]-1)), shape = mtxshape)
 	else: # STAR >= 2.7.9
 		mtx = np.loadtxt(os.path.join(velodir, "spliced.mtx"), skiprows=3, delimiter=' ')
-		allspliced = sparse.coo_matrix((mtx[:,2], (mtx[:,0]-1, mtx[:,1]-1)), shape = mtxshape)
+		allspliced = sparse.csr_matrix((mtx[:,2], (mtx[:,0]-1, mtx[:,1]-1)), shape = mtxshape)
 		mtx = np.loadtxt(os.path.join(velodir, "unspliced.mtx"), skiprows=3, delimiter=' ')
-		allunspliced = sparse.coo_matrix((mtx[:,2], (mtx[:,0]-1, mtx[:,1]-1)), shape = mtxshape)
+		allunspliced = sparse.csr_matrix((mtx[:,2], (mtx[:,0]-1, mtx[:,1]-1)), shape = mtxshape)
 		mtx = np.loadtxt(os.path.join(velodir, "ambiguous.mtx"), skiprows=3, delimiter=' ')
-		allambiguous = sparse.coo_matrix((mtx[:,2], (mtx[:,0]-1, mtx[:,1]-1)), shape = mtxshape)
+		allambiguous = sparse.csr_matrix((mtx[:,2], (mtx[:,0]-1, mtx[:,1]-1)), shape = mtxshape)
 	total_umis = np.array(allspliced.sum(axis=0))[0]
 	if cell_filter == "emptydrops":
 		ambient_umis, ambient_pvalue = call_cells(allspliced.tocsc(), expected_n_cells)
@@ -1261,9 +1261,10 @@ def create_from_star(indir : str, outfile : str, sample_id : str, \
 	n_valid_cells = valid_cells.sum()
 	valid_barcodes = np.array(barcodes)[valid_cells]
 	valid_umis = total_umis[valid_cells]
-	spliced = allspliced.tocsr()[:, valid_cells]
-	unspliced = allunspliced.tocsr()[:, valid_cells]
-	ambiguous = allambiguous.tocsr()[:, valid_cells]
+	spliced = allspliced[:, valid_cells]
+	unspliced = allunspliced[:, valid_cells]
+	ambiguous = allambiguous[:, valid_cells]
+	total = spliced + unspliced + ambiguous
 
 	valid_cellids = np.array([f"{sample_id}:{v_bc}" for v_bc in valid_barcodes])
 	ca = { "CellID": valid_cellids, "BarcodeTotalUMIs":  valid_umis }
