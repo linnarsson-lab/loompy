@@ -1056,10 +1056,10 @@ def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loomp
 			raise ValueError(f"Layer '{name}' is not the same shape as the main matrix")
 	for name, ra in row_attrs.items():
 		if len(ra) != shape[0]:
-			raise ValueError(f"Row attribute '{name}' is not the same length ({ra.shape[0]}) as number of rows in main matrix ({shape[0]})")
+			raise ValueError(f"Row attribute '{name}' is not the same length ({len(ra)}) as number of rows in main matrix ({shape[0]})")
 	for name, ca in col_attrs.items():
 		if len(ca) != shape[1]:
-			raise ValueError(f"Column attribute '{name}' is not the same length ({ca.shape[0]}) as number of columns in main matrix ({shape[1]})")
+			raise ValueError(f"Column attribute '{name}' is not the same length ({len(ca)}) as number of columns in main matrix ({shape[1]})")
 
 	try:
 		with new(filename, file_attrs=file_attrs) as ds:
