@@ -855,7 +855,7 @@ class LoomConnection:
 			self.col_attrs._permute(ordering)
 			self.col_graphs._permute(ordering)
 
-	def aggregate(self, out_file: str = None, select: np.ndarray = None, group_by: Union[str, np.ndarray] = "Clusters", aggr_by: str = "mean", aggr_ca_by: Dict[str, str] = None) -> np.ndarray:
+	def aggregate(self, out_file: str = None, select: np.ndarray = None, group_by: Union[str, np.ndarray] = "Clusters", aggr_by: str = "mean", aggr_ca_by: Dict[str, str] = None, layer:str="") -> np.ndarray:
 		"""
 		Aggregate the Loom file by applying aggregation functions to the main matrix as well as to the column attributes
 
@@ -865,6 +865,7 @@ class LoomConnection:
 			group_by	The column attribute to group by, or an np.ndarray of integer group labels
 			aggr_by 	The aggregation function for the main matrix
 			aggr_ca_by	A dictionary of aggregation functions for the column attributes (or None to skip)
+			layer		The name of the layer to aggregate. Defaults to main layer
 
 		Returns:
 			m			Aggregated main matrix
@@ -911,8 +912,8 @@ class LoomConnection:
 					ca[key] = npg.aggregate(zero_strt_sort_noholes_lbls, self.ca[key], func=func, fill_value=self.ca[key][0])
 
 		m = np.empty((self.shape[0], n_groups))
-		for (_, selection, view) in self.scan(axis=0, layers=[""]):
-			vals_aggr = npg.aggregate(zero_strt_sort_noholes_lbls, view[:, :], func=aggr_by, axis=1, fill_value=0)
+		for (_, selection, view) in self.scan(axis=0, layers=[layer]):
+			vals_aggr = npg.aggregate(zero_strt_sort_noholes_lbls, view[layer][:, :], func=aggr_by, axis=1, fill_value=0)
 			m[selection, :] = vals_aggr
 
 		if out_file is not None:
