@@ -1,3 +1,4 @@
+from multiprocessing.sharedctypes import Value
 from typing import *
 import numpy as np
 import h5py
@@ -80,6 +81,8 @@ class AttributeManager:
 		if type(thing) is slice or type(thing) is np.ndarray or type(thing) is int:
 			am = AttributeManager(None, axis=self.axis)
 			for key, val in self.items():
+				if val is None:
+					raise ValueError(key)
 				am[key] = val[thing]
 			return am
 		elif type(thing) is tuple:
