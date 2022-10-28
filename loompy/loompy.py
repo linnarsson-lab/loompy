@@ -1234,7 +1234,7 @@ def create_from_star(indir : str, outfile : str, sample_id : str, \
 	if main_layer in ("Gene", "GeneFull", "GeneFull_ExonOverIntron", "GeneFull_Ex50pAS") and main_layer not in gtypes:
 		gtypes.append(main_layer)
 	subdir = "raw" if cell_filter == "none" else "filtered"
-	velodir = os.path.join(indir, "Solo.out", "Velocyto", subdir)
+	velodir = os.path.join(indir, "Solo.out", "Velocyto", subdir) if not indir.endswith("Solo.out") else os.path.join(indir, "Velocyto", subdir) 
 	accessions = [ l.split('\t')[0] for l in open(os.path.join(velodir, "features.tsv")).readlines() ]
 	genes = [ l.split('\t')[1] for l in open(os.path.join(velodir, "features.tsv")).readlines() ]
 	gtype2bcs = {}
@@ -1313,9 +1313,12 @@ def create_from_star(indir : str, outfile : str, sample_id : str, \
 		ca["AmbientPValue"] = valid_pvalue
 		ca["AmbientUMIs"] = np.full(n_valid_cells, ambient_umis)
 	if sample_metadata_file:
-		sample_metadata = load_sample_metadata(sample_metadata_file, sample_id)
-		for key, value in sample_metadata.items():
-			ca[key] = np.full(n_valid_cells, value)
+		try:
+			sample_metadata = load_sample_metadata(sample_metadata_file, sample_id)
+			for key, value in sample_metadata.items():
+				ca[key] = np.full(n_valid_cells, value)
+		except:
+			print("No sample metadata for %s in %s. Skipping annotation." % (sample_id, sample_metadata_file))
 	if gtf_file:
 		ra = make_row_attrs_from_gene_metadata(gtf_file, accessions)
 	else:
