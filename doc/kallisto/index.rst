@@ -27,7 +27,7 @@ and you should see the following output:
 Using the ``loompy fromfq`` command
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-1. Install `kallisto <https://pachterlab.github.io/kallisto/>`_
+1. Install `kallisto <https://pachterlab.github.io/kallisto/>`_  . Please note: Version >= 0.46.0 is required!
 ---------------------------------------------------------------
 
 The excellent kallisto tool performs ultra-fast pseudoalignment, which loompy uses to count reads (UMIs) on genes.
