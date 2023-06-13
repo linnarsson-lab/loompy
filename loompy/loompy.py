@@ -586,7 +586,7 @@ class LoomConnection:
 		if layers == "":
 			layers = [""]
 
-		if (items is not None) and (np.issubdtype(items.dtype, np.bool_)):
+		if (items is not None) and (type(items) != int) and (np.issubdtype(items.dtype, np.bool_)):
 			items = np.where(items)[0]
 
 		ordering: Union[np.ndarray, slice] = None
@@ -599,6 +599,8 @@ class LoomConnection:
 				ordering = slice(None)
 			if items is None:
 				items = np.fromiter(range(self.shape[1]), dtype='int')
+			elif type(items) == int:
+				items = np.fromiter(range(items, self.shape[1]), dtype='int')
 			cols_per_chunk = batch_size
 			ix = 0
 			while ix < self.shape[1]:
@@ -1082,14 +1084,15 @@ def create(filename: str, layers: Union[np.ndarray, Dict[str, np.ndarray], loomp
 		raise ve
 
 
-def create_from_cellranger(indir: str, outdir: str = None, genome: str = None) -> str:
+def create_from_cellranger(indir: str, outdir: str = None, genome: str = None, file_attrs: Dict[str, str] = None, selected_cellids: List[str] = None) -> str:
 	"""
 	Create a .loom file from 10X Genomics cellranger output
 
 	Args:
 		indir (str):	path to the cellranger output folder (the one that contains 'outs')
-		outdir (str):	output folder wher the new loom file should be saved (default to indir)
+		outdir (str):	output folder where the new loom file should be saved (default to indir)
 		genome (str):	genome build to load (e.g. 'mm10'; if None, determine species from outs folder)
+		file_attrs:	dict of global file attributes, or None
 
 	Returns:
 		path (str):		Full path to the created loom file.
@@ -1138,7 +1141,27 @@ def create_from_cellranger(indir: str, outdir: str = None, genome: str = None) -
 		col_attrs["ClusterID"] = labels.astype('int') - 1
 
 	path = os.path.join(outdir, sampleid + ".loom")
-	create(path, matrix, row_attrs, col_attrs, file_attrs={"Genome": genome})
+	if file_attrs == None:
+		file_attrs = {}
+	if not "Genome" in file_attrs:
+		if genome is None:
+			invocationfile = os.path.join(indir, "_invocation")
+			for line in open(invocationfile):
+				m = re.search('reference_path.+"([^"]+)"', line)
+				if m:
+					genome = m.group(1)
+					break
+		if genome:
+			file_attrs["Genome"] = genome
+	cmdlinefile = os.path.join(indir, "_cmdline")
+	if not "Cmdline" in file_attrs and os.path.exists(cmdlinefile):
+		cmdline = open(cmdlinefile).read().strip()
+		file_attrs["Cmdline"] = cmdline
+	versionsfile = os.path.join(indir, "_versions")
+	if not "Versions" in file_attrs and os.path.exists(versionsfile):
+		versions = open(versionsfile).read().strip().replace("\n", " ")
+		file_attrs["Versions"] = versions
+	create(path, matrix, row_attrs, col_attrs, file_attrs=file_attrs)
 	return path
 
 
@@ -1206,7 +1229,7 @@ def create_from_matrix_market(out_file: str, sample_id: str, layer_paths: Dict[s
 
 def create_from_star(indir : str, outfile : str, sample_id : str, \
                      cell_filter : str = "star", expected_n_cells : int = 0, min_total_umis : int = 0, ambient_pthreshold : float = 1.0, \
-                     sample_metadata_file : str = None, gtf_file : str = None, main_layer : str = "velosum", extra_layers = None):
+                     sample_metadata_file : str = None, gtf_file : str = None, main_layer : str = "velosum", extra_layers = None, file_attrs = None):
 	"""
 		Create a .loom file from STARsolo output
 		Args:
@@ -1224,6 +1247,7 @@ def create_from_star(indir : str, outfile : str, sample_id : str, \
 			  main_layer(str):            The STAR output matrix to use for the main loom layer (e.g. 'Gene', or 'GeneFull').
 			                              'velosum' adds up spliced, unspliced, and ambiguous.
 			  extra_layers(list):         Names of additional layers to add in data (e.g. 'GeneFull').
+			  file_attrs:                 dict of global file attributes, or None
 		Returns:
 		           nothing
 
@@ -1323,7 +1347,7 @@ def create_from_star(indir : str, outfile : str, sample_id : str, \
 		ra = make_row_attrs_from_gene_metadata(gtf_file, accessions)
 	else:
 		ra = { "Gene": np.array(genes), "Accession": np.array(accessions) }
-	create(filename=outfile, layers=layers, row_attrs=ra, col_attrs=ca)
+	create(filename=outfile, layers=layers, row_attrs=ra, col_attrs=ca, file_attrs=file_attrs)
 
 def create_from_kallistobus(out_file: str, in_dir: str, tr2g_file: str, whitelist_file: str, file_attrs: Dict[str, str] = None, layers: Dict[str, str] = None):
 	"""

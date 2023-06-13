@@ -100,7 +100,9 @@ class LoomLayer():
 			self.ds._file.attrs["last_modified"] = timestamp()
 			self.ds._file.flush()
 
-	def sparse(self, rows: np.ndarray = None, cols: np.ndarray = None) -> scipy.sparse.coo_matrix:
+	# dtype added by Peter:
+	#def sparse(self, rows: np.ndarray = None, cols: np.ndarray = None) -> scipy.sparse.coo_matrix:
+	def sparse(self, rows: np.ndarray = None, cols: np.ndarray = None, dtype = None) -> scipy.sparse.coo_matrix:
 		if rows is not None:
 			if np.issubdtype(rows.dtype, np.bool_):
 				rows = np.where(rows)[0]
@@ -120,6 +122,9 @@ class LoomLayer():
 				vals = view.layers[self.name][rows, :]
 			else:
 				vals = view.layers[self.name][:, :]
+			# Added by Peter:
+			if dtype:
+				vals = vals.astype(dtype)
 			nonzeros = np.where(vals != 0)
 			data.append(vals[nonzeros])
 			row.append(nonzeros[0])
