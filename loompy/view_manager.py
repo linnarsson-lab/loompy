@@ -20,7 +20,7 @@ class ViewManager:
 		Returns:
 			A LoomView object, an in-memory representation of the sliced file
 		"""
-		if type(slice_) is not tuple or len(slice_) is not 2:
+		if type(slice_) is not tuple or len(slice_) != 2:
 			raise ValueError("Views require slices along two dimensions")
 
 		rows = slice_[0]
