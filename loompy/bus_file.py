@@ -64,7 +64,7 @@ twobit_to_dna_table = {0: "A", 1: "C", 2: "G", 3: "T"}
 dna_to_twobit_table = {"A": 0, "C": 1, "G": 2, "T": 3}
 
 
-@jit
+@jit(nopython=True)
 def twobit_to_dna(twobit: int, size: int) -> str:
 	result = []
 	for i in range(size):
@@ -81,7 +81,7 @@ def twobit_to_dna(twobit: int, size: int) -> str:
 	return "".join(result)
 
 
-@jit
+@jit(nopython=True)
 def dna_to_twobit(dna: str) -> int:
 	x = 0
 	for nt in dna:
@@ -98,7 +98,7 @@ def dna_to_twobit(dna: str) -> int:
 	return x
 
 
-@jit
+@jit(nopython=True)
 def twobit_1hamming(twobit: int, size: int) -> List[int]:
 	result = []
 	for i in range(size):
