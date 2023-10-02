@@ -1165,21 +1165,62 @@ def create_from_cellranger(indir: str, outdir: str = None, genome: str = None, f
 	return path
 
 
+def create_from_tsv(out_file: str, tsv_file: str, row_metadata_loomfile: str, row_metadata_attr: str = "Accession", delim: str = "\t", \
+                    dtype: str = "float32", sample_id: str = "", file_attrs: Dict[str, str] = None) -> None:
+	"""
+	Create a .loom file from .tsv file
+
+	Args:
+		out_file:               path to the newly created .loom file (will be overwritten if it exists)
+		tsv_file:		input tab separated data matrix file
+		row_metadata_loomfile:  path to loomfile that will supply gene data and their order
+		row_metadata_attr:      row attribute of loomfile to use to match with gene IDs of .tsv file
+                delim:                  delimiter of input file
+		dtype:                  requested type of loomfile data matrix
+		sample_id:              string to use as prefix for cell IDs
+		file_attrs:             dict of global loomfile attributes, or None
+	"""
+	row_attrs = {}
+	with loompy.connect(row_metadata_loomfile, "r") as ds:
+		for attr in ("Accession", "Gene", "Chromosome", "Start", "End"):
+			if attr in ds.ra:
+				row_attrs[attr] = ds.ra[attr][:]
+		nrows = ds.shape[0]
+	id2rowidx = { n : i for i, n in enumerate(row_attrs[row_metadata_attr]) }
+	with open(tsv_file, "r") as fd:
+		headerrow = fd.readline().rstrip().split(delim)
+		cellids = np.array([ sample_id + cellid for cellid in headerrow[1:] ]).astype('str')
+		matrix = np.zeros([nrows, len(cellids)], dtype=dtype)
+		nlines = nnomatch = 0
+		for line in fd:
+			nlines += 1
+			row = line.rstrip().split(delim)
+			geneid = row[0]
+			if not geneid in id2rowidx:
+				nnomatch += 1
+				continue
+			rowidx = id2rowidx[geneid]
+			datarow = [ float(v) for v in row[1:] ]
+			matrix[rowidx, :] = np.array(datarow).astype(dtype)
+	col_attrs = {"CellID": cellids}
+	create(out_file, matrix, row_attrs, col_attrs, file_attrs=file_attrs)
+	print("No match for %s / %s genes in input file. Size of output loomfile: %s" % (nnomatch, nlines, matrix.shape) )
+
 def create_from_matrix_market(out_file: str, sample_id: str, layer_paths: Dict[str, str], row_metadata_path: str, column_metadata_path: str, delim: str = "\t", skip_row_headers: bool = False, skip_colums_headers: bool = False, file_attrs: Dict[str, str] = None, matrix_transposed: bool = False) -> None:
 	"""
 	Create a .loom file from .mtx matrix market format
 
 	Args:
-		out_file:				path to the newly created .loom file (will be overwritten if it exists)
-		sample_id:				string to use as prefix for cell IDs
-		layer_paths:			dict mapping layer names to paths to the corresponding matrix file (usually with .mtx extension)
-		row_metadata_path:		path to the row (usually genes) metadata file
-		column_metadata_path:	path to the column (usually cells) metadata file
-		delim:					delimiter used for metadata (default: "\t")
-		skip_row_headers:		if true, skip first line in rows metadata file
-		skip_column_headers: 	if true, skip first line in columns metadata file
-		file_attrs:				dict of global file attributes, or None
-		matrix_transposed:		if true, the main matrix is transposed
+		out_file:                    path to the newly created .loom file (will be overwritten if it exists)
+		sample_id:                   string to use as prefix for cell IDs
+		layer_paths:                 dict mapping layer names to paths to the corresponding matrix file (usually with .mtx extension)
+		row_metadata_path:           path to the row (usually genes) metadata file
+		column_metadata_path:        path to the column (usually cells) metadata file
+		delim:                       delimiter used for metadata (default: "\t")
+		skip_row_headers:            if true, skip first line in rows metadata file
+		skip_column_headers:         if true, skip first line in columns metadata file
+		file_attrs:                  dict of global loomfile attributes, or None
+		matrix_transposed:           if true, the main matrix is transposed
 	
 	Remarks:
 		layer_paths should typically map the empty string to a matrix market file: {"": "path/to/filename.mtx"}.
