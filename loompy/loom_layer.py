@@ -100,8 +100,6 @@ class LoomLayer():
 			self.ds._file.attrs["last_modified"] = timestamp()
 			self.ds._file.flush()
 
-	# dtype added by Peter:
-	#def sparse(self, rows: np.ndarray = None, cols: np.ndarray = None) -> scipy.sparse.coo_matrix:
 	def sparse(self, rows: np.ndarray = None, cols: np.ndarray = None, dtype = None) -> scipy.sparse.coo_matrix:
 		if rows is not None:
 			if np.issubdtype(rows.dtype, np.bool_):
@@ -112,25 +110,35 @@ class LoomLayer():
 				
 		n_genes = self.ds.shape[0] if rows is None else rows.shape[0]
 		n_cells = self.ds.shape[1] if cols is None else cols.shape[0]
-
-		data: List[np.ndarray] = []
-		row: List[np.ndarray] = []
-		col: List[np.ndarray] = []
-		i = 0
-		for (ix, selection, view) in self.ds.scan(items=cols, axis=1, layers=[self.name], what=["layers"]):
+		# Calculate sparse data length to be able to reserve proper sized arrays beforehand
+		nnonzero = 0
+		for (ix, selection, view) in self.ds.scan(items=cols, axis=1, layers=[self.name], what=["layers"], batch_size=4096):
 			if rows is not None:
 				vals = view.layers[self.name][rows, :]
 			else:
 				vals = view.layers[self.name][:, :]
-			# Added by Peter:
+			nnonzero += np.count_nonzero(vals)
+		data = np.empty((nnonzero,), dtype=dtype) #(data: List[np.ndarray] = []
+		row = np.empty((nnonzero,), dtype=('uint16' if self.ds.shape[0] < 2**16 else 'uint32')) #row : List[np.ndarray] = []
+		col = np.empty((nnonzero,), dtype=('uint32' if self.ds.shape[1] < 2**32 else 'uint64')) #col: List[np.ndarray] = []
+		i = 0
+		ci = 0
+		for (ix, selection, view) in self.ds.scan(items=cols, axis=1, layers=[self.name], what=["layers"], batch_size=4096):
+			if rows is not None:
+				vals = view.layers[self.name][rows, :]
+			else:
+				vals = view.layers[self.name][:, :]
 			if dtype:
 				vals = vals.astype(dtype)
 			nonzeros = np.where(vals != 0)
-			data.append(vals[nonzeros])
-			row.append(nonzeros[0])
-			col.append(nonzeros[1] + i)
+			n = len(nonzeros[0])
+			data[ci:ci+n] = vals[nonzeros] #data.append(vals[nonzeros])
+			row[ci:ci+n] = nonzeros[0] #row.append(nonzeros[0])
+			col[ci:ci+n] = (nonzeros[1]+i) #col.append(nonzeros[1] + i)
+			ci += n
 			i += selection.shape[0]
-		return scipy.sparse.coo_matrix((np.concatenate(data), (np.concatenate(row), np.concatenate(col))), shape=(n_genes, n_cells))
+		return scipy.sparse.coo_matrix((data, (row, col)), shape=(n_genes, n_cells), dtype=dtype)
+		#return scipy.sparse.coo_matrix((np.concatenate(data, dtype=dtype), (np.concatenate(row), np.concatenate(col))), shape=(n_genes, n_cells), dtype=dtype)
 
 	def _resize(self, size: Tuple[int, int], axis: int = None) -> None:
 		"""Resize the dataset, or the specified axis.
