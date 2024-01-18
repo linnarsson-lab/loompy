@@ -857,7 +857,8 @@ class LoomConnection:
 			self.col_attrs._permute(ordering)
 			self.col_graphs._permute(ordering)
 
-	def aggregate(self, out_file: str = None, select: np.ndarray = None, group_by: Union[str, np.ndarray] = "Clusters", aggr_by: str = "mean", aggr_ca_by: Dict[str, str] = None, layer:str="") -> np.ndarray:
+	def aggregate(self, out_file: str = None, select: np.ndarray = None, group_by: Union[str, np.ndarray] = "Clusters", \
+	                    aggr_by: str = "mean", aggr_ca_by: Dict[str, str] = None, layer: str = "", aggr_ca_if_equal: bool = False) -> np.ndarray:
 		"""
 		Aggregate the Loom file by applying aggregation functions to the main matrix as well as to the column attributes
 
@@ -868,6 +869,7 @@ class LoomConnection:
 			aggr_by 	The aggregation function for the main matrix
 			aggr_ca_by	A dictionary of aggregation functions for the column attributes (or None to skip)
 			layer		The name of the layer to aggregate. Defaults to main layer
+			aggr_ca_if_equal If True, scalar column attributes not in aggr_ca_by will be transferred when they have the same value within each aggregate  group
 
 		Returns:
 			m			Aggregated main matrix
@@ -891,6 +893,13 @@ class LoomConnection:
 			labels = (self.ca[group_by]).astype('int')
 		_, zero_strt_sort_noholes_lbls = np.unique(labels, return_inverse=True)
 		n_groups = len(set(labels))
+		if aggr_ca_if_equal:
+			for key in self.ca.keys():
+				if (aggr_ca_by is None or key not in aggr_ca_by) and np.isscalar(self.ca[key][0]):
+					value_by_pos = self.ca[key]
+					nvalues_per_lbl = npg.aggregate(zero_strt_sort_noholes_lbls, value_by_pos, lambda v: len(set(v)))
+					if np.all(nvalues_per_lbl == 1):
+						ca[key] = npg.aggregate(zero_strt_sort_noholes_lbls, self.ca[key], func='first', fill_value=self.ca[key][0])
 		if aggr_ca_by is not None:
 			for key in self.ca.keys():
 				if key not in aggr_ca_by:
