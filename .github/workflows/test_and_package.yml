@@ -1,0 +1,97 @@
+---
+# yamllint disable rule:line-length
+name: run tests and create installable packages
+
+# yamllint disable-line rule:truthy
+on:
+  workflow_dispatch:
+  workflow_call:
+
+concurrency:
+  group: test-${{github.ref}}-${{github.event.pull_request.number || github.run_number}}
+  cancel-in-progress: true
+
+jobs:
+
+  run-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version:
+          - 3.8
+          - 3.9
+          - "3.10"
+          - 3.11
+          # 3.12 has problems with older NumPy
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install test dependencies
+        run: |
+          python -m pip install -U setuptools pip
+          python -m pip install pytest pytest-cov
+      - name: Install package
+        run: |
+          python -m pip install .
+      - name: Test
+        run: |
+          python -m pytest --cov=loompy
+      - name: Install pypa/build
+        run: |
+          python -m pip install build
+      - name: Build distribution packages (binary wheel and source tarball)
+        run: |
+          python -m build
+      - name: Check packages with twine
+        run: |
+          python -m pip install twine
+          python -m twine check dist/*
+      - name: Store the distribution packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+        if: matrix.python-version == '3.11'
+
+  # We check the installation using all Python versions using the packages
+  # created from a single version, since the packages are platform and version
+  # independent.
+  check-installation:
+    needs:
+      - run-tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        install-method: [wheel, source]
+        python-version:
+          - 3.8
+          - 3.9
+          - "3.10"
+          - 3.11
+          # 3.12 has problems with older NumPy
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Download the distribution packages
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+      - name: Update environment
+        run: |
+          python -m pip install -U setuptools pip
+      - name: Install from wheel
+        run: |
+          python -m pip install dist/*.whl
+        if: matrix.install-method == 'wheel'
+      - name: Install from source
+        run: |
+          python -m pip install dist/*.tar.gz
+        if: matrix.install-method == 'source'
+      - name: Check installation
+        run: |
+          cd ~
+          python -c 'import loompy; print(loompy.__version__)'

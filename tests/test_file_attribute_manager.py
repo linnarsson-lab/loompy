@@ -15,7 +15,7 @@ class GlobalAttributeManagerTests(TestCase):
 		f = NamedTemporaryFile(suffix="loom")
 		f.close()
 		self.filename = f.name
-		self.file = h5py.File(f.name)
+		self.file = h5py.File(f.name, mode="w")
 		self.file.attrs["arr"] = self.VALUE_IN_FILE
 
 	def tearDown(self):
