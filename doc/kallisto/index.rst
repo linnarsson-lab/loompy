@@ -32,13 +32,14 @@ Using the ``loompy fromfq`` command
 
 The excellent kallisto tool performs ultra-fast pseudoalignment, which loompy uses to count reads (UMIs) on genes.
 
-2. Download an index (or build your own)
+2. Download an index or build your own. Please note: The pre-built index only works with kallisto version < 0.50.0 !
 ----------------------------------------
 
 We provide a pre-built index of the `human genome <https://storage.googleapis.com/linnarsson-lab-www-blobs/human_GRCh38_gencode.v31.tar.gz>`_. 
 
 .. warning::
   This index is really only suitable for use with 10x Chromium data (it makes strong assumptions about the read distribution).
+  This index only works with kallisto version < 0.50.0.
 
 Unzip the index to a directory, which will have the following content:
 
