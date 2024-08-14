@@ -3,6 +3,7 @@ from inspect import currentframe, getouterframes
 import datetime
 from h5py import File as HDF5File
 from .normalize import materialize_attr_values
+import numpy as np
 
 
 def deprecated(message: str) -> None:
@@ -16,11 +17,16 @@ def timestamp() -> str:
 
 
 def get_loom_spec_version(f: HDF5File) -> str:
+	version = "0.0.0"
 	if "attrs" in f and "LOOM_SPEC_VERSION" in f["/attrs"]:
-		return materialize_attr_values(f["/attrs"]["LOOM_SPEC_VERSION"][()])
+		version = materialize_attr_values(f["/attrs"]["LOOM_SPEC_VERSION"][()])
+		if type(version) == np.ndarray:
+			version = version[0]
 	if "LOOM_SPEC_VERSION" in f.attrs:
-		return materialize_attr_values(f.attrs["LOOM_SPEC_VERSION"])
-	return "0.0.0"
+		version = materialize_attr_values(f.attrs["LOOM_SPEC_VERSION"])
+		if type(version) == np.ndarray:
+			version = version[0]
+	return version
 
 
 def compare_loom_spec_version(f: HDF5File, v: str) -> int:
