@@ -232,7 +232,7 @@ class LoomValidator:
 		if self.version == "3.0.0":
 			expected_dtype = np.object_
 		else:
-			expected_dtype = np.string_
+			expected_dtype = np.bytes_
 		delay_print("Row attributes:")
 		if self._check("row_attrs" in file, "'row_attrs' group is missing"):
 			for ra in file["row_attrs"]:
