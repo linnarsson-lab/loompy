@@ -456,6 +456,9 @@ def create_from_fastq(out_file: str, sample_id: str, fastqs: List[str], index_pa
 		logging.info(f"Creating loom file '{out_file}'")
 		bus.save(out_file, sample_id, samples_metadata_file)
 		with connect(out_file) as ds:
+			for ra in ds.row_attrs:  # For some reason it happens that e.g. ds.ra.Alias == None, which fails downstream work.
+				if ds.rowattrs[ra] is None:
+					del ds.rowattrs[ra]
 			ds.attrs.Species = manifest["species"]
 			ds.attrs.Saturation = seq_sat
 			if run_info is not None:
