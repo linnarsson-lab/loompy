@@ -62,4 +62,6 @@ http://www.ensembl.org/biomart/martview/7c9b283e3eca26cb81449ec518f4fc14?VIRTUAL
 
 `kallisto index -i gencode.vM23.fragments.idx -k 31 inputs/gencode.vM23.fragments.fa`
 
+(If you end up with 'counting k-mers ... Killed' you have too little memory in your computer.)
+
 10. Refer to the notebook for human for more info on the output.
