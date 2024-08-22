@@ -4,11 +4,12 @@ For the human genome see the notebook subdirectory.
 
 ## Building the mouse kallisto index
 
-These instructions work on Linux (tested on CentOS7).
+These instructions work on Linux (tested on Ubuntu 22.04).
 
-1. Make sure packages bedtools and kallisto are installed on the system.
+1. Make sure packages bedtools and kallisto are installed on the system. (On Ubuntu you can use the apt package manager to install both.)
   - bedtools from https://bedtools.readthedocs.io/en/latest/content/installation.html
   - kallisto from https://pachterlab.github.io/kallisto/download.html
+
 
 2. Create your working directory, 'cd' there, and put the files above there.
 
@@ -21,16 +22,16 @@ These instructions work on Linux (tested on CentOS7).
 4. Download "BrowseTF  TcoF-DB.xlsx" from https://tools.sschmeier.com/tcof/browse/?type=tcof&species=mouse&class=all# by clicking the "Excel" button. (Main page is https://tools.sschmeier.com/tcof/home/).
   Open the file in Excel and save tab-separated as "inputs/TcoF-DB.tsv".
 
-5. You need to download some annotations for Mouse GRCm38 from BioMart (https://m.ensembl.org/biomart) Open this link in a new browser tab:
+5. You need to download some annotations for Mouse GRCm3x from BioMart (https://m.ensembl.org/biomart) Open this link in a new browser tab:
 
-http://www.ensembl.org/biomart/martview/7c9b283e3eca26cb81449ec518f4fc14?VIRTUALSCHEMANAME=default&ATTRIBUTES=mmusculus_gene_ensembl.default.feature_page.ensembl_gene_id|mmusculus_gene_ensembl.default.feature_page.ensembl_gene_id_version|mmusculus_gene_ensembl.default.feature_page.ensembl_transcript_id|mmusculus_gene_ensembl.default.feature_page.ensembl_transcript_id_version|mmusculus_gene_ensembl.default.feature_page.ucsc|mmusculus_gene_ensembl.default.feature_page.vega_translation|mmusculus_gene_ensembl.default.feature_page.ccds&FILTERS=&VISIBLEPANEL=resultspanel
+http://www.ensembl.org/biomart/martview/7c9b283e3eca26cb81449ec518f4fc14?VIRTUALSCHEMANAME=default&ATTRIBUTES=mmusculus_gene_ensembl.default.feature_page.ensembl_gene_id|mmusculus_gene_ensembl.default.feature_page.ensembl_gene_id_version|mmusculus_gene_ensembl.default.feature_page.ensembl_transcript_id|mmusculus_gene_ensembl.default.feature_page.ensembl_transcript_id_version|mmusculus_gene_ensembl.default.feature_page.ucsc|mmusculus_gene_ensembl.default.feature_page.entrezgene_trans_name|mmusculus_gene_ensembl.default.feature_page.ccds&FILTERS=&VISIBLEPANEL=resultspanel
 
   On this BioMart page, click the "Go" button, and save the downloaded "mart_export.txt" file as "inputs/mart_export.txt".
   The file should contain the following columns in the header:
-      Gene stable ID        Gene stable ID version  Transcript stable ID    Transcript stable ID version    UCSC Stable ID  Vega translation ID     CCDS ID
+      Gene stable ID        Gene stable ID version  Transcript stable ID    Transcript stable ID version    UCSC Stable ID  EntrezGene transcript name ID     CCDS ID
 
-  If the link fails, you need to manually select the proper dataset and columns from the https://m.ensembl.org/biomart webpage and download:
-  *  Select Dataset "Ensembl Genes 101"/"Mouse genes GRCm38".
+  If the link fails, you need to manually select the proper dataset and columns from the [https://m.ensembl.org/biomart/martview](https://www.ensembl.org/biomart/martview) webpage and download:
+  *  Select Dataset "Ensembl Genes 1xx"/"Mouse genes GRCm3x".
   *  Select Attributes as in columns above: First 4 should be auto-selected. Select the following 3 from the "EXTERNAL" section, clicking the 3 boxes in the order above.
   * Click "Results", export using "Go" button, and save to "inputs/mart_export.txt". 
 
