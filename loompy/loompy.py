@@ -1174,44 +1174,85 @@ def create_from_cellranger(indir: str, outdir: str = None, genome: str = None, f
 	return path
 
 
-def create_from_tsv(out_file: str, tsv_file: str, row_metadata_loomfile: str, row_metadata_attr: str = "Accession", delim: str = "\t", \
-                    dtype: str = "float32", sample_id: str = "", file_attrs: Dict[str, str] = None) -> None:
+def create_from_tsv(out_file: str, tsv_file: str, row_metadata_loomfile: str = None, row_metadata_attr: str = "Accession", delim: str = "\t", \
+                    dtype: str = "float32", sample_id: str = "", file_attrs: Dict[str, str] = None, \
+                    col_metadata_tsv: str = None, tsv_delim: str = '\t') -> None:
 	"""
 	Create a .loom file from .tsv file
 
 	Args:
 		out_file:               path to the newly created .loom file (will be overwritten if it exists)
-		tsv_file:		input tab separated data matrix file
-		row_metadata_loomfile:  path to loomfile that will supply gene data and their order
-		row_metadata_attr:      row attribute of loomfile to use to match with gene IDs of .tsv file
-                delim:                  delimiter of input file
+		tsv_file:		input tab separated data matrix file. Header line should contain cell IDs.
+		row_metadata_loomfile:  path to loomfile that will supply gene data and their order. Use to make the new loomfile conform with existing loomfile(s).
+		row_metadata_attr:      row attribute of row_metadata_loomfile to use to match with gene IDs of tsv_file
+                delim:                  delimiter of expression matrix file
 		dtype:                  requested type of loomfile data matrix
-		sample_id:              string to use as prefix for cell IDs
-		file_attrs:             dict of global loomfile attributes, or None
+		sample_id:              string to use as prefix for cell IDs, or nothing if header fields already include sample IDs
+		file_attrs:             dict of global loomfile attributes
+                col_metadata_tsv:       metadata for cells. Header line shoud be names of attributes. First column should be CellIDs. Order has to match data matrix file.
+                tsv_delim:              delimiter of tsv metadata file
 	"""
+	id2rowidx = None
 	row_attrs = {}
-	with loompy.connect(row_metadata_loomfile, "r") as ds:
-		for attr in ("Accession", "Gene", "Chromosome", "Start", "End"):
-			if attr in ds.ra:
-				row_attrs[attr] = ds.ra[attr][:]
-		nrows = ds.shape[0]
-	id2rowidx = { n : i for i, n in enumerate(row_attrs[row_metadata_attr]) }
+	if row_metadata_loomfile:
+		with loompy.connect(row_metadata_loomfile, "r") as ds:
+			for attr in ("Accession", "Gene", "Chromosome", "Start", "End"):
+				if attr in ds.ra:
+					row_attrs[attr] = ds.ra[attr][:]
+			nrows = ds.shape[0]
+		id2rowidx = { n : i for i, n in enumerate(row_attrs[row_metadata_attr]) }
 	with open(tsv_file, "r") as fd:
 		headerrow = fd.readline().rstrip().split(delim)
-		cellids = np.array([ sample_id + cellid for cellid in headerrow[1:] ]).astype('str')
+		datarow1 = fd.readline().rstrip().split(delim)
+		headerfirstcellid = 1 if len(datarow1)==len(headerrow) else 0
+		if not row_metadata_loomfile:
+			nrows = 1
+			for line in fd:
+				nrows += 1
+	geneids = []
+	with open(tsv_file, "r") as fd:
+		headerrow = fd.readline().rstrip().split(delim)
+		headerrow = [re.sub(r'^"(.+)"$', r'\1', f) for f in headerrow]
+		cellids = np.array([ sample_id + cellid for cellid in headerrow[headerfirstcellid:] ]).astype('str')
 		matrix = np.zeros([nrows, len(cellids)], dtype=dtype)
 		nlines = nnomatch = 0
-		for line in fd:
+		for inrowidx, line in enumerate(fd):
 			nlines += 1
 			row = line.rstrip().split(delim)
-			geneid = row[0]
-			if not geneid in id2rowidx:
-				nnomatch += 1
-				continue
-			rowidx = id2rowidx[geneid]
+			geneid = re.sub(r'^"(.+)"$', r'\1', row[0])
+			if id2rowidx:
+				if not geneid in id2rowidx:
+					nnomatch += 1
+					continue
+				rowidx = id2rowidx[geneid]
+			else:
+				rowidx = inrowidx
 			datarow = [ float(v) for v in row[1:] ]
 			matrix[rowidx, :] = np.array(datarow).astype(dtype)
+			geneids.append(geneid)
+	if len(row_attrs) == 0:
+		row_attrs['Gene'] = geneids
 	col_attrs = {"CellID": cellids}
+	if col_metadata_tsv:
+		with open(col_metadata_tsv, "r") as fd:
+			cm_attrs = fd.readline().rstrip().split(tsv_delim)
+			cm_attrs = [re.sub(r'^"(.+)"$', r'\1', a) for a in cm_attrs]
+			for cm_attr in cm_attrs:
+				col_attrs[cm_attr] = []
+			cmrowidx = 0
+			line = fd.readline()
+			while line:
+				cm_values = line.rstrip().split(tsv_delim)
+				cm_values = [re.sub(r'^"(.+)"$', r'\1', v) for v in cm_values]
+				cmcellid = cm_values[0]
+				if cmcellid != cellids[cmrowidx]:
+					raise ValueError("CellID %s at row %s in %s does not match with corresponding header column %s of %s" % \
+					                 (cmcellid, cmrowidx, col_metadata_tsv, cellids[cmrowidx], tsv_file))
+				cm_idx0 = 1 if len(cm_values) == len(cm_attrs) else 0
+				for colidx, cm_attr in enumerate(cm_attrs):
+					col_attrs[cm_attr].append(cm_values[cm_idx0 + colidx])
+				cmrowidx += 1
+				line = fd.readline()
 	create(out_file, matrix, row_attrs, col_attrs, file_attrs=file_attrs)
 	print("No match for %s / %s genes in input file. Size of output loomfile: %s" % (nnomatch, nlines, matrix.shape) )
 
