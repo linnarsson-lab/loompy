@@ -1176,7 +1176,7 @@ def create_from_cellranger(indir: str, outdir: str = None, genome: str = None, f
 
 def create_from_tsv(out_file: str, tsv_file: str, row_metadata_loomfile: str = None, row_metadata_attr: str = "Accession", delim: str = "\t", \
                     dtype: str = "float32", sample_id: str = "", file_attrs: Dict[str, str] = None, \
-                    col_metadata_tsv: str = None, tsv_delim: str = '\t') -> None:
+                    col_metadata_tsv: str = None, metadata_delim: str = '\t') -> None:
 	"""
 	Create a .loom file from .tsv file
 
@@ -1190,7 +1190,7 @@ def create_from_tsv(out_file: str, tsv_file: str, row_metadata_loomfile: str = N
 		sample_id:              string to use as prefix for cell IDs, or nothing if header fields already include sample IDs
 		file_attrs:             dict of global loomfile attributes
                 col_metadata_tsv:       metadata for cells. Header line shoud be names of attributes. First column should be CellIDs. Order has to match data matrix file.
-                tsv_delim:              delimiter of tsv metadata file
+                metadata_delim:         delimiter of tsv metadata file
 	"""
 	id2rowidx = None
 	row_attrs = {}
@@ -1201,7 +1201,7 @@ def create_from_tsv(out_file: str, tsv_file: str, row_metadata_loomfile: str = N
 					row_attrs[attr] = ds.ra[attr][:]
 			nrows = ds.shape[0]
 		id2rowidx = { n : i for i, n in enumerate(row_attrs[row_metadata_attr]) }
-	with open(tsv_file, "r") as fd:
+	with (gzip.open(tsv_file, "rt") if tsv_file.endswith(".gz") else open(tsv_file, "r")) as fd:
 		headerrow = fd.readline().rstrip().split(delim)
 		datarow1 = fd.readline().rstrip().split(delim)
 		headerfirstcellid = 1 if len(datarow1)==len(headerrow) else 0
@@ -1210,7 +1210,7 @@ def create_from_tsv(out_file: str, tsv_file: str, row_metadata_loomfile: str = N
 			for line in fd:
 				nrows += 1
 	geneids = []
-	with open(tsv_file, "r") as fd:
+	with (gzip.open(tsv_file, "rt") if tsv_file.endswith(".gz") else open(tsv_file, "r")) as fd:
 		headerrow = fd.readline().rstrip().split(delim)
 		headerrow = [re.sub(r'^"(.+)"$', r'\1', f) for f in headerrow]
 		cellids = np.array([ sample_id + cellid for cellid in headerrow[headerfirstcellid:] ]).astype('str')
@@ -1234,15 +1234,15 @@ def create_from_tsv(out_file: str, tsv_file: str, row_metadata_loomfile: str = N
 		row_attrs['Gene'] = geneids
 	col_attrs = {"CellID": cellids}
 	if col_metadata_tsv:
-		with open(col_metadata_tsv, "r") as fd:
-			cm_attrs = fd.readline().rstrip().split(tsv_delim)
+		with (gzip.open(col_metadata_tsv, "rt") if col_metadata_tsv.endswith(".gz") else open(col_metadata_tsv, "r")) as fd:
+			cm_attrs = fd.readline().rstrip().split(metadata_delim)
 			cm_attrs = [re.sub(r'^"(.+)"$', r'\1', a) for a in cm_attrs]
 			for cm_attr in cm_attrs:
 				col_attrs[cm_attr] = []
 			cmrowidx = 0
 			line = fd.readline()
 			while line:
-				cm_values = line.rstrip().split(tsv_delim)
+				cm_values = line.rstrip().split(metadata_delim)
 				cm_values = [re.sub(r'^"(.+)"$', r'\1', v) for v in cm_values]
 				cmcellid = cm_values[0]
 				if cmcellid != cellids[cmrowidx]:
