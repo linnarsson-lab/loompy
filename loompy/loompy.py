@@ -1248,7 +1248,7 @@ def create_from_tsv(out_file: str, tsv_file: str, row_metadata_loomfile: str = N
 				if cmcellid != cellids[cmrowidx]:
 					raise ValueError("CellID %s at row %s in %s does not match with corresponding header column %s of %s" % \
 					                 (cmcellid, cmrowidx, col_metadata_tsv, cellids[cmrowidx], tsv_file))
-				cm_idx0 = 1 if len(cm_values) == len(cm_attrs) else 0
+				cm_idx0 = 0 if len(cm_values) == len(cm_attrs) else 1
 				for colidx, cm_attr in enumerate(cm_attrs):
 					col_attrs[cm_attr].append(cm_values[cm_idx0 + colidx])
 				cmrowidx += 1
