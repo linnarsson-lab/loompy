@@ -135,7 +135,7 @@ def load_sample_metadata(path: str, sample_id: str) -> Dict[str, str]:
 	else:
 		result = {}
 		with open(path) as f:
-			headers = [x.lower() for x in f.readline()[:-1].split("\t")]
+			headers = [x.lower() for x in f.readline()[:-1].split(",")]
 			if "sampleid" not in headers and 'name' not in headers:
 				raise ValueError("Required column 'SampleID' or 'Name' not found in sample metadata file")
 			if "sampleid" in headers:
@@ -144,7 +144,7 @@ def load_sample_metadata(path: str, sample_id: str) -> Dict[str, str]:
 				sample_metadata_key_idx = headers.index("name")
 			sample_found = False
 			for line in f:
-				items = line[:-1].split("\t")
+				items = line[:-1].split(",")
 				if len(items) > sample_metadata_key_idx and items[sample_metadata_key_idx] == sample_id:
 					for i, item in enumerate(items):
 						result[headers[i]] = item
